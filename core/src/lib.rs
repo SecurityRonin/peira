@@ -283,6 +283,62 @@ title: Amcache recorded coreupdater.exe at a staging path
 The hive catalogued the file identity and path.
 ";
 
+    const CLAIM_WITH_STATUS: &str = "\
+---
+id: 20260809T142530
+type: claim
+title: Amcache recorded coreupdater.exe at a staging path
+status: accepted
+---
+
+Body.
+";
+
+    const CLAIM_WITH_CONFIDENCE: &str = "\
+---
+id: 20260809T142530
+type: claim
+title: Amcache recorded coreupdater.exe at a staging path
+confidence: 0.9
+---
+
+Body.
+";
+
+    #[test]
+    fn refuses_a_node_carrying_a_hand_written_status() {
+        match parse_node(CLAIM_WITH_STATUS) {
+            Err(ParseError::ForbiddenField { field, kind, .. }) => {
+                assert_eq!(field, "status");
+                assert_eq!(kind, NodeKind::Claim);
+            }
+            other => panic!("a hand-written `status` must be refused, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn refuses_a_node_carrying_a_hand_written_confidence() {
+        match parse_node(CLAIM_WITH_CONFIDENCE) {
+            Err(ParseError::ForbiddenField { field, kind, .. }) => {
+                assert_eq!(field, "confidence");
+                assert_eq!(kind, NodeKind::Claim);
+            }
+            other => panic!("a hand-written `confidence` must be refused, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn forbidden_field_error_names_the_offending_key_verbatim() {
+        let Err(err) = parse_node(CLAIM_WITH_STATUS) else {
+            panic!("expected a refusal");
+        };
+        let rendered = err.to_string();
+        assert!(
+            rendered.contains("status"),
+            "the error must show the offending key verbatim, got: {rendered}"
+        );
+    }
+
     #[test]
     fn parses_a_claim_node() {
         let node = parse_node(CLAIM_DOC).expect("a well-formed claim document should parse");
