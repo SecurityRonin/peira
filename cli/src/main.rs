@@ -44,6 +44,14 @@ enum Command {
         /// Where to create it.
         path: PathBuf,
     },
+    /// Rebuild the derived index. Disposable — never authoritative, never committed.
+    Index {
+        /// Vault root.
+        vault: PathBuf,
+        /// Where to write the database.
+        #[arg(long, default_value = "index.sqlite")]
+        out: PathBuf,
+    },
     /// Run the deterministic lint pack.
     Lint {
         /// Vault root.
@@ -159,6 +167,19 @@ fn cmd_init(path: &Path) -> Result<u8, String> {
     for (dir, _) in AREAS {
         println!("  {dir}/");
     }
+    Ok(exit::OK)
+}
+
+fn cmd_index(vault: &Path, out: &Path) -> Result<u8, String> {
+    let graph = load(vault)?;
+    elenchus_index::build(&graph, out).map_err(|e| format!("{}: {e}", out.display()))?;
+    println!(
+        "Indexed {} node(s) and {} edge(s) → {}",
+        graph.nodes().count(),
+        graph.edges().count(),
+        out.display()
+    );
+    println!("  (derived and disposable — rebuilt from the markdown, never committed)");
     Ok(exit::OK)
 }
 
@@ -335,6 +356,7 @@ fn cmd_verify(vault: &Path, packet: &Path) -> Result<u8, String> {
 fn run() -> Result<u8, String> {
     match Cli::parse().command {
         Command::Init { path } => cmd_init(&path),
+        Command::Index { vault, out } => cmd_index(&vault, &out),
         Command::Lint { vault } => {
             let graph = load(&vault)?;
             Ok(report(&lints::lint(&graph), "lint"))

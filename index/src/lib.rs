@@ -1,0 +1,306 @@
+//! A derived index over a vault.
+//!
+//! # This index is never authoritative
+//!
+//! The markdown is the source of truth. This database is **rebuilt from scratch**
+//! by `elenchus index`, is gitignored, and is dropped and recreated on every build
+//! rather than updated incrementally.
+//!
+//! That is a deliberate constraint, not laziness. An incrementally-updated index
+//! can drift from the files it describes, and once it can drift it becomes a second
+//! source of truth that nobody reviewed. It also keeps every CI gate satisfiable
+//! from committed bytes alone: delete the database and nothing is lost.
+//!
+//! What it buys is query. Once a vault outgrows what fits in a terminal, questions
+//! like *which claims lack boundaries*, *which edges rest on testimony*, or *what is
+//! out of the grounded extension and why* are SQL rather than a re-scan.
+
+use elenchus_core::{Graph, NodeId};
+use elenchus_lens::{examine_graph, lints};
+use rusqlite::{params, Connection};
+use std::path::Path;
+
+/// Rebuild the index at `path` from `graph`, replacing whatever was there.
+///
+/// # Errors
+/// Propagates any `SQLite` failure. A partially-built index is never left behind:
+/// the whole build runs in one transaction.
+pub fn build(graph: &Graph, path: &Path) -> rusqlite::Result<()> {
+    let mut conn = Connection::open(path)?;
+    let tx = conn.transaction()?;
+
+    // Dropped rather than migrated. The index is derived, so a schema change is a
+    // rebuild, and there is nothing here worth preserving across one.
+    tx.execute_batch(
+        "DROP TABLE IF EXISTS violations;
+         DROP TABLE IF EXISTS grounded;
+         DROP TABLE IF EXISTS edges;
+         DROP TABLE IF EXISTS fields;
+         DROP TABLE IF EXISTS nodes;
+
+         CREATE TABLE nodes (
+             id     TEXT PRIMARY KEY,
+             kind   TEXT NOT NULL,
+             title  TEXT NOT NULL,
+             body   TEXT NOT NULL
+         );
+         CREATE TABLE fields (
+             node_id  TEXT NOT NULL REFERENCES nodes(id),
+             key      TEXT NOT NULL,
+             value    TEXT NOT NULL,
+             ordinal  INTEGER NOT NULL
+         );
+         CREATE TABLE edges (
+             from_id    TEXT NOT NULL,
+             to_id      TEXT NOT NULL,
+             kind       TEXT NOT NULL,
+             grade      TEXT,
+             graded_by  TEXT,
+             proposed   TEXT,
+             pramana    TEXT
+         );
+         CREATE TABLE grounded (
+             node_id TEXT PRIMARY KEY
+         );
+         CREATE TABLE violations (
+             gate     TEXT NOT NULL,
+             lens     TEXT NOT NULL,
+             subject  TEXT NOT NULL,
+             detail   TEXT NOT NULL,
+             remedy   TEXT NOT NULL
+         );
+         CREATE INDEX idx_fields_key ON fields(key);
+         CREATE INDEX idx_edges_to   ON edges(to_id);
+         CREATE INDEX idx_edges_from ON edges(from_id);
+         CREATE INDEX idx_viol_subj  ON violations(subject);",
+    )?;
+
+    write_nodes(&tx, graph)?;
+    write_edges(&tx, graph)?;
+    write_derived(&tx, graph)?;
+
+    tx.commit()
+}
+
+/// Nodes and their flattened frontmatter.
+fn write_nodes(tx: &rusqlite::Transaction<'_>, graph: &Graph) -> rusqlite::Result<()> {
+    {
+        let mut node_stmt =
+            tx.prepare("INSERT INTO nodes (id, kind, title, body) VALUES (?1, ?2, ?3, ?4)")?;
+        let mut field_stmt = tx
+            .prepare("INSERT INTO fields (node_id, key, value, ordinal) VALUES (?1, ?2, ?3, ?4)")?;
+
+        for node in graph.nodes() {
+            node_stmt.execute(params![
+                node.id.as_str(),
+                node.kind.as_str(),
+                node.title,
+                node.body
+            ])?;
+            for key in node.fields.keys() {
+                for (i, value) in node.field_list(key).iter().enumerate() {
+                    field_stmt.execute(params![
+                        node.id.as_str(),
+                        key,
+                        value,
+                        i64::try_from(i).unwrap_or(i64::MAX)
+                    ])?;
+                }
+            }
+        }
+    }
+    Ok(())
+}
+
+/// Edges, with their grades and means of knowing.
+fn write_edges(tx: &rusqlite::Transaction<'_>, graph: &Graph) -> rusqlite::Result<()> {
+    {
+        let mut edge_stmt = tx.prepare(
+            "INSERT INTO edges (from_id, to_id, kind, grade, graded_by, proposed, pramana)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
+        )?;
+        for edge in graph.edges() {
+            edge_stmt.execute(params![
+                edge.from.as_str(),
+                edge.to.as_str(),
+                edge.kind.as_str(),
+                edge.grade().map(elenchus_core::Grade::as_str),
+                edge.grader(),
+                edge.grade_proposed.map(elenchus_core::Grade::as_str),
+                edge.pramana.map(elenchus_core::Pramana::as_str),
+            ])?;
+        }
+    }
+    Ok(())
+}
+
+/// What the engine computed: the grounded extension, and every violation.
+fn write_derived(tx: &rusqlite::Transaction<'_>, graph: &Graph) -> rusqlite::Result<()> {
+    {
+        let mut grounded_stmt = tx.prepare("INSERT INTO grounded (node_id) VALUES (?1)")?;
+        for id in graph.grounded_extension() {
+            grounded_stmt.execute(params![id.as_str()])?;
+        }
+
+        let mut viol_stmt = tx.prepare(
+            "INSERT INTO violations (gate, lens, subject, detail, remedy)
+             VALUES (?1, ?2, ?3, ?4, ?5)",
+        )?;
+        for v in examine_graph(graph).into_iter().chain(lints::lint(graph)) {
+            viol_stmt.execute(params![
+                v.gate,
+                v.lens,
+                v.subject.as_str(),
+                v.detail,
+                v.remedy
+            ])?;
+        }
+    }
+    Ok(())
+}
+
+/// Claims blocked by at least one gate, worst first.
+///
+/// # Errors
+/// Propagates any `SQLite` failure.
+pub fn blocked_claims(conn: &Connection) -> rusqlite::Result<Vec<(NodeId, i64)>> {
+    let mut stmt = conn.prepare(
+        "SELECT v.subject, COUNT(*) AS n
+           FROM violations v
+           JOIN nodes n ON n.id = v.subject
+          WHERE n.kind = 'claim'
+       GROUP BY v.subject
+       ORDER BY n DESC, v.subject",
+    )?;
+    let rows = stmt.query_map([], |row| {
+        Ok((NodeId::new(row.get::<_, String>(0)?), row.get::<_, i64>(1)?))
+    })?;
+    rows.collect()
+}
+
+/// Claims that are out of the grounded extension.
+///
+/// # Errors
+/// Propagates any `SQLite` failure.
+pub fn defeated_claims(conn: &Connection) -> rusqlite::Result<Vec<NodeId>> {
+    let mut stmt = conn.prepare(
+        "SELECT n.id FROM nodes n
+          WHERE n.kind IN ('claim', 'hypothesis')
+            AND n.id NOT IN (SELECT node_id FROM grounded)
+       ORDER BY n.id",
+    )?;
+    let rows = stmt.query_map([], |row| Ok(NodeId::new(row.get::<_, String>(0)?)))?;
+    rows.collect()
+}
+
+/// Edges resting on testimony — the ones whose independence needs checking.
+///
+/// # Errors
+/// Propagates any `SQLite` failure.
+pub fn testimony_edges(conn: &Connection) -> rusqlite::Result<Vec<(NodeId, NodeId)>> {
+    let mut stmt = conn.prepare(
+        "SELECT from_id, to_id FROM edges
+          WHERE pramana = 'testimony'
+       ORDER BY from_id, to_id",
+    )?;
+    let rows = stmt.query_map([], |row| {
+        Ok((
+            NodeId::new(row.get::<_, String>(0)?),
+            NodeId::new(row.get::<_, String>(1)?),
+        ))
+    })?;
+    rows.collect()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use elenchus_core::load;
+    use std::path::PathBuf;
+
+    fn vault(name: &str) -> Graph {
+        let root = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("..")
+            .join("tests")
+            .join("vaults")
+            .join(name);
+        load(&root).unwrap_or_else(|e| panic!("loading {name}: {e}"))
+    }
+
+    /// Each test gets its own database file. Sharing one path across tests that
+    /// cargo runs in parallel produces `database is locked`, which reads as a bug
+    /// in the code under test rather than in the harness.
+    fn built(vault_name: &str, tag: &str) -> Connection {
+        let path = std::env::temp_dir().join(format!("elenchus-index-{vault_name}-{tag}.sqlite"));
+        let _ = std::fs::remove_file(&path);
+        let graph = vault(vault_name);
+        build(&graph, &path).expect("index builds");
+        Connection::open(&path).expect("opens")
+    }
+
+    #[test]
+    fn indexes_the_bounded_vault_with_no_violations() {
+        let conn = built("bounded", "clean");
+        let n: i64 = conn
+            .query_row("SELECT COUNT(*) FROM violations", [], |r| r.get(0))
+            .unwrap();
+        assert_eq!(n, 0, "the bounded vault must index clean");
+
+        let nodes: i64 = conn
+            .query_row("SELECT COUNT(*) FROM nodes", [], |r| r.get(0))
+            .unwrap();
+        assert_eq!(nodes, 6);
+    }
+
+    #[test]
+    fn the_overclaim_shows_up_as_the_most_blocked_claim() {
+        let conn = built("overclaim", "blocked");
+        let blocked = blocked_claims(&conn).unwrap();
+        assert_eq!(
+            blocked.first().map(|(id, _)| id.as_str()),
+            Some("c-overclaim")
+        );
+        assert!(
+            blocked[0].1 >= 5,
+            "expected at least five findings, got {}",
+            blocked[0].1
+        );
+    }
+
+    #[test]
+    fn grounded_membership_is_materialised() {
+        let conn = built("bounded", "grounded");
+        let defeated = defeated_claims(&conn).unwrap();
+        assert!(
+            !defeated.iter().any(|id| id.as_str() == "c-bounded"),
+            "the bounded claim survives; got {defeated:?}"
+        );
+    }
+
+    #[test]
+    fn testimony_edges_are_queryable() {
+        let conn = built("bounded", "testimony");
+        let edges = testimony_edges(&conn).unwrap();
+        assert_eq!(
+            edges,
+            vec![(NodeId::new("o2"), NodeId::new("c-bounded"))],
+            "the parser-output observation is testimony, and only it"
+        );
+    }
+
+    #[test]
+    fn rebuilding_over_an_existing_index_replaces_rather_than_accumulates() {
+        let path = std::env::temp_dir().join("elenchus-index-test-rebuild.sqlite");
+        let _ = std::fs::remove_file(&path);
+        let graph = vault("bounded");
+
+        build(&graph, &path).unwrap();
+        build(&graph, &path).unwrap();
+
+        let conn = Connection::open(&path).unwrap();
+        let nodes: i64 = conn
+            .query_row("SELECT COUNT(*) FROM nodes", [], |r| r.get(0))
+            .unwrap();
+        assert_eq!(nodes, 6, "a second build must replace, not double up");
+    }
+}

@@ -20,6 +20,7 @@ path = "src/main.rs"
 elenchus-core = { workspace = true }
 elenchus-lens = { workspace = true }
 elenchus-court = { workspace = true }
+elenchus-index = { workspace = true }
 clap = { version = "4", features = ["derive"] }
 
 [lints]
