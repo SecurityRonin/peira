@@ -157,15 +157,24 @@ jobs:
           workspaces: |
             .
             fuzz
-      # `cargo +nightly`, not a bare `cargo`: rust-toolchain.toml pins 1.96.0, and a
-      # CHANNEL ref from the setup action loses to the toml (only an explicit
-      # version ref outranks it). Without the `+nightly` the job fails on
-      # `-Zsanitizer=address` having "learnt about" the pinned stable instead.
+      # Two things this line cannot omit, both of which failed on the first run:
+      #
+      # `cargo +nightly`, not a bare `cargo` — rust-toolchain.toml pins 1.96.0, and
+      # a CHANNEL ref from the setup action loses to the toml (only an explicit
+      # version ref outranks it), so a bare cargo fails on `-Zsanitizer=address`.
+      #
+      # An explicit `--target` — cargo-fuzz defaults to the triple IT was built
+      # for, not the host it is running on. install-action ships a musl build, so
+      # the default became x86_64-unknown-linux-musl and the job died on
+      # "sanitizer is incompatible with statically linked libc". The host is asked
+      # for rather than hardcoded, so this stays correct on a runner of any arch.
       - run: |
           set -euo pipefail
+          HOST=$(rustc +nightly -vV | awk '/^host:/{print $2}')
+          echo "fuzzing on host target: $HOST"
           for t in $(cargo +nightly fuzz list); do
             echo "::group::$t"
-            cargo +nightly fuzz run "$t" -- -max_total_time=60 -rss_limit_mb=4096
+            cargo +nightly fuzz run "$t" --target "$HOST" -- -max_total_time=60 -rss_limit_mb=4096
             echo "::endgroup::"
           done
 
