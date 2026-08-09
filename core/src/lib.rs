@@ -198,9 +198,75 @@ impl fmt::Display for ParseError {
 
 impl std::error::Error for ParseError {}
 
+/// Split a document into its frontmatter YAML and the markdown body.
+///
+/// The closing fence is a line that is exactly `---`, so a `---` appearing inside
+/// a YAML scalar does not truncate the frontmatter.
+fn split_frontmatter(source: &str) -> Result<(&str, &str), ParseError> {
+    let rest = source
+        .strip_prefix("---\n")
+        .or_else(|| source.strip_prefix("---\r\n"))
+        .ok_or(ParseError::MissingFrontmatter)?;
+
+    let mut offset = 0usize;
+    for line in rest.split_inclusive('\n') {
+        if line.trim_end_matches(['\n', '\r']) == "---" {
+            let frontmatter = &rest[..offset];
+            let body = &rest[offset + line.len()..];
+            return Ok((frontmatter, body));
+        }
+        offset += line.len();
+    }
+    Err(ParseError::UnterminatedFrontmatter)
+}
+
+/// Render a YAML scalar as a string.
+///
+/// Numbers are accepted because a UID like `202607241412` is a perfectly ordinary
+/// frontmatter `id:` and YAML types it as an integer — rejecting it would fail on
+/// the vault's own documented convention.
+fn scalar_as_string(value: &serde_yaml_ng::Value) -> Option<String> {
+    match value {
+        serde_yaml_ng::Value::String(s) => Some(s.clone()),
+        serde_yaml_ng::Value::Number(n) => Some(n.to_string()),
+        serde_yaml_ng::Value::Bool(b) => Some(b.to_string()),
+        _ => None,
+    }
+}
+
+/// Fetch a required scalar field.
+fn required_scalar(
+    map: &serde_yaml_ng::Mapping,
+    field: &'static str,
+) -> Result<String, ParseError> {
+    let value = map
+        .get(serde_yaml_ng::Value::String(field.to_owned()))
+        .ok_or(ParseError::MissingField { field })?;
+    scalar_as_string(value).ok_or(ParseError::WrongFieldType {
+        field,
+        expected: "a scalar (string or number)",
+    })
+}
+
 /// Parse one vault document into a [`Node`].
-pub fn parse_node(_source: &str) -> Result<Node, ParseError> {
-    Err(ParseError::MissingFrontmatter)
+pub fn parse_node(source: &str) -> Result<Node, ParseError> {
+    let (frontmatter, body) = split_frontmatter(source)?;
+
+    let value: serde_yaml_ng::Value =
+        serde_yaml_ng::from_str(frontmatter).map_err(|e| ParseError::Yaml(e.to_string()))?;
+    let map = value
+        .as_mapping()
+        .ok_or_else(|| ParseError::Yaml("frontmatter is not a mapping".to_owned()))?;
+
+    let type_name = required_scalar(map, "type")?;
+    let kind = NodeKind::from_str_opt(&type_name).ok_or(ParseError::UnknownNodeType(type_name))?;
+
+    Ok(Node {
+        id: NodeId::new(required_scalar(map, "id")?),
+        kind,
+        title: required_scalar(map, "title")?,
+        body: body.to_owned(),
+    })
 }
 
 #[cfg(test)]
