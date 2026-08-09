@@ -248,6 +248,38 @@ fn required_scalar(
     })
 }
 
+/// Fields no node may carry, because the engine derives them.
+///
+/// This table is the whole doer/checker split, made structural. A model — or a
+/// hurried human — can propose nodes and edges all day and still never assert that
+/// a claim is accepted, because there is nowhere to write it. Keeping the rule
+/// general rather than per-kind is deliberate: a special case here would be a
+/// confession that the model is wrong.
+const DERIVED_FIELDS: &[(&str, &str)] = &[
+    (
+        "status",
+        "claim state is derived from gates, reviewer records and the grounded extension",
+    ),
+    (
+        "confidence",
+        "confidence is a reviewed assessment of the whole current graph, computed on demand",
+    ),
+];
+
+/// Reject any frontmatter key the engine owns.
+fn reject_derived_fields(map: &serde_yaml_ng::Mapping, kind: NodeKind) -> Result<(), ParseError> {
+    for (field, reason) in DERIVED_FIELDS {
+        if map.contains_key(serde_yaml_ng::Value::String((*field).to_owned())) {
+            return Err(ParseError::ForbiddenField {
+                field: (*field).to_owned(),
+                kind,
+                reason,
+            });
+        }
+    }
+    Ok(())
+}
+
 /// Parse one vault document into a [`Node`].
 pub fn parse_node(source: &str) -> Result<Node, ParseError> {
     let (frontmatter, body) = split_frontmatter(source)?;
@@ -260,6 +292,8 @@ pub fn parse_node(source: &str) -> Result<Node, ParseError> {
 
     let type_name = required_scalar(map, "type")?;
     let kind = NodeKind::from_str_opt(&type_name).ok_or(ParseError::UnknownNodeType(type_name))?;
+
+    reject_derived_fields(map, kind)?;
 
     Ok(Node {
         id: NodeId::new(required_scalar(map, "id")?),
