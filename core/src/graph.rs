@@ -133,6 +133,13 @@ impl Graph {
             }
             current = next;
         }
+        // cov:unreachable: the characteristic function is monotone over a finite set,
+        // so the sequence ∅ ⊆ F(∅) ⊆ F²(∅) ⊆ … strictly grows until it stabilises, and
+        // must therefore reach its fixed point within `arguments.len() + 1` steps —
+        // which returns above. This line exists so a future change that breaks
+        // monotonicity degrades into a conservative answer instead of an infinite
+        // loop. Kept deliberately: never delete a defensive guard to satisfy a
+        // coverage gate.
         current
     }
 

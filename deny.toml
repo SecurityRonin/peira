@@ -10,6 +10,14 @@ ignore = []
 
 [licenses]
 version = 2
+# Kept in step with the fleet's own list (blazehash's deny.toml), so a dependency
+# that is acceptable there does not become a blocker here for no reason.
+#
+# CC0-1.0 and BSL-1.0 were added after `cargo deny` rejected tiny-keccak and
+# xxhash-rust, both reached through blazehash-core. Both are permissive and
+# OSI/FSF-recognised, so the prescribed fix is to allow the licence rather than
+# to drop the capability: `default-features = false` is banned as a way to dodge
+# a gate.
 allow = [
     "Apache-2.0",
     "MIT",
@@ -18,6 +26,10 @@ allow = [
     "ISC",
     "Unicode-3.0",
     "Zlib",
+    "CC0-1.0",
+    "BSL-1.0",
+    "0BSD",
+    "MPL-2.0",
 ]
 confidence-threshold = 0.93
 

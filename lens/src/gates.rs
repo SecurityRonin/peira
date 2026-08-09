@@ -699,6 +699,161 @@ from this image\n---\n",
     }
 
     #[test]
+    fn an_explicit_evaluative_flag_engages_the_pole_without_a_trigger_word() {
+        let n =
+            node("---\nid: c1\ntype: claim\ntitle: A plain description\nevaluative: true\n---\n");
+        let g = graph_of(vec![n.clone()], vec![]);
+        assert_eq!(
+            criterion_declared(&g, &n).violation().map(|v| v.gate),
+            Some(CRITERION_UNDECLARED),
+            "self-declaration must work when the word list does not fire"
+        );
+    }
+
+    #[test]
+    fn a_criterion_edge_pointing_at_a_non_criterion_does_not_satisfy_the_pole() {
+        let claim = node("---\nid: c1\ntype: claim\ntitle: The path is suspicious\n---\n");
+        let other = node("---\nid: o1\ntype: observation\ntitle: not a criterion\n---\n");
+        let g = graph_of(
+            vec![claim.clone(), other],
+            vec![Edge::new(
+                NodeId::new("c1"),
+                NodeId::new("o1"),
+                EdgeKind::JudgedBy,
+            )],
+        );
+        assert_eq!(
+            criterion_declared(&g, &claim).violation().map(|v| v.gate),
+            Some(CRITERION_UNDECLARED)
+        );
+    }
+
+    #[test]
+    fn a_key_term_pointing_at_nothing_is_blocked_with_the_dangling_id() {
+        let claim = node("---\nid: c1\ntype: claim\ntitle: t\n---\n");
+        let g = graph_of(
+            vec![claim.clone()],
+            vec![Edge::new(
+                NodeId::new("c1"),
+                NodeId::new("ghost"),
+                EdgeKind::UsesTerm,
+            )],
+        );
+        let r = key_terms_stipulated(&g, &claim);
+        let v = r.violation().expect("must block");
+        assert_eq!(v.gate, TERM_UNSTIPULATED);
+        assert!(v.detail.contains("ghost"), "{}", v.detail);
+    }
+
+    #[test]
+    fn a_substance_claim_with_no_evidence_is_unassessed_not_passed() {
+        let claim = node("---\nid: c1\ntype: claim\ntitle: x is y\naspect: substance\n---\n");
+        let g = graph_of(vec![claim.clone()], vec![]);
+        let r = substance_not_from_function_alone(&g, &claim);
+        assert!(matches!(r, GateResult::Unassessed { .. }));
+        assert!(!r.permits_promotion());
+    }
+
+    #[test]
+    fn a_claim_that_never_says_class_or_case_is_unassessed() {
+        let n = node("---\nid: c1\ntype: claim\ntitle: t\n---\n");
+        let g = graph_of(vec![n.clone()], vec![]);
+        let r = class_extension_declared(&g, &n);
+        assert!(matches!(r, GateResult::Unassessed { .. }));
+        assert!(!r.permits_promotion());
+    }
+
+    #[test]
+    fn a_class_claim_declaring_its_extension_passes() {
+        let n = node(
+            "---\nid: c1\ntype: claim\ntitle: t\nquantifier: class\nextension:\n  - InventoryApplicationFile on 1809+\n---\n",
+        );
+        let g = graph_of(vec![n.clone()], vec![]);
+        assert_eq!(class_extension_declared(&g, &n), GateResult::Pass);
+    }
+
+    #[test]
+    fn an_uncontested_claim_is_out_of_scope_for_the_four_corners() {
+        let n = node("---\nid: c1\ntype: claim\ntitle: t\n---\n");
+        let g = graph_of(vec![n.clone()], vec![]);
+        assert_eq!(four_corners_addressed(&g, &n), GateResult::NotApplicable);
+    }
+
+    #[test]
+    fn a_node_with_no_incoming_edges_is_out_of_scope_for_pramana() {
+        let n = node("---\nid: c1\ntype: claim\ntitle: t\n---\n");
+        let g = graph_of(vec![n.clone()], vec![]);
+        assert_eq!(
+            grades_within_pramana_ceiling(&g, &n),
+            GateResult::NotApplicable
+        );
+    }
+
+    #[test]
+    fn well_graded_edges_pass_the_ceiling_check() {
+        let claim = node("---\nid: c1\ntype: claim\ntitle: t\n---\n");
+        let obs = node("---\nid: o1\ntype: observation\ntitle: o\n---\n");
+        let g = graph_of(
+            vec![claim.clone(), obs],
+            vec![
+                Edge::new(NodeId::new("o1"), NodeId::new("c1"), EdgeKind::Supports)
+                    .via(Pramana::Inference)
+                    .graded_by(Grade::G2, "albert"),
+            ],
+        );
+        assert_eq!(grades_within_pramana_ceiling(&g, &claim), GateResult::Pass);
+    }
+
+    #[test]
+    fn an_unrecognised_rung_is_blocked_and_shown_verbatim() {
+        let n = node("---\nid: c1\ntype: claim\ntitle: t\ncausal_rung: teleological\n---\n");
+        let g = graph_of(vec![n.clone()], vec![]);
+        let r = causal_rung_earned(&g, &n);
+        let v = r.violation().expect("must block");
+        assert_eq!(v.gate, CAUSAL_RUNG_UNREACHED);
+        assert!(v.detail.contains("teleological"), "{}", v.detail);
+    }
+
+    #[test]
+    fn rung_names_are_accepted_in_their_common_spellings() {
+        for (spelling, needs_run) in [
+            ("association", false),
+            ("seeing", false),
+            ("1", false),
+            ("intervention", true),
+            ("doing", true),
+            ("2", true),
+            ("counterfactual", true),
+            ("imagining", true),
+            ("3", true),
+            ("  ASSOCIATION  ", false),
+        ] {
+            let doc =
+                format!("---\nid: c1\ntype: claim\ntitle: t\ncausal_rung: \"{spelling}\"\n---\n");
+            let n = node(&doc);
+            let g = graph_of(vec![n.clone()], vec![]);
+            let r = causal_rung_earned(&g, &n);
+            if needs_run {
+                assert!(
+                    r.violation().is_some(),
+                    "{spelling} should demand a protocol"
+                );
+            } else {
+                assert_eq!(r, GateResult::Pass, "{spelling} should pass at rung 1");
+            }
+        }
+    }
+
+    #[test]
+    fn a_counterfactual_claim_names_its_rung_in_the_diagnostic() {
+        let claim = node("---\nid: c1\ntype: claim\ntitle: t\ncausal_rung: intervention\n---\n");
+        let g = graph_of(vec![claim.clone()], vec![]);
+        let v = causal_rung_earned(&g, &claim);
+        let v = v.violation().expect("must block");
+        assert!(v.detail.contains("intervention"), "{}", v.detail);
+    }
+
+    #[test]
     fn boundaries_are_required_and_a_declared_one_passes() {
         let without = node("---\nid: c1\ntype: claim\ntitle: t\n---\n");
         let with =

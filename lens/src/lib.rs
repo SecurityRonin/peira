@@ -712,6 +712,95 @@ falsifiable, not merely plausible",
     }
 
     #[test]
+    fn every_tradition_renders_its_name() {
+        for t in [
+            Tradition::Greek,
+            Tradition::Chinese,
+            Tradition::Indian,
+            Tradition::Buddhist,
+            Tradition::Jewish,
+            Tradition::Modern,
+            Tradition::Formal,
+        ] {
+            assert!(!t.as_str().is_empty());
+            assert_eq!(t.to_string(), t.as_str());
+        }
+    }
+
+    #[test]
+    fn the_catalogue_draws_on_more_than_one_tradition() {
+        // A "universal" catalogue sourced from one lineage would be a claim this
+        // project could not make honestly.
+        let traditions: BTreeSet<_> = CATALOG.iter().map(|l| l.tradition.as_str()).collect();
+        assert!(
+            traditions.len() >= 5,
+            "only {} traditions represented: {traditions:?}",
+            traditions.len()
+        );
+    }
+
+    #[test]
+    fn a_lens_reports_not_applicable_outside_its_scope() {
+        use elenchus_core::{parse_node, Graph};
+        let term =
+            parse_node("---\nid: 60.01\ntype: term\ntitle: presence\n---\n").expect("parses");
+        let graph = Graph::new();
+        let liji = lens("LIJI").expect("LIJI exists");
+        assert_eq!(
+            liji.examine(&graph, &term),
+            vec![GateResult::NotApplicable],
+            "立極 examines arguments, not reference material"
+        );
+    }
+
+    #[test]
+    fn a_violation_renders_gate_lens_subject_and_remedy() {
+        let v = Violation {
+            gate: "ELEN-TEST",
+            lens: "TEST",
+            subject: elenchus_core::NodeId::new("c1"),
+            detail: "what was found".to_owned(),
+            remedy: "what to do".to_owned().leak(),
+        };
+        let rendered = v.to_string();
+        for part in ["ELEN-TEST", "TEST", "c1", "what was found", "what to do"] {
+            assert!(rendered.contains(part), "missing {part} in {rendered}");
+        }
+    }
+
+    #[test]
+    fn examine_graph_returns_nothing_for_an_empty_graph() {
+        // Vacuously clean, and it must not be confusable with "checked and passed" —
+        // which is why the CLI reports counts rather than a bare tick for a vault it
+        // could not find.
+        assert!(examine_graph(&elenchus_core::Graph::new()).is_empty());
+    }
+
+    #[test]
+    fn enforced_is_a_strict_subset_of_the_catalogue() {
+        let n = enforced().count();
+        assert!(n > 0, "nothing is enforced");
+        assert!(n < CATALOG.len(), "everything claims to be enforced");
+    }
+
+    #[test]
+    fn a_block_result_yields_its_violation_and_others_do_not() {
+        let v = Violation {
+            gate: "ELEN-TEST",
+            lens: "TEST",
+            subject: elenchus_core::NodeId::new("c1"),
+            detail: String::new(),
+            remedy: "",
+        };
+        assert!(GateResult::Block(v).violation().is_some());
+        assert!(GateResult::Pass.violation().is_none());
+        assert!(GateResult::NotApplicable.violation().is_none());
+        assert!(GateResult::Unassessed { why: String::new() }
+            .violation()
+            .is_none());
+    }
+
+    #[test]
     fn unassessed_never_permits_promotion() {
         let u = GateResult::Unassessed {
             why: "no data".to_owned(),

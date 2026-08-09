@@ -321,4 +321,111 @@ mod tests {
         let err = load(&missing).unwrap_err();
         assert!(matches!(err, VaultError::NotADirectory(_)));
     }
+
+    #[test]
+    fn every_vault_error_renders_and_names_its_subject() {
+        let cases = [
+            VaultError::NotADirectory(PathBuf::from("/nope")),
+            VaultError::Io {
+                path: PathBuf::from("/some/file.md"),
+                source: io::Error::new(io::ErrorKind::PermissionDenied, "denied"),
+            },
+            VaultError::Parse {
+                path: PathBuf::from("/some/bad.md"),
+                source: ParseError::MissingFrontmatter,
+            },
+            VaultError::DuplicateId {
+                id: NodeId::new("x"),
+                first: PathBuf::from("/a.md"),
+                second: PathBuf::from("/b.md"),
+            },
+        ];
+        for err in cases {
+            let rendered = err.to_string();
+            assert!(rendered.len() > 15, "too terse: {rendered}");
+            let _: &dyn std::error::Error = &err;
+        }
+        assert!(VaultError::NotADirectory(PathBuf::from("/nope"))
+            .to_string()
+            .contains("/nope"));
+        assert!(VaultError::Io {
+            path: PathBuf::from("/some/file.md"),
+            source: io::Error::new(io::ErrorKind::PermissionDenied, "denied"),
+        }
+        .to_string()
+        .contains("denied"));
+    }
+
+    #[test]
+    fn an_inline_spec_may_propose_without_settling() {
+        let e = edge_from_spec(&NodeId::new("o1"), "c1 proposed=G3", EdgeKind::Supports);
+        assert_eq!(e.grade_proposed, Some(Grade::G3));
+        assert_eq!(e.grade(), None);
+    }
+
+    #[test]
+    fn unknown_and_malformed_spec_tokens_are_ignored_not_fatal() {
+        // A note is hand-written. A typo in one token must not lose the edge.
+        let e = edge_from_spec(
+            &NodeId::new("o1"),
+            "c1 colour=blue grade=NOTAGRADE via=telepathy bare",
+            EdgeKind::Supports,
+        );
+        assert_eq!(e.to, NodeId::new("c1"), "the edge itself survives");
+        assert_eq!(e.grade(), None, "an unparseable grade settles nothing");
+        assert_eq!(
+            e.pramana, None,
+            "an unrecognised means of knowing is dropped"
+        );
+    }
+
+    #[test]
+    fn an_empty_spec_yields_an_edge_to_an_empty_id_which_lints_as_dangling() {
+        let e = edge_from_spec(&NodeId::new("o1"), "", EdgeKind::Supports);
+        assert_eq!(e.to, NodeId::new(""));
+    }
+
+    #[test]
+    fn a_grader_without_a_grade_settles_nothing() {
+        let e = edge_from_spec(&NodeId::new("o1"), "c1 by=albert", EdgeKind::Supports);
+        assert_eq!(e.grade(), None);
+        assert_eq!(e.grader(), None);
+    }
+
+    #[test]
+    fn nested_directories_are_walked() {
+        let dir = scratch("nested");
+        write(
+            &dir,
+            "a/b/c/deep.md",
+            "---\nid: d\ntype: claim\ntitle: t\n---\n",
+        );
+        write(&dir, "top.md", "---\nid: t\ntype: claim\ntitle: t\n---\n");
+
+        let g = load(&dir).unwrap();
+        assert_eq!(g.nodes().count(), 2);
+
+        fs::remove_dir_all(&dir).unwrap();
+    }
+
+    #[test]
+    fn non_markdown_files_are_left_alone() {
+        let dir = scratch("nonmd");
+        write(&dir, "keep.md", "---\nid: k\ntype: claim\ntitle: t\n---\n");
+        write(&dir, "notes.txt", "not frontmatter at all");
+        write(&dir, "data.json", "{}");
+
+        let g = load(&dir).unwrap();
+        assert_eq!(g.nodes().count(), 1);
+
+        fs::remove_dir_all(&dir).unwrap();
+    }
+
+    #[test]
+    fn an_empty_vault_loads_as_an_empty_graph() {
+        let dir = scratch("empty");
+        let g = load(&dir).unwrap();
+        assert_eq!(g.nodes().count(), 0);
+        fs::remove_dir_all(&dir).unwrap();
+    }
 }

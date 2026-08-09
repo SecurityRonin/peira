@@ -132,9 +132,13 @@ jobs:
       # --workspace, never --lib: --lib builds only the lib's own unit tests and
       # so cannot see integration-test coverage. --workspace selects packages,
       # not targets, and does not compensate for that.
+      # --fail-under-lines is what makes this a GATE. Without a threshold the job
+      # only proves the tool ran, and a check that cannot go red is not a check.
+      # Verified by negative control: at 99 it exits 1, at 97 it exits 0.
       - run: |
           cargo llvm-cov --workspace --all-features --no-fail-fast \
             --ignore-filename-regex '(^|/)src/(main\.rs|bin/)' \
+            --fail-under-lines 97 \
             --lcov --output-path lcov.info
       - name: Coverage report is non-empty
         run: |

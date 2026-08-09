@@ -9,3 +9,6 @@ target/
 *.elenchus-index
 index.sqlite
 index.sqlite-*
+
+# Coverage output — derived, like the index.
+lcov.info

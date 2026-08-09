@@ -436,6 +436,82 @@ mod tests {
             EdgeKind::Examines,
         ] {
             assert_eq!(EdgeKind::from_str_opt(kind.as_str()), Some(kind));
+            assert_eq!(kind.to_string(), kind.as_str());
         }
+        assert_eq!(EdgeKind::from_str_opt("nonesuch"), None);
+    }
+
+    #[test]
+    fn every_grade_round_trips_and_renders() {
+        for grade in [Grade::G0, Grade::G1, Grade::G2, Grade::G3, Grade::G4] {
+            assert_eq!(Grade::from_str_opt(grade.as_str()), Some(grade));
+            assert_eq!(grade.to_string(), grade.as_str());
+        }
+        assert_eq!(Grade::from_str_opt("G5"), None);
+        assert_eq!(Grade::from_str_opt(""), None);
+    }
+
+    #[test]
+    fn grades_order_from_weakest_to_strongest() {
+        assert!(Grade::G0 < Grade::G1);
+        assert!(Grade::G3 < Grade::G4);
+    }
+
+    #[test]
+    fn pramana_accepts_english_and_sanskrit_including_diacritics() {
+        for (input, expected) in [
+            ("perception", Pramana::Perception),
+            ("pratyaksa", Pramana::Perception),
+            ("pratyakṣa", Pramana::Perception),
+            ("inference", Pramana::Inference),
+            ("anumana", Pramana::Inference),
+            ("anumāna", Pramana::Inference),
+            ("comparison", Pramana::Comparison),
+            ("upamana", Pramana::Comparison),
+            ("upamāna", Pramana::Comparison),
+            ("testimony", Pramana::Testimony),
+            ("sabda", Pramana::Testimony),
+            ("śabda", Pramana::Testimony),
+        ] {
+            assert_eq!(
+                Pramana::from_str_opt(input),
+                Some(expected),
+                "input {input}"
+            );
+        }
+        assert_eq!(Pramana::from_str_opt("revelation"), None);
+    }
+
+    #[test]
+    fn every_pramana_renders_its_name() {
+        for p in [
+            Pramana::Perception,
+            Pramana::Inference,
+            Pramana::Comparison,
+            Pramana::Testimony,
+        ] {
+            assert_eq!(p.to_string(), p.as_str());
+        }
+    }
+
+    #[test]
+    fn the_ceiling_ordering_reflects_the_epistemology() {
+        // Perception outranks inference, which outranks the two second-hand routes.
+        assert!(Pramana::Perception.grade_ceiling() > Pramana::Inference.grade_ceiling());
+        assert!(Pramana::Inference.grade_ceiling() > Pramana::Testimony.grade_ceiling());
+        assert_eq!(
+            Pramana::Comparison.grade_ceiling(),
+            Pramana::Testimony.grade_ceiling()
+        );
+    }
+
+    #[test]
+    fn an_edge_with_a_grade_but_no_pramana_is_not_flagged_as_over_graded() {
+        let e = edge().graded_by(Grade::G4, "albert");
+        assert!(
+            !e.exceeds_pramana_ceiling(),
+            "with no declared means of knowing there is nothing to compare against; \
+the gates report that separately as unassessed"
+        );
     }
 }

@@ -104,6 +104,38 @@ cargo run -p elenchus-cli -- gates tests/vaults/bounded     # exit 0
 abandons remaining targets after a failure, so the totals would otherwise be counts of
 different test sets.
 
+## Coverage
+
+**97.98% of lines**, over the workspace excluding the binary shell
+(`src/main.rs`, `src/bin/`) — measured with `cargo llvm-cov --workspace`, never
+`--lib`, which builds only each lib's own unit tests and so cannot see the
+integration suite.
+
+```
+core/src/edge.rs     100.00%      lens/src/gates.rs     99.25%
+core/src/graph.rs     99.44%      lens/src/lib.rs       98.93%
+core/src/node.rs      98.57%      lens/src/lints.rs     98.50%
+core/src/vault.rs     95.42%      court/src/lib.rs      95.73%
+index/src/lib.rs      93.69%      TOTAL                 97.98%
+```
+
+**This is below the fleet's 100% standard, and the gap is stated rather than
+rounded away.** The 51 uncovered lines are, in order of count: SQLite and I/O
+error-propagation arms reached only by injecting filesystem or database failures;
+and `panic!` arms inside test helpers, which by construction never execute while
+the tests pass.
+
+One line is deliberately unreachable and annotated rather than deleted:
+`graph.rs` returns a conservative answer if the characteristic function's fixed
+point is somehow not reached within `n+1` steps. Monotonicity over a finite set
+makes that impossible today; the guard exists so a future change that breaks
+monotonicity degrades instead of hanging. Never delete a defensive guard to
+satisfy a coverage gate.
+
+The CI job enforces `--fail-under-lines 97`, and **the threshold was verified to
+fail**: at 99 it exits 1, at 97 it exits 0. A coverage job with no threshold
+proves only that the tool ran.
+
 ## Known limits
 
 - The corpus is synthetic in its *structure*, though its epistemics are taken from real

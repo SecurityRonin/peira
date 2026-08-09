@@ -623,4 +623,164 @@ Body.
             Err(ParseError::UnterminatedFrontmatter)
         );
     }
+
+    #[test]
+    fn every_node_kind_round_trips_through_its_frontmatter_spelling() {
+        for kind in [
+            NodeKind::Question,
+            NodeKind::Hypothesis,
+            NodeKind::Claim,
+            NodeKind::Observation,
+            NodeKind::Term,
+            NodeKind::Criterion,
+            NodeKind::Protocol,
+            NodeKind::Run,
+            NodeKind::Examination,
+            NodeKind::Dissent,
+            NodeKind::Packet,
+        ] {
+            assert_eq!(NodeKind::from_str_opt(kind.as_str()), Some(kind));
+            assert_eq!(kind.to_string(), kind.as_str());
+        }
+        assert_eq!(NodeKind::from_str_opt("nonesuch"), None);
+    }
+
+    #[test]
+    fn only_argument_kinds_compete_in_the_graph() {
+        for kind in [
+            NodeKind::Claim,
+            NodeKind::Hypothesis,
+            NodeKind::Observation,
+            NodeKind::Dissent,
+        ] {
+            assert!(kind.is_argument(), "{kind} should be an argument");
+        }
+        for kind in [
+            NodeKind::Term,
+            NodeKind::Criterion,
+            NodeKind::Protocol,
+            NodeKind::Run,
+            NodeKind::Examination,
+            NodeKind::Packet,
+            NodeKind::Question,
+        ] {
+            assert!(!kind.is_argument(), "{kind} is reference material");
+        }
+    }
+
+    /// Every diagnostic renders, and renders something a reader can act on. The
+    /// error text is this crate's contract as much as its types are.
+    #[test]
+    fn every_parse_error_renders_a_usable_message() {
+        let cases = [
+            ParseError::MissingFrontmatter,
+            ParseError::UnterminatedFrontmatter,
+            ParseError::Yaml("mapping values are not allowed".to_owned()),
+            ParseError::MissingField { field: "title" },
+            ParseError::WrongFieldType {
+                field: "id",
+                expected: "a scalar",
+            },
+            ParseError::UnknownNodeType("assertion".to_owned()),
+            ParseError::ForbiddenField {
+                field: "status".to_owned(),
+                kind: NodeKind::Claim,
+                reason: "derived",
+            },
+        ];
+        for err in cases {
+            let rendered = err.to_string();
+            assert!(rendered.len() > 20, "too terse to act on: {rendered}");
+            // std::error::Error is implemented, so `?` works for callers.
+            let _: &dyn std::error::Error = &err;
+        }
+    }
+
+    #[test]
+    fn error_messages_carry_the_offending_value() {
+        assert!(ParseError::UnknownNodeType("assertion".to_owned())
+            .to_string()
+            .contains("assertion"));
+        assert!(ParseError::Yaml("bad thing".to_owned())
+            .to_string()
+            .contains("bad thing"));
+        assert!(ParseError::MissingField { field: "title" }
+            .to_string()
+            .contains("title"));
+        assert!(ParseError::WrongFieldType {
+            field: "id",
+            expected: "a scalar"
+        }
+        .to_string()
+        .contains("a scalar"));
+    }
+
+    #[test]
+    fn a_non_scalar_frontmatter_key_is_skipped_not_fatal() {
+        // A mapping used as a KEY is nonsense, but it should not stop the document
+        // parsing — the rest of the frontmatter is still readable.
+        let doc = "---\nid: 1\ntype: claim\ntitle: t\n? [a, b]\n: value\nwarrant: kept\n---\n";
+        let node = parse_node(doc).expect("an odd key must not be fatal");
+        assert_eq!(node.field("warrant"), Some("kept"));
+    }
+
+    #[test]
+    fn rejects_frontmatter_that_is_not_a_mapping() {
+        let doc = "---\n- just\n- a list\n---\n";
+        assert!(matches!(parse_node(doc), Err(ParseError::Yaml(_))));
+    }
+
+    #[test]
+    fn a_missing_required_field_names_which_one() {
+        assert_eq!(
+            parse_node("---\ntype: claim\ntitle: t\n---\n"),
+            Err(ParseError::MissingField { field: "id" })
+        );
+        assert_eq!(
+            parse_node("---\nid: 1\ntitle: t\n---\n"),
+            Err(ParseError::MissingField { field: "type" })
+        );
+    }
+
+    #[test]
+    fn a_non_scalar_required_field_is_rejected_by_shape() {
+        assert_eq!(
+            parse_node("---\nid: [1, 2]\ntype: claim\ntitle: t\n---\n"),
+            Err(ParseError::WrongFieldType {
+                field: "id",
+                expected: "a scalar (string or number)"
+            })
+        );
+    }
+
+    #[test]
+    fn node_id_renders_and_exposes_its_string() {
+        let id = NodeId::new("20260809T142530");
+        assert_eq!(id.as_str(), "20260809T142530");
+        assert_eq!(id.to_string(), "20260809T142530");
+    }
+
+    #[test]
+    fn fields_enumerates_its_keys_in_document_order() {
+        let doc = "---\nid: 1\ntype: claim\ntitle: t\nalpha: 1\nbeta: 2\n---\n";
+        let node = parse_node(doc).unwrap();
+        let keys: Vec<_> = node.fields.keys().collect();
+        assert_eq!(keys, vec!["alpha", "beta"]);
+    }
+
+    #[test]
+    fn a_crlf_frontmatter_fence_parses() {
+        // Git on Windows rewrites LF to CRLF unless .gitattributes says otherwise.
+        // A reader that only accepts LF fails on exactly one platform.
+        let doc = "---\r\nid: 1\r\ntype: claim\r\ntitle: t\r\n---\r\n\r\nBody.\r\n";
+        let node = parse_node(doc).expect("CRLF frontmatter must parse");
+        assert_eq!(node.id, NodeId::new("1"));
+    }
+
+    #[test]
+    fn a_boolean_scalar_renders_as_text() {
+        let doc = "---\nid: 1\ntype: claim\ntitle: t\nevaluative: true\n---\n";
+        let node = parse_node(doc).unwrap();
+        assert_eq!(node.field("evaluative"), Some("true"));
+    }
 }
