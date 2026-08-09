@@ -31,6 +31,8 @@ pub const GRADE_EXCEEDS_PRAMANA: &str = "PEIR-GRADE-EXCEEDS-PRAMANA";
 pub const CAUSAL_RUNG_UNREACHED: &str = "PEIR-CAUSAL-RUNG-UNREACHED";
 /// A conclusion stated with no conditions under which it would change.
 pub const BOUNDARIES_MISSING: &str = "PEIR-BOUNDARIES-MISSING";
+/// Premortem: a claim with nothing that could ever count against it.
+pub const FALSIFIER_MISSING: &str = "PEIR-FALSIFIER-MISSING";
 
 /// Words that turn a description into a judgement.
 ///
@@ -413,6 +415,40 @@ cite each, never a bare string",
     } else {
         GateResult::Pass
     }
+}
+
+// ── Premortem ────────────────────────────────────────────────────────────────
+
+/// A claim must record at least one thing that would defeat it.
+///
+/// Distinct from [`boundaries_declared`], which asks *where* a claim holds — versions,
+/// configurations, populations. A claim can be perfectly scoped and still have nothing
+/// that could ever count against it.
+///
+/// An incoming attack edge satisfies this as fully as a `falsifier:` field does: the
+/// gate asks whether anyone has said what would make the claim wrong, and a defeater
+/// recorded as a node has said it. Demanding the string as well would be bookkeeping.
+/// A *defeated* attacker still counts — it is evidence the claim was examined for
+/// defeat, and whether it survives is the grounded extension's question, not this one.
+pub fn falsifier_declared(graph: &Graph, node: &Node) -> GateResult {
+    if !node.field_list("falsifier").is_empty() {
+        return GateResult::Pass;
+    }
+    if graph.edges_to(&node.id).any(|e| e.kind.is_attack()) {
+        return GateResult::Pass;
+    }
+    block(
+        FALSIFIER_MISSING,
+        "PREMORTEM",
+        node,
+        format!(
+            "\"{}\" records nothing that would defeat it — as written, no observation \
+could count against it",
+            node.title
+        ),
+        "state what would have to be observed for this to be wrong, as `falsifier:` \
+or as a node that attacks it",
+    )
 }
 
 #[cfg(test)]

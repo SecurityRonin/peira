@@ -8,6 +8,10 @@ aspect: function
 causal_rung: association
 boundaries:
   - Windows 10 1809 and later
+falsifier:
+  - >-
+    A prefetch or SRUM record placing the image in execution within the same
+    window would leave this mechanism unable to account for the record on its own
 limits: [c-bounded]
 ---
 

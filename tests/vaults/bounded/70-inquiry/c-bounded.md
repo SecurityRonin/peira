@@ -15,6 +15,14 @@ boundaries:
   - Windows 10 1809 and later, where InventoryApplicationFile is populated
   - Amcache.hve as acquired; not a reconstructed or merged hive
   - Says nothing about builds where the population mechanism differs
+falsifier:
+  - >-
+    A hive whose InventoryApplicationFile entries are shown to be populated by a
+    mechanism that never observes the path — a scan or an inventory sweep — would
+    defeat even the presence reading
+  - >-
+    A demonstrated write path that produces the entry without the file having been
+    present on the volume
 ---
 
 Catalogued presence, stated at the association rung, with the alternative

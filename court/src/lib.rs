@@ -263,7 +263,8 @@ mod tests {
             "---\nid: c1\ntype: claim\ntitle: The hive catalogued the file at that path\n\
 warrant: A catalogue entry evidences that the path was recorded.\n\
 quantifier: singular\naspect: function\ncausal_rung: association\n\
-boundaries:\n  - Windows 10 1809 and later\n---\n",
+boundaries:\n  - Windows 10 1809 and later\n\
+falsifier:\n  - an entry shown to be written without the path ever being present\n---\n",
         ));
         g.insert_node(node(
             "---\nid: o1\ntype: observation\ntitle: InventoryApplicationFile entry present\n\

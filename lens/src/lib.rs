@@ -552,14 +552,17 @@ not because the reason is necessarily good, but because not knowing it is not an
         failure_mode: "no recorded falsifier, so nothing could ever count as being wrong",
         operation: "promotion requires at least one stated condition that would defeat the claim",
         applies_to: ARGUMENTS,
-        gates: &[],
+        gates: &[Gate {
+            code: gates::FALSIFIER_MISSING,
+            check: gates::falsifier_declared,
+        }],
         worked_example: "Assume it is a year later and the conclusion collapsed; say what did it. \
 A claim with no answer is not yet a claim.",
         sources: &[
             "Gary Klein, Harvard Business Review, September 2007, \"Performing a Project Premortem\"",
             "Karl Popper, Logik der Forschung (1934), §6",
         ],
-        phase: Phase::Catalogued,
+        phase: Phase::Enforced,
     },
     Lens {
         id: "ERDI",
@@ -789,10 +792,13 @@ falsifiable, not merely plausible",
     fn a_claim_with_no_recorded_falsifier_is_blocked() {
         use peira_core::{parse_node, Edge, EdgeKind, Graph, NodeId};
 
-        let falsifier_findings = |g: &Graph| {
+        // Scoped to a subject, not counted graph-wide: an attacker node is itself a
+        // claim, and is itself subject to this gate, so a graph-wide count answers a
+        // different question than the one each case asks.
+        let falsifier_findings = |g: &Graph, subject: &str| {
             examine_graph(g)
                 .into_iter()
-                .filter(|v| v.gate == "PEIR-FALSIFIER-MISSING")
+                .filter(|v| v.gate == "PEIR-FALSIFIER-MISSING" && v.subject.as_str() == subject)
                 .count()
         };
 
@@ -810,7 +816,7 @@ boundaries:\n  - Windows 10 1809 and later\n";
             .expect("fixture parses"),
         );
         assert_eq!(
-            falsifier_findings(&bare),
+            falsifier_findings(&bare, "c1"),
             1,
             "a claim stating no condition that would defeat it must be blocked"
         );
@@ -824,7 +830,7 @@ falsifier:\n  - the entry predates the file's creation timestamp\n---\n"
             .expect("fixture parses"),
         );
         assert_eq!(
-            falsifier_findings(&stated),
+            falsifier_findings(&stated, "c1"),
             0,
             "a stated falsifier satisfies the gate"
         );
@@ -848,9 +854,14 @@ falsifier:\n  - the entry predates the file's creation timestamp\n---\n"
             EdgeKind::Contradicts,
         ));
         assert_eq!(
-            falsifier_findings(&attacked),
+            falsifier_findings(&attacked, "c1"),
             0,
             "a defeater recorded as a node satisfies the gate without a duplicate field"
+        );
+        assert_eq!(
+            falsifier_findings(&attacked, "c2"),
+            1,
+            "the attacker is itself a claim and is itself held to the same demand"
         );
     }
 

@@ -12,7 +12,7 @@ no model in the loop, naming the tradition that identified the mistake.
 
 ```console
 $ peira gates vault/
-✗ gates: 7 finding(s).
+✗ gates: 8 finding(s).
 
   PEIR-FUNCTION-AS-SUBSTANCE [TIYONG]  c-overclaim
       substance claim "This Amcache entry proves execution of the suspicious binary"
@@ -47,8 +47,9 @@ as a rule about a claim graph, each becomes machine-checkable:
 | Toulmin | the unstated warrant | `warrant` is required |
 | pramāṇa | testimony passed off as observation | grade ceilings by means of knowing |
 | Pearl's ladder | rung-3 claims from rung-1 data | interventional claims need an executed protocol |
+| Premortem / Popper | nothing could ever count against it | `falsifier` is required, or a node that attacks it |
 
-Twenty-one lenses are catalogued; eight are enforced today. `peira lens` lists them,
+Twenty lenses are catalogued; ten are enforced today. `peira lens` lists them,
 each with its sources and a worked example of its gate firing.
 
 ## The invariant
@@ -85,7 +86,7 @@ are run:
 
 | Control | Setup | Result |
 |---|---|---|
-| **A** | `"This Amcache entry proves execution"` | **BLOCKS** — 7 gates + 1 lint, exit 1 |
+| **A** | `"This Amcache entry proves execution"` | **BLOCKS** — 8 gates + 1 lint, exit 1 |
 | **B** | the bounded conclusion | **PASSES** — exit 0, packet freezes |
 | **B′** | causal-rung gate neutered | that finding disappears, then returns on restore |
 | **C** | vault absent | exit 2 in 2 ms — distinguishable from A |

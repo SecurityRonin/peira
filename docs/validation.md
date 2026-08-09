@@ -28,7 +28,7 @@ is load-bearing.
 
 | Control | Setup | Required | Observed |
 |---|---|---|---|
-| **A** | over-claim vault | BLOCKS, non-zero exit, ≥5 lenses | 7 gates + 1 lint, exit 1 |
+| **A** | over-claim vault | BLOCKS, non-zero exit, ≥5 lenses | 8 gates + 1 lint, exit 1 |
 | **B** | bounded vault | PASSES, exit 0 | exit 0, packet froze |
 | **B′** | rung gate neutered | that finding disappears | 1 → 0 → 1 across mutate/build/restore |
 | **C** | vault absent | distinguishable from A, ~0 s | exit 2, 2 ms |
@@ -45,6 +45,7 @@ PEIR-CORNERS-UNADDRESSED        [CATUSKOTI]  contested, addresses 0 of 4 corners
 PEIR-WARRANT-MISSING            [TOULMIN]    states no warrant
 PEIR-CAUSAL-RUNG-UNREACHED      [RUNG]       counterfactual rung, observation only
 PEIR-BOUNDARIES-MISSING         [RUNG]       no boundary conditions
+PEIR-FALSIFIER-MISSING          [PREMORTEM]  nothing could ever count against it
 PEIR-LINT-FORBIDDEN-VERB        [LINT]       says "proves"
 exit=1
 ```
@@ -95,7 +96,7 @@ verify (restored)        ✓ exit=0
 ## Reproducing
 
 ```bash
-cargo test --workspace --no-fail-fast          # 141 tests, incl. the acceptance suite
+cargo test --workspace --no-fail-fast          # 142 tests, incl. the acceptance suite
 cargo build -p peira-cli && tests/controls.sh target/debug/peira   # A, B and C
 ```
 
@@ -109,21 +110,21 @@ different test sets.
 
 ## Coverage
 
-**97.98% of lines**, over the workspace excluding the binary shell
+**98.11% of lines**, over the workspace excluding the binary shell
 (`src/main.rs`, `src/bin/`) — measured with `cargo llvm-cov --workspace`, never
 `--lib`, which builds only each lib's own unit tests and so cannot see the
 integration suite.
 
 ```
-core/src/edge.rs     100.00%      lens/src/gates.rs     99.25%
-core/src/graph.rs     99.44%      lens/src/lib.rs       98.93%
+core/src/edge.rs     100.00%      lens/src/gates.rs     99.63%
+core/src/graph.rs     99.44%      lens/src/lib.rs       99.15%
 core/src/node.rs      98.57%      lens/src/lints.rs     98.50%
-core/src/vault.rs     95.42%      court/src/lib.rs      95.73%
-index/src/lib.rs      93.69%      TOTAL                 97.98%
+core/src/vault.rs     95.42%      court/src/lib.rs      95.75%
+index/src/lib.rs      93.69%      TOTAL                 98.11%
 ```
 
 **This is below the fleet's 100% standard, and the gap is stated rather than
-rounded away.** The 51 uncovered lines are, in order of count: SQLite and I/O
+rounded away.** The 49 uncovered lines are, in order of count: SQLite and I/O
 error-propagation arms reached only by injecting filesystem or database failures;
 and `panic!` arms inside test helpers, which by construction never execute while
 the tests pass.
@@ -190,7 +191,7 @@ absence of defects.
 - The corpus is synthetic in its *structure*, though its epistemics are taken from real
   documents. It does not parse a real hive; `amcache-forensic` does that, and peira
   reasons over what such a parser reports.
-- 13 of the 21 catalogued lenses are not yet mechanised. They are marked `Catalogued`,
+- 10 of the 20 catalogued lenses are not yet mechanised. They are marked `Catalogued`,
   and a meta-test asserts a `Catalogued` lens owns no gates — so the catalogue cannot
   quietly imply enforcement it does not perform.
 - The evaluative-term table behind 立極 is a heuristic and will both miss judgements and
