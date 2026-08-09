@@ -315,11 +315,26 @@ fn scalar_as_string(value: &serde_yaml_ng::Value) -> Option<String> {
 /// sequence becomes its scalar members, anything else becomes empty.
 fn values_of(value: &serde_yaml_ng::Value) -> Vec<String> {
     match value {
-        serde_yaml_ng::Value::Sequence(items) => {
-            items.iter().filter_map(scalar_as_string).collect()
-        }
-        other => scalar_as_string(other).into_iter().collect(),
+        serde_yaml_ng::Value::Sequence(items) => items.iter().filter_map(render_item).collect(),
+        other => render_item(other).into_iter().collect(),
     }
+}
+
+/// Render one value without ever dropping it.
+///
+/// An unquoted `- neither: catalogued without running` is a YAML *mapping*, not a
+/// string. Filtering non-scalars out would silently shrink the list — and a gate
+/// requiring four corners would then pass a claim that stated three, reporting
+/// success over work never done. Structured items are rendered back to YAML instead,
+/// so the count is always the count the author wrote.
+fn render_item(value: &serde_yaml_ng::Value) -> Option<String> {
+    if let Some(s) = scalar_as_string(value) {
+        return Some(s);
+    }
+    serde_yaml_ng::to_string(value)
+        .ok()
+        .map(|s| s.trim().to_owned())
+        .filter(|s| !s.is_empty())
 }
 
 /// Fetch a required scalar field.
@@ -523,6 +538,33 @@ boundaries: Windows 11 only
 ";
         let node = parse_node(doc).unwrap();
         assert_eq!(node.field_list("boundaries"), vec!["Windows 11 only"]);
+    }
+
+    #[test]
+    fn a_structured_list_item_is_rendered_never_dropped() {
+        // `- neither: catalogued` is a YAML mapping, not a string. Dropping it would
+        // let a four-corner check pass a claim that stated three — a silent shrink,
+        // reporting success over work never done.
+        let doc = "\
+---
+id: 1
+type: claim
+title: t
+corners:
+  - executed
+  - not executed
+  - both, on separate occasions
+  - neither: catalogued without running
+---
+";
+        let node = parse_node(doc).unwrap();
+        let corners = node.field_list("corners");
+        assert_eq!(corners.len(), 4, "got {corners:?}");
+        assert!(
+            corners[3].contains("catalogued without running"),
+            "the mapping's content must survive: {:?}",
+            corners[3]
+        );
     }
 
     #[test]

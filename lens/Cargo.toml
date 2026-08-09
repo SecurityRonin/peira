@@ -11,11 +11,14 @@ readme.workspace = true
 keywords = ["critical-thinking", "argumentation", "epistemics", "dialectic", "logic"]
 categories = ["data-structures"]
 
-# Deliberately ZERO runtime dependencies, mirroring forensicnomicon's knowledge
-# leaf: the catalogue compiles to `static`/`const` memory. No I/O, no database,
-# no runtime parse step — so a malformed catalogue is a compile error, matches are
-# exhaustive at compile time, and the catalogue is auditable as source.
+# The CATALOGUE keeps forensicnomicon's knowledge-leaf discipline — `static`/`const`
+# memory, no I/O, no database, no runtime parse step, so a malformed catalogue is a
+# compile error and matches stay exhaustive. The crate is not literally dependency-
+# free, though: a gate predicate has to see the graph it judges, so it takes the node
+# and edge types from elenchus-core. Claiming "zero dependencies" here would be the
+# kind of overstatement this project exists to catch.
 [dependencies]
+elenchus-core = { workspace = true }
 
 [lints]
 workspace = true

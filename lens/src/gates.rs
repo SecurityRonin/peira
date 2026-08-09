@@ -1,0 +1,715 @@
+//! The enforced gate predicates.
+//!
+//! Every gate is a pure function of the graph and one node — no I/O, no clock, no
+//! randomness — so each is independently testable and fuzzable, and the engine's
+//! verdict is reproducible from committed bytes alone.
+//!
+//! A gate that cannot reach a verdict returns [`GateResult::Unassessed`] naming what
+//! was missing. It never returns `Pass`. Silence is not consent.
+
+use crate::{GateResult, Violation};
+use elenchus_core::{EdgeKind, Graph, Node, NodeKind};
+
+// ── Stable published gate codes ──────────────────────────────────────────────
+// These appear in Court Mode packets. A shipped code never changes meaning.
+
+/// 立極: an evaluative claim with no declared standard.
+pub const CRITERION_UNDECLARED: &str = "ELEN-CRITERION-UNDECLARED";
+/// 正名: a load-bearing term that was never stipulated.
+pub const TERM_UNSTIPULATED: &str = "ELEN-TERM-UNSTIPULATED";
+/// 體用: a claim about what a thing IS, resting only on what it DID.
+pub const FUNCTION_AS_SUBSTANCE: &str = "ELEN-FUNCTION-AS-SUBSTANCE";
+/// 白馬非馬: a class claim that never says what the class contains.
+pub const CLASS_EXTENSION_UNDECLARED: &str = "ELEN-CLASS-EXTENSION-UNDECLARED";
+/// 四句: a contested claim that addressed fewer than four corners.
+pub const CORNERS_UNADDRESSED: &str = "ELEN-CORNERS-UNADDRESSED";
+/// Toulmin: the rule licensing grounds → claim was never written down.
+pub const WARRANT_MISSING: &str = "ELEN-WARRANT-MISSING";
+/// pramāṇa: an edge graded above what its means of knowing allows.
+pub const GRADE_EXCEEDS_PRAMANA: &str = "ELEN-GRADE-EXCEEDS-PRAMANA";
+/// Pearl: an interventional or counterfactual claim with no executed protocol.
+pub const CAUSAL_RUNG_UNREACHED: &str = "ELEN-CAUSAL-RUNG-UNREACHED";
+/// A conclusion stated with no conditions under which it would change.
+pub const BOUNDARIES_MISSING: &str = "ELEN-BOUNDARIES-MISSING";
+
+/// Words that turn a description into a judgement.
+///
+/// This is our own detection heuristic rather than a decode of anyone's spec, so a
+/// self-authored table is the honest instrument for it. It exists to catch the case
+/// where nobody thought to mark a claim evaluative — `evaluative: true` handles the
+/// case where they did.
+const EVALUATIVE_TERMS: &[&str] = &[
+    "suspicious",
+    "malicious",
+    "anomalous",
+    "unusual",
+    "concerning",
+    "significant",
+    "benign",
+    "legitimate",
+    "safe",
+    "severe",
+    "critical",
+    "poor",
+    "excessive",
+    "inadequate",
+    "unacceptable",
+];
+
+/// Rungs of Pearl's ladder.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+enum CausalRung {
+    /// Seeing: correlation, observed association.
+    Association,
+    /// Doing: what happens if we intervene.
+    Intervention,
+    /// Imagining: what would have happened otherwise.
+    Counterfactual,
+}
+
+impl CausalRung {
+    fn from_str_opt(s: &str) -> Option<Self> {
+        Some(match s.trim().to_ascii_lowercase().as_str() {
+            "association" | "seeing" | "1" => CausalRung::Association,
+            "intervention" | "doing" | "2" => CausalRung::Intervention,
+            "counterfactual" | "imagining" | "3" => CausalRung::Counterfactual,
+            _ => return None,
+        })
+    }
+}
+
+/// Build a blocking result.
+fn block(
+    gate: &'static str,
+    lens: &'static str,
+    node: &Node,
+    detail: String,
+    remedy: &'static str,
+) -> GateResult {
+    GateResult::Block(Violation {
+        gate,
+        lens,
+        subject: node.id.clone(),
+        detail,
+        remedy,
+    })
+}
+
+/// Nodes supporting `node` via a `supports` edge.
+fn supporters<'a>(graph: &'a Graph, node: &Node) -> Vec<&'a Node> {
+    graph
+        .edges_to(&node.id)
+        .filter(|e| e.kind == EdgeKind::Supports)
+        .filter_map(|e| graph.node(&e.from))
+        .collect()
+}
+
+/// Whether the claim reads as a judgement rather than a description.
+fn is_evaluative(node: &Node) -> bool {
+    if node.field("evaluative") == Some("true") {
+        return true;
+    }
+    let haystack = format!("{} {}", node.title, node.body).to_ascii_lowercase();
+    EVALUATIVE_TERMS.iter().any(|t| {
+        haystack
+            .split(|c: char| !c.is_alphanumeric())
+            .any(|w| w == *t)
+    })
+}
+
+// ── 立極 ─────────────────────────────────────────────────────────────────────
+
+/// An evaluative claim must name the standard it is judged against.
+pub fn criterion_declared(graph: &Graph, node: &Node) -> GateResult {
+    if !is_evaluative(node) {
+        return GateResult::NotApplicable;
+    }
+    let has_criterion = graph
+        .edges_from(&node.id)
+        .filter(|e| e.kind == EdgeKind::JudgedBy)
+        .any(|e| {
+            graph
+                .node(&e.to)
+                .is_some_and(|n| n.kind == NodeKind::Criterion)
+        });
+
+    if has_criterion {
+        GateResult::Pass
+    } else {
+        block(
+            CRITERION_UNDECLARED,
+            "LIJI",
+            node,
+            format!("evaluative claim \"{}\" declares no criterion", node.title),
+            "add a `judged_by:` edge to a Criterion stating the standard applied",
+        )
+    }
+}
+
+// ── 正名 ─────────────────────────────────────────────────────────────────────
+
+/// The three moments a Term must carry before a claim may lean on it.
+const TERM_MOMENTS: &[&str] = &["as_used", "not_essence", "stipulated"];
+
+/// Every load-bearing term resolves to a fully stipulated Term node.
+pub fn key_terms_stipulated(graph: &Graph, node: &Node) -> GateResult {
+    let uses: Vec<_> = graph
+        .edges_from(&node.id)
+        .filter(|e| e.kind == EdgeKind::UsesTerm)
+        .collect();
+
+    if uses.is_empty() {
+        return GateResult::Unassessed {
+            why: format!(
+                "\"{}\" declares no key terms, so which words are load-bearing is unknown",
+                node.title
+            ),
+        };
+    }
+
+    for edge in uses {
+        let Some(term) = graph.node(&edge.to) else {
+            return block(
+                TERM_UNSTIPULATED,
+                "ZHENGMING",
+                node,
+                format!("key term `{}` does not resolve to any node", edge.to),
+                "create the Term node, or correct the reference",
+            );
+        };
+        let missing: Vec<&str> = TERM_MOMENTS
+            .iter()
+            .copied()
+            .filter(|m| term.field(m).is_none())
+            .collect();
+        if !missing.is_empty() {
+            return block(
+                TERM_UNSTIPULATED,
+                "ZHENGMING",
+                node,
+                format!("term `{}` is missing {}", term.id, missing.join(", ")),
+                "give the term all three moments: as_used (所謂), not_essence (即非), \
+stipulated (是名)",
+            );
+        }
+    }
+    GateResult::Pass
+}
+
+// ── 體用 ─────────────────────────────────────────────────────────────────────
+
+/// A claim about what a thing *is* may not rest solely on what it *did*.
+pub fn substance_not_from_function_alone(graph: &Graph, node: &Node) -> GateResult {
+    if node.field("aspect") != Some("substance") {
+        return GateResult::NotApplicable;
+    }
+    let support = supporters(graph, node);
+    if support.is_empty() {
+        return GateResult::Unassessed {
+            why: format!("\"{}\" has no supporting evidence to classify", node.title),
+        };
+    }
+    let function_only = support
+        .iter()
+        .all(|s| s.field("aspect") == Some("function"));
+
+    if function_only {
+        block(
+            FUNCTION_AS_SUBSTANCE,
+            "TIYONG",
+            node,
+            format!(
+                "substance claim \"{}\" rests only on function evidence ({})",
+                node.title,
+                support
+                    .iter()
+                    .map(|s| s.id.as_str())
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            ),
+            "restate as a claim about what the thing did, or add evidence bearing on \
+what it is",
+        )
+    } else {
+        GateResult::Pass
+    }
+}
+
+// ── 白馬非馬 ─────────────────────────────────────────────────────────────────
+
+/// A claim quantifying over a class must say what the class contains.
+pub fn class_extension_declared(_graph: &Graph, node: &Node) -> GateResult {
+    let Some(quantifier) = node.field("quantifier") else {
+        return GateResult::Unassessed {
+            why: format!(
+                "\"{}\" does not say whether it speaks of a class or a single case",
+                node.title
+            ),
+        };
+    };
+    if !matches!(quantifier, "universal" | "class") {
+        return GateResult::NotApplicable;
+    }
+    if node.field_list("extension").is_empty() {
+        block(
+            CLASS_EXTENSION_UNDECLARED,
+            "BAIMA",
+            node,
+            format!(
+                "claim quantifies `{quantifier}` over \"{}\" without declaring its extension",
+                node.title
+            ),
+            "declare `extension:` — what the class contains — or narrow the claim to the \
+case actually examined",
+        )
+    } else {
+        GateResult::Pass
+    }
+}
+
+// ── 四句 ─────────────────────────────────────────────────────────────────────
+
+/// A contested claim must address all four corners.
+pub fn four_corners_addressed(graph: &Graph, node: &Node) -> GateResult {
+    let attacked = graph.edges_to(&node.id).any(|e| e.kind.is_attack());
+    let contested = attacked || node.field("contested") == Some("true");
+    if !contested {
+        return GateResult::NotApplicable;
+    }
+    let corners = node.field_list("corners");
+    if corners.len() == 4 {
+        GateResult::Pass
+    } else {
+        block(
+            CORNERS_UNADDRESSED,
+            "CATUSKOTI",
+            node,
+            format!(
+                "contested claim \"{}\" addresses {} of 4 corners",
+                node.title,
+                corners.len()
+            ),
+            "state all four: A, not-A, both, neither — ruling one out with a reason counts \
+as addressing it",
+        )
+    }
+}
+
+// ── Toulmin ──────────────────────────────────────────────────────────────────
+
+/// The rule licensing grounds → claim must be written down.
+pub fn warrant_present(_graph: &Graph, node: &Node) -> GateResult {
+    if node.field("warrant").is_some() {
+        return GateResult::Pass;
+    }
+    let detail = if node.fields.contains("warrant") {
+        format!("\"{}\" has a `warrant:` key, but it is blank", node.title)
+    } else {
+        format!("\"{}\" states no warrant", node.title)
+    };
+    block(
+        WARRANT_MISSING,
+        "TOULMIN",
+        node,
+        detail,
+        "write the rule that licenses the step from grounds to claim — it is usually \
+the part that turns out to be false",
+    )
+}
+
+// ── pramāṇa ──────────────────────────────────────────────────────────────────
+
+/// No edge may be graded above what its means of knowing allows.
+pub fn grades_within_pramana_ceiling(graph: &Graph, node: &Node) -> GateResult {
+    let incoming: Vec<_> = graph.edges_to(&node.id).collect();
+    if incoming.is_empty() {
+        return GateResult::NotApplicable;
+    }
+    for edge in incoming {
+        if edge.exceeds_pramana_ceiling() {
+            let (Some(grade), Some(pramana)) = (edge.grade(), edge.pramana) else {
+                continue;
+            };
+            return block(
+                GRADE_EXCEEDS_PRAMANA,
+                "PRAMANA",
+                node,
+                format!(
+                    "edge {} → {} is graded {grade} on {pramana}, whose ceiling is {}",
+                    edge.from,
+                    edge.to,
+                    pramana.grade_ceiling()
+                ),
+                "lower the grade, or obtain evidence of a kind that earns it — corroboration \
+between tools is testimony, not perception",
+            );
+        }
+    }
+    GateResult::Pass
+}
+
+// ── Pearl's ladder ───────────────────────────────────────────────────────────
+
+/// A claim above the association rung needs an executed protocol behind it.
+pub fn causal_rung_earned(graph: &Graph, node: &Node) -> GateResult {
+    let Some(raw) = node.field("causal_rung") else {
+        return GateResult::Unassessed {
+            why: format!(
+                "\"{}\" does not declare which rung of the causal ladder it stands on",
+                node.title
+            ),
+        };
+    };
+    let Some(rung) = CausalRung::from_str_opt(raw) else {
+        return block(
+            CAUSAL_RUNG_UNREACHED,
+            "RUNG",
+            node,
+            format!("`causal_rung: {raw}` is not a rung"),
+            "use association, intervention or counterfactual",
+        );
+    };
+    if rung == CausalRung::Association {
+        return GateResult::Pass;
+    }
+    let has_run = supporters(graph, node)
+        .iter()
+        .any(|s| s.kind == NodeKind::Run);
+
+    if has_run {
+        GateResult::Pass
+    } else {
+        block(
+            CAUSAL_RUNG_UNREACHED,
+            "RUNG",
+            node,
+            format!(
+                "\"{}\" claims the {} rung but rests on observation alone — no executed \
+protocol supports it",
+                node.title,
+                match rung {
+                    CausalRung::Intervention => "intervention",
+                    CausalRung::Counterfactual => "counterfactual",
+                    CausalRung::Association => "association",
+                }
+            ),
+            "run a controlled protocol and cite the Run, or restate the claim at the \
+association rung",
+        )
+    }
+}
+
+/// Every claim states the conditions under which it would change.
+pub fn boundaries_declared(_graph: &Graph, node: &Node) -> GateResult {
+    if node.field_list("boundaries").is_empty() {
+        block(
+            BOUNDARIES_MISSING,
+            "RUNG",
+            node,
+            format!("\"{}\" declares no boundary conditions", node.title),
+            "name the versions, configurations or populations where the claim holds — and \
+cite each, never a bare string",
+        )
+    } else {
+        GateResult::Pass
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use elenchus_core::{parse_node, Edge, Grade, NodeId, Pramana};
+
+    fn node(src: &str) -> Node {
+        parse_node(src).expect("fixture parses")
+    }
+
+    fn graph_of(nodes: Vec<Node>, edges: Vec<Edge>) -> Graph {
+        let mut g = Graph::new();
+        for n in nodes {
+            g.insert_node(n);
+        }
+        for e in edges {
+            g.insert_edge(e);
+        }
+        g
+    }
+
+    // ── 立極 ──────────────────────────────────────────────────────────────
+
+    #[test]
+    fn an_evaluative_claim_without_a_criterion_is_blocked() {
+        let n = node("---\nid: c1\ntype: claim\ntitle: The path is suspicious\n---\n");
+        let g = graph_of(vec![n.clone()], vec![]);
+        let r = criterion_declared(&g, &n);
+        assert_eq!(r.violation().map(|v| v.gate), Some(CRITERION_UNDECLARED));
+    }
+
+    #[test]
+    fn a_descriptive_claim_is_out_of_scope_for_the_pole() {
+        let n = node("---\nid: c1\ntype: claim\ntitle: The hive records this path\n---\n");
+        let g = graph_of(vec![n.clone()], vec![]);
+        assert_eq!(criterion_declared(&g, &n), GateResult::NotApplicable);
+    }
+
+    #[test]
+    fn declaring_the_criterion_clears_the_pole() {
+        let claim = node("---\nid: c1\ntype: claim\ntitle: The path is suspicious\n---\n");
+        let crit = node("---\nid: 60.01\ntype: criterion\ntitle: Staging-path standard\n---\n");
+        let g = graph_of(
+            vec![claim.clone(), crit],
+            vec![Edge::new(
+                NodeId::new("c1"),
+                NodeId::new("60.01"),
+                EdgeKind::JudgedBy,
+            )],
+        );
+        assert_eq!(criterion_declared(&g, &claim), GateResult::Pass);
+    }
+
+    // ── 正名 ──────────────────────────────────────────────────────────────
+
+    #[test]
+    fn a_term_missing_a_moment_blocks() {
+        let claim = node("---\nid: c1\ntype: claim\ntitle: t\n---\n");
+        let term =
+            node("---\nid: 60.02\ntype: term\ntitle: execution\nas_used: running a program\n---\n");
+        let g = graph_of(
+            vec![claim.clone(), term],
+            vec![Edge::new(
+                NodeId::new("c1"),
+                NodeId::new("60.02"),
+                EdgeKind::UsesTerm,
+            )],
+        );
+        let v = key_terms_stipulated(&g, &claim);
+        let v = v.violation().expect("must block");
+        assert_eq!(v.gate, TERM_UNSTIPULATED);
+        assert!(v.detail.contains("not_essence"), "{}", v.detail);
+        assert!(v.detail.contains("stipulated"), "{}", v.detail);
+    }
+
+    #[test]
+    fn a_fully_stipulated_term_passes() {
+        let claim = node("---\nid: c1\ntype: claim\ntitle: t\n---\n");
+        let term = node(
+            "---\nid: 60.02\ntype: term\ntitle: execution\nas_used: running a program\n\
+not_essence: a catalogue record is not a running program\nstipulated: a process was created \
+from this image\n---\n",
+        );
+        let g = graph_of(
+            vec![claim.clone(), term],
+            vec![Edge::new(
+                NodeId::new("c1"),
+                NodeId::new("60.02"),
+                EdgeKind::UsesTerm,
+            )],
+        );
+        assert_eq!(key_terms_stipulated(&g, &claim), GateResult::Pass);
+    }
+
+    #[test]
+    fn no_declared_terms_is_unassessed_never_a_pass() {
+        let claim = node("---\nid: c1\ntype: claim\ntitle: t\n---\n");
+        let g = graph_of(vec![claim.clone()], vec![]);
+        let r = key_terms_stipulated(&g, &claim);
+        assert!(matches!(r, GateResult::Unassessed { .. }));
+        assert!(!r.permits_promotion());
+    }
+
+    // ── 體用 ──────────────────────────────────────────────────────────────
+
+    #[test]
+    fn a_substance_claim_on_function_evidence_alone_is_blocked() {
+        let claim =
+            node("---\nid: c1\ntype: claim\ntitle: Amcache is an execution artifact\naspect: substance\n---\n");
+        let obs = node(
+            "---\nid: o1\ntype: observation\ntitle: the hive recorded this path\naspect: function\n---\n",
+        );
+        let g = graph_of(
+            vec![claim.clone(), obs],
+            vec![Edge::new(
+                NodeId::new("o1"),
+                NodeId::new("c1"),
+                EdgeKind::Supports,
+            )],
+        );
+        let r = substance_not_from_function_alone(&g, &claim);
+        assert_eq!(r.violation().map(|v| v.gate), Some(FUNCTION_AS_SUBSTANCE));
+    }
+
+    #[test]
+    fn a_substance_claim_with_substance_evidence_passes() {
+        let claim = node("---\nid: c1\ntype: claim\ntitle: x is y\naspect: substance\n---\n");
+        let obs = node("---\nid: o1\ntype: observation\ntitle: o\naspect: substance\n---\n");
+        let g = graph_of(
+            vec![claim.clone(), obs],
+            vec![Edge::new(
+                NodeId::new("o1"),
+                NodeId::new("c1"),
+                EdgeKind::Supports,
+            )],
+        );
+        assert_eq!(
+            substance_not_from_function_alone(&g, &claim),
+            GateResult::Pass
+        );
+    }
+
+    // ── 白馬非馬 ──────────────────────────────────────────────────────────
+
+    #[test]
+    fn a_class_claim_without_extension_is_blocked() {
+        let n = node(
+            "---\nid: c1\ntype: claim\ntitle: Amcache entries indicate execution\nquantifier: universal\n---\n",
+        );
+        let g = graph_of(vec![n.clone()], vec![]);
+        assert_eq!(
+            class_extension_declared(&g, &n).violation().map(|v| v.gate),
+            Some(CLASS_EXTENSION_UNDECLARED)
+        );
+    }
+
+    #[test]
+    fn a_singular_claim_is_out_of_scope() {
+        let n = node("---\nid: c1\ntype: claim\ntitle: t\nquantifier: singular\n---\n");
+        let g = graph_of(vec![n.clone()], vec![]);
+        assert_eq!(class_extension_declared(&g, &n), GateResult::NotApplicable);
+    }
+
+    // ── 四句 ──────────────────────────────────────────────────────────────
+
+    #[test]
+    fn a_contested_claim_needs_all_four_corners() {
+        let a = node("---\nid: c1\ntype: claim\ntitle: it executed\n---\n");
+        let b = node("---\nid: c2\ntype: claim\ntitle: it was only copied\n---\n");
+        let g = graph_of(
+            vec![a.clone(), b],
+            vec![Edge::new(
+                NodeId::new("c2"),
+                NodeId::new("c1"),
+                EdgeKind::Contradicts,
+            )],
+        );
+        assert_eq!(
+            four_corners_addressed(&g, &a).violation().map(|v| v.gate),
+            Some(CORNERS_UNADDRESSED)
+        );
+    }
+
+    #[test]
+    fn four_corners_stated_passes() {
+        let a = node(
+            "---\nid: c1\ntype: claim\ntitle: it executed\ncontested: true\ncorners:\n  - executed\n  - not executed\n  - both, on different occasions\n  - neither: catalogued without running\n---\n",
+        );
+        let g = graph_of(vec![a.clone()], vec![]);
+        assert_eq!(four_corners_addressed(&g, &a), GateResult::Pass);
+    }
+
+    // ── Toulmin ───────────────────────────────────────────────────────────
+
+    #[test]
+    fn a_missing_warrant_is_blocked_and_distinguished_from_a_blank_one() {
+        let absent = node("---\nid: c1\ntype: claim\ntitle: t\n---\n");
+        let blank = node("---\nid: c2\ntype: claim\ntitle: t\nwarrant: \"\"\n---\n");
+        let g = graph_of(vec![absent.clone(), blank.clone()], vec![]);
+
+        let a = warrant_present(&g, &absent);
+        let b = warrant_present(&g, &blank);
+        assert_eq!(a.violation().map(|v| v.gate), Some(WARRANT_MISSING));
+        assert_eq!(b.violation().map(|v| v.gate), Some(WARRANT_MISSING));
+        assert!(a.violation().unwrap().detail.contains("states no warrant"));
+        assert!(b.violation().unwrap().detail.contains("blank"));
+    }
+
+    // ── pramāṇa ───────────────────────────────────────────────────────────
+
+    #[test]
+    fn an_overgraded_testimony_edge_is_blocked() {
+        let claim = node("---\nid: c1\ntype: claim\ntitle: t\n---\n");
+        let obs = node("---\nid: o1\ntype: observation\ntitle: o\n---\n");
+        let g = graph_of(
+            vec![claim.clone(), obs],
+            vec![
+                Edge::new(NodeId::new("o1"), NodeId::new("c1"), EdgeKind::Supports)
+                    .via(Pramana::Testimony)
+                    .graded_by(Grade::G3, "albert"),
+            ],
+        );
+        let v = grades_within_pramana_ceiling(&g, &claim);
+        let v = v.violation().expect("must block");
+        assert_eq!(v.gate, GRADE_EXCEEDS_PRAMANA);
+        assert!(v.detail.contains("G3"), "{}", v.detail);
+        assert!(v.detail.contains("testimony"), "{}", v.detail);
+    }
+
+    // ── Pearl ─────────────────────────────────────────────────────────────
+
+    #[test]
+    fn a_counterfactual_claim_on_observation_alone_is_blocked() {
+        let claim = node(
+            "---\nid: c1\ntype: claim\ntitle: this entry proves execution\ncausal_rung: counterfactual\n---\n",
+        );
+        let obs = node("---\nid: o1\ntype: observation\ntitle: hive record\n---\n");
+        let g = graph_of(
+            vec![claim.clone(), obs],
+            vec![Edge::new(
+                NodeId::new("o1"),
+                NodeId::new("c1"),
+                EdgeKind::Supports,
+            )],
+        );
+        assert_eq!(
+            causal_rung_earned(&g, &claim).violation().map(|v| v.gate),
+            Some(CAUSAL_RUNG_UNREACHED)
+        );
+    }
+
+    #[test]
+    fn an_association_claim_needs_no_protocol() {
+        let claim = node("---\nid: c1\ntype: claim\ntitle: t\ncausal_rung: association\n---\n");
+        let g = graph_of(vec![claim.clone()], vec![]);
+        assert_eq!(causal_rung_earned(&g, &claim), GateResult::Pass);
+    }
+
+    #[test]
+    fn an_executed_protocol_earns_the_higher_rung() {
+        let claim = node(
+            "---\nid: c1\ntype: claim\ntitle: launching it creates the record\ncausal_rung: intervention\n---\n",
+        );
+        let run = node("---\nid: r1\ntype: run\ntitle: controlled launch on 22H2\n---\n");
+        let g = graph_of(
+            vec![claim.clone(), run],
+            vec![Edge::new(
+                NodeId::new("r1"),
+                NodeId::new("c1"),
+                EdgeKind::Supports,
+            )],
+        );
+        assert_eq!(causal_rung_earned(&g, &claim), GateResult::Pass);
+    }
+
+    #[test]
+    fn an_undeclared_rung_is_unassessed_not_passed() {
+        let claim = node("---\nid: c1\ntype: claim\ntitle: t\n---\n");
+        let g = graph_of(vec![claim.clone()], vec![]);
+        let r = causal_rung_earned(&g, &claim);
+        assert!(matches!(r, GateResult::Unassessed { .. }));
+        assert!(!r.permits_promotion());
+    }
+
+    #[test]
+    fn boundaries_are_required_and_a_declared_one_passes() {
+        let without = node("---\nid: c1\ntype: claim\ntitle: t\n---\n");
+        let with =
+            node("---\nid: c2\ntype: claim\ntitle: t\nboundaries:\n  - Windows 10 1809+\n---\n");
+        let g = graph_of(vec![without.clone(), with.clone()], vec![]);
+        assert_eq!(
+            boundaries_declared(&g, &without)
+                .violation()
+                .map(|v| v.gate),
+            Some(BOUNDARIES_MISSING)
+        );
+        assert_eq!(boundaries_declared(&g, &with), GateResult::Pass);
+    }
+}
