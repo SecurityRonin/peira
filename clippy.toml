@@ -9,6 +9,6 @@ allow-expect-in-tests = true
 doc-valid-idents = [
     "Amcache", "OGS", "DFIR", "SecurityRonin", "Johnny.Decimal",
     "Madhyamaka", "Nyaya", "Toulmin", "Dung", "catuskoti", "pramana",
-    "hetvabhasa", "pancavayava", "Aufhebung", "elenchus", "Zettelkasten",
+    "hetvabhasa", "pancavayava", "Aufhebung", "peira", "elenchus", "Zettelkasten",
     "MoC", "MoCs", "WORM", "RFC",
 ]

@@ -6,7 +6,7 @@ loop.
 
 **What is not claimed:** that the Amcache forensic conclusions in the corpus are true.
 The corpus exercises the *engine*. Its ground truth is taken from a third-party README
-and from the Vibe Research design document; elenchus did not establish it.
+and from the Vibe Research design document; peira did not establish it.
 
 ## Evidence tier
 
@@ -38,14 +38,14 @@ is load-bearing.
 Claim: `This Amcache entry proves execution of the suspicious binary`
 
 ```
-ELEN-CRITERION-UNDECLARED       [LIJI]       judged, with no standard declared
-ELEN-FUNCTION-AS-SUBSTANCE      [TIYONG]     what it did, stated as what it is
-ELEN-CLASS-EXTENSION-UNDECLARED [BAIMA]      one token, quantified universally
-ELEN-CORNERS-UNADDRESSED        [CATUSKOTI]  contested, addresses 0 of 4 corners
-ELEN-WARRANT-MISSING            [TOULMIN]    states no warrant
-ELEN-CAUSAL-RUNG-UNREACHED      [RUNG]       counterfactual rung, observation only
-ELEN-BOUNDARIES-MISSING         [RUNG]       no boundary conditions
-ELEN-LINT-FORBIDDEN-VERB        [LINT]       says "proves"
+PEIR-CRITERION-UNDECLARED       [LIJI]       judged, with no standard declared
+PEIR-FUNCTION-AS-SUBSTANCE      [TIYONG]     what it did, stated as what it is
+PEIR-CLASS-EXTENSION-UNDECLARED [BAIMA]      one token, quantified universally
+PEIR-CORNERS-UNADDRESSED        [CATUSKOTI]  contested, addresses 0 of 4 corners
+PEIR-WARRANT-MISSING            [TOULMIN]    states no warrant
+PEIR-CAUSAL-RUNG-UNREACHED      [RUNG]       counterfactual rung, observation only
+PEIR-BOUNDARIES-MISSING         [RUNG]       no boundary conditions
+PEIR-LINT-FORBIDDEN-VERB        [LINT]       says "proves"
 exit=1
 ```
 
@@ -66,15 +66,15 @@ run and asserted absent after restore, because a mutation that silently fails to
 reports green while testing nothing.
 
 ```
-baseline                 ELEN-CAUSAL-RUNG-UNREACHED findings: 1
-gate neutered            ELEN-CAUSAL-RUNG-UNREACHED findings: 0   (6 findings total)
-restored                 ELEN-CAUSAL-RUNG-UNREACHED findings: 1
+baseline                 PEIR-CAUSAL-RUNG-UNREACHED findings: 1
+gate neutered            PEIR-CAUSAL-RUNG-UNREACHED findings: 0   (6 findings total)
+restored                 PEIR-CAUSAL-RUNG-UNREACHED findings: 1
 ```
 
 ### Control C — an absent vault is not an empty pass
 
 ```
-elenchus: vault root `/nonexistent/vault` is not a directory
+peira: vault root `/nonexistent/vault` is not a directory
 exit=2   elapsed=2ms
 ```
 
@@ -96,8 +96,8 @@ verify (restored)        ✓ exit=0
 
 ```bash
 cargo test --workspace --no-fail-fast          # 91 tests, incl. the acceptance suite
-cargo run -p elenchus-cli -- gates tests/vaults/overclaim   # exit 1
-cargo run -p elenchus-cli -- gates tests/vaults/bounded     # exit 0
+cargo run -p peira-cli -- gates tests/vaults/overclaim   # exit 1
+cargo run -p peira-cli -- gates tests/vaults/bounded     # exit 0
 ```
 
 `--no-fail-fast` matters whenever test counts are compared across two trees: cargo
@@ -139,7 +139,7 @@ proves only that the tool ran.
 ## Known limits
 
 - The corpus is synthetic in its *structure*, though its epistemics are taken from real
-  documents. It does not parse a real hive; `amcache-forensic` does that, and elenchus
+  documents. It does not parse a real hive; `amcache-forensic` does that, and peira
   reasons over what such a parser reports.
 - 13 of the 21 catalogued lenses are not yet mechanised. They are marked `Catalogued`,
   and a meta-test asserts a `Catalogued` lens owns no gates — so the catalogue cannot

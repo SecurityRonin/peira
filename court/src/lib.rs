@@ -7,7 +7,7 @@
 //! overstates in ways no matcher catches, and the reviewer who wrote the sentence is
 //! the last person able to see it.
 //!
-//! So elenchus inverts it. The safe statement is **rendered from the graph** using
+//! So peira inverts it. The safe statement is **rendered from the graph** using
 //! the 金剛經 three-moment form — 所謂 X (what is called X), 即非 X (X is not the
 //! thing itself), 是名 X (it is named X under these conditions). Nobody writes the
 //! sentence, so nobody can overstate it. This is 二諦 as a build step: the packet is
@@ -17,8 +17,8 @@
 //! A packet also **refuses to freeze while any gate blocks**. There is no override.
 
 use blazehash_core::algorithm::{hash_bytes, Algorithm};
-use elenchus_core::{EdgeKind, Graph, Node, NodeId, NodeKind};
-use elenchus_lens::{examine_graph, lints, Violation};
+use peira_core::{EdgeKind, Graph, Node, NodeId, NodeKind};
+use peira_lens::{examine_graph, lints, Violation};
 use std::fmt::{self, Write as _};
 
 /// Why a packet could not be frozen.
@@ -250,7 +250,7 @@ pub fn verify(graph: &Graph, packet: &Packet) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use elenchus_core::{parse_node, Edge};
+    use peira_core::{parse_node, Edge};
 
     fn node(src: &str) -> Node {
         parse_node(src).expect("fixture parses")

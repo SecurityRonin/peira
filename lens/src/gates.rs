@@ -8,29 +8,29 @@
 //! was missing. It never returns `Pass`. Silence is not consent.
 
 use crate::{GateResult, Violation};
-use elenchus_core::{EdgeKind, Graph, Node, NodeKind};
+use peira_core::{EdgeKind, Graph, Node, NodeKind};
 
 // ── Stable published gate codes ──────────────────────────────────────────────
 // These appear in Court Mode packets. A shipped code never changes meaning.
 
 /// 立極: an evaluative claim with no declared standard.
-pub const CRITERION_UNDECLARED: &str = "ELEN-CRITERION-UNDECLARED";
+pub const CRITERION_UNDECLARED: &str = "PEIR-CRITERION-UNDECLARED";
 /// 正名: a load-bearing term that was never stipulated.
-pub const TERM_UNSTIPULATED: &str = "ELEN-TERM-UNSTIPULATED";
+pub const TERM_UNSTIPULATED: &str = "PEIR-TERM-UNSTIPULATED";
 /// 體用: a claim about what a thing IS, resting only on what it DID.
-pub const FUNCTION_AS_SUBSTANCE: &str = "ELEN-FUNCTION-AS-SUBSTANCE";
+pub const FUNCTION_AS_SUBSTANCE: &str = "PEIR-FUNCTION-AS-SUBSTANCE";
 /// 白馬非馬: a class claim that never says what the class contains.
-pub const CLASS_EXTENSION_UNDECLARED: &str = "ELEN-CLASS-EXTENSION-UNDECLARED";
+pub const CLASS_EXTENSION_UNDECLARED: &str = "PEIR-CLASS-EXTENSION-UNDECLARED";
 /// 四句: a contested claim that addressed fewer than four corners.
-pub const CORNERS_UNADDRESSED: &str = "ELEN-CORNERS-UNADDRESSED";
+pub const CORNERS_UNADDRESSED: &str = "PEIR-CORNERS-UNADDRESSED";
 /// Toulmin: the rule licensing grounds → claim was never written down.
-pub const WARRANT_MISSING: &str = "ELEN-WARRANT-MISSING";
+pub const WARRANT_MISSING: &str = "PEIR-WARRANT-MISSING";
 /// pramāṇa: an edge graded above what its means of knowing allows.
-pub const GRADE_EXCEEDS_PRAMANA: &str = "ELEN-GRADE-EXCEEDS-PRAMANA";
+pub const GRADE_EXCEEDS_PRAMANA: &str = "PEIR-GRADE-EXCEEDS-PRAMANA";
 /// Pearl: an interventional or counterfactual claim with no executed protocol.
-pub const CAUSAL_RUNG_UNREACHED: &str = "ELEN-CAUSAL-RUNG-UNREACHED";
+pub const CAUSAL_RUNG_UNREACHED: &str = "PEIR-CAUSAL-RUNG-UNREACHED";
 /// A conclusion stated with no conditions under which it would change.
-pub const BOUNDARIES_MISSING: &str = "ELEN-BOUNDARIES-MISSING";
+pub const BOUNDARIES_MISSING: &str = "PEIR-BOUNDARIES-MISSING";
 
 /// Words that turn a description into a judgement.
 ///
@@ -418,7 +418,7 @@ cite each, never a bare string",
 #[cfg(test)]
 mod tests {
     use super::*;
-    use elenchus_core::{parse_node, Edge, Grade, NodeId, Pramana};
+    use peira_core::{parse_node, Edge, Grade, NodeId, Pramana};
 
     fn node(src: &str) -> Node {
         parse_node(src).expect("fixture parses")

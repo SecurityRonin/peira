@@ -1,6 +1,6 @@
 # 體用 — Substance and Function
 
-**Gate:** `ELEN-FUNCTION-AS-SUBSTANCE`
+**Gate:** `PEIR-FUNCTION-AS-SUBSTANCE`
 **Failure mode:** reporting what a thing DID as though it established what a thing IS.
 
 程頤: 體用一源，顯微無間 — substance and function share a source. Sharing a source is not

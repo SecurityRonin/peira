@@ -1,6 +1,6 @@
 # 正名 / 所謂 X 即非 X 是名 X — Rectify the Name
 
-**Gate:** `ELEN-TERM-UNSTIPULATED`
+**Gate:** `PEIR-TERM-UNSTIPULATED`
 **Failure mode:** reifying a label into a thing, so a word does argumentative work its
 definition never licensed.
 

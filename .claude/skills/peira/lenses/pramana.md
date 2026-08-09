@@ -1,10 +1,10 @@
 # प्रमाण pramāṇa — Type the Means of Knowing
 
-**Gate:** `ELEN-GRADE-EXCEEDS-PRAMANA`
+**Gate:** `PEIR-GRADE-EXCEEDS-PRAMANA`
 **Failure mode:** testimony passed off as observation, and corroboration mistaken for
 independence.
 
-Nyāya Sūtra 1.1.3 names four means of valid knowledge, and elenchus caps the grade an
+Nyāya Sūtra 1.1.3 names four means of valid knowledge, and peira caps the grade an
 edge may carry by which one it rests on:
 
 | pramāṇa | | ceiling |
@@ -43,7 +43,7 @@ supports: ["c-bounded grade=G2 by=albert via=perception"]
 and on the observation node, `pramana: testimony` where that is what it is.
 
 If two supporters restate one another, record it — `duplicates:` — and the
-`ELEN-LINT-FALSE-INDEPENDENCE` lint will stop them being counted twice.
+`PEIR-LINT-FALSE-INDEPENDENCE` lint will stop them being counted twice.
 
 ## Watch for
 

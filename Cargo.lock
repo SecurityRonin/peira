@@ -287,50 +287,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "elenchus-cli"
-version = "0.1.0"
-dependencies = [
- "clap",
- "elenchus-core",
- "elenchus-court",
- "elenchus-index",
- "elenchus-lens",
-]
-
-[[package]]
-name = "elenchus-core"
-version = "0.1.0"
-dependencies = [
- "serde",
- "serde_yaml_ng",
-]
-
-[[package]]
-name = "elenchus-court"
-version = "0.1.0"
-dependencies = [
- "blazehash-core",
- "elenchus-core",
- "elenchus-lens",
-]
-
-[[package]]
-name = "elenchus-index"
-version = "0.1.0"
-dependencies = [
- "elenchus-core",
- "elenchus-lens",
- "rusqlite",
-]
-
-[[package]]
-name = "elenchus-lens"
-version = "0.1.0"
-dependencies = [
- "elenchus-core",
-]
-
-[[package]]
 name = "equivalent"
 version = "1.0.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -469,6 +425,50 @@ name = "once_cell_polyfill"
 version = "1.70.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "384b8ab6d37215f3c5301a95a4accb5d64aa607f1fcb26a11b5303878451b4fe"
+
+[[package]]
+name = "peira-cli"
+version = "0.1.0"
+dependencies = [
+ "clap",
+ "peira-core",
+ "peira-court",
+ "peira-index",
+ "peira-lens",
+]
+
+[[package]]
+name = "peira-core"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "serde_yaml_ng",
+]
+
+[[package]]
+name = "peira-court"
+version = "0.1.0"
+dependencies = [
+ "blazehash-core",
+ "peira-core",
+ "peira-lens",
+]
+
+[[package]]
+name = "peira-index"
+version = "0.1.0"
+dependencies = [
+ "peira-core",
+ "peira-lens",
+ "rusqlite",
+]
+
+[[package]]
+name = "peira-lens"
+version = "0.1.0"
+dependencies = [
+ "peira-core",
+]
 
 [[package]]
 name = "pkg-config"

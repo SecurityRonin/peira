@@ -1,6 +1,6 @@
 # Privacy
 
-elenchus is a command-line program that reads and writes files on your machine.
+peira is a command-line program that reads and writes files on your machine.
 
 - **No network access.** The binary makes no outbound connections. There is no
   telemetry, no analytics, no crash reporting, and no update check.

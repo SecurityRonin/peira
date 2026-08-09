@@ -16,7 +16,7 @@ means inheriting a suppression.
 
 **Hashing.** ADR-0010 makes preferring our own crates a hard rule, and `blazehash-core`
 exposes exactly what packet digests need. It declares `rust-version = "1.88"`, while
-`elenchus-core` and `elenchus-lens` promise 1.75 — a floor downstream consumers pin
+`peira-core` and `peira-lens` promise 1.75 — a floor downstream consumers pin
 against.
 
 **MSRV enforcement.** A declared `rust-version` is a claim until something compiles
@@ -30,7 +30,7 @@ against it.
   1.85 floor would raise our promise by ten releases). It is isolated behind `parse_node`
   so a later swap is a one-function change.
 - **`blazehash-core`** for digests, and never a hand-rolled one. The 1.88 constraint is
-  **scoped to `elenchus-court`**, where the dependency is actually used, instead of
+  **scoped to `peira-court`**, where the dependency is actually used, instead of
   propagating up into the library crates.
 - **MSRV is measured, not asserted — and the first measurement failed.** 1.75 was
   declared, and the msrv job disproved it immediately: `indexmap 2.14` (pulled by
@@ -39,7 +39,7 @@ against it.
   `cargo +1.85 check`**.
 
   The distinction matters and is recorded rather than smoothed over: **1.85 is an
-  inherited floor, not this code's own.** `elenchus-core` and `elenchus-lens` very likely
+  inherited floor, not this code's own.** `peira-core` and `peira-lens` very likely
   compile lower — clippy's `incompatible_msrv` was already enforcing 1.75 against our
   source during development, and caught `Option::is_none_or` (stabilised 1.82), which was
   rewritten as a match rather than raising the floor. But our own floor is **unmeasured**,

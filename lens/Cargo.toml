@@ -1,7 +1,7 @@
 [package]
-name = "elenchus-lens"
+name = "peira-lens"
 version = "0.1.0"
-description = "The elenchus lens catalogue — classical critical-thinking examinations (Socratic, Toulmin, catuskoti, 體用, 白馬非馬, Ship of Theseus) as typed, cited, machine-checkable gates."
+description = "The peira lens catalogue — classical critical-thinking examinations (Socratic, Toulmin, catuskoti, 體用, 白馬非馬, Ship of Theseus) as typed, cited, machine-checkable gates."
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
@@ -15,10 +15,10 @@ categories = ["data-structures"]
 # memory, no I/O, no database, no runtime parse step, so a malformed catalogue is a
 # compile error and matches stay exhaustive. The crate is not literally dependency-
 # free, though: a gate predicate has to see the graph it judges, so it takes the node
-# and edge types from elenchus-core. Claiming "zero dependencies" here would be the
+# and edge types from peira-core. Claiming "zero dependencies" here would be the
 # kind of overstatement this project exists to catch.
 [dependencies]
-elenchus-core = { workspace = true }
+peira-core = { workspace = true }
 
 [lints]
 workspace = true

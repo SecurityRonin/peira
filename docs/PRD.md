@@ -1,4 +1,4 @@
-# elenchus — purpose and scope
+# peira — purpose and scope
 
 ## Problem
 
@@ -11,7 +11,7 @@ Existing tools address adjacent problems. Perplexity shows where an answer looke
 shows what an agent did. Neither shows **why a claim may be stated, with what strength,
 under which boundaries, and what would change it.**
 
-## What elenchus is
+## What peira is
 
 A markdown-native knowledge vault plus a deterministic checker that refuses to promote a
 claim which has not been examined for specific, named failure modes — each drawn from a

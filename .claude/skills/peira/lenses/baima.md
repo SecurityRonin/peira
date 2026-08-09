@@ -1,6 +1,6 @@
 # 白馬非馬 — The White Horse
 
-**Gate:** `ELEN-CLASS-EXTENSION-UNDECLARED`
+**Gate:** `PEIR-CLASS-EXTENSION-UNDECLARED`
 **Failure mode:** sliding between a type and its tokens, or between intension and
 extension.
 

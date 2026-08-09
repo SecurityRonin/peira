@@ -1,9 +1,9 @@
 ---
-name: elenchus
-description: Examine a claim in an elenchus vault through the classical critical-thinking lenses — 立極, 正名/所謂即非是名, 體用, 白馬非馬, 四句, Toulmin, pramāṇa, and the causal ladder — and write examination artifacts that propose nodes and edges. Use when a claim needs cross-examining before it is relied on, when `elenchus gates` blocks and the fix is not obvious, or when turning folklore into a scoped proposition. Triggers - "examine this claim", "cross-examine", "is this over-claimed", "run the lenses", "why is this blocked", "make this court-safe".
+name: peira
+description: Examine a claim in a peira vault through the classical critical-thinking lenses — 立極, 正名/所謂即非是名, 體用, 白馬非馬, 四句, Toulmin, pramāṇa, and the causal ladder — and write examination artifacts that propose nodes and edges. Use when a claim needs cross-examining before it is relied on, when `peira gates` blocks and the fix is not obvious, or when turning folklore into a scoped proposition. Triggers - "examine this claim", "cross-examine", "is this over-claimed", "run the lenses", "why is this blocked", "make this court-safe".
 ---
 
-# elenchus — examine a claim
+# peira — examine a claim
 
 ## What you may and may not do
 
@@ -23,7 +23,7 @@ built into the data model, and you should not try to work around it.
 - write `grade=` without `by=`. An unattributed grade silently degrades to a
   proposal, and the lint pack reports it.
 - declare that a claim is accepted, verified, or cleared. Only
-  `elenchus status` says that, and it derives the answer.
+  `peira status` says that, and it derives the answer.
 
 If you catch yourself wanting to assert a verdict, that is the feeling the design
 exists to produce. Write the evidence instead.
@@ -33,8 +33,8 @@ exists to produce. Write the evidence instead.
 1. **Read the state first.** Never begin by proposing fixes.
 
    ```bash
-   elenchus gates <vault> --node <id>
-   elenchus status <vault> <id>
+   peira gates <vault> --node <id>
+   peira status <vault> <id>
    ```
 
    Every blocking finding names its gate, what was actually found, and a remedy.
@@ -45,16 +45,16 @@ exists to produce. Write the evidence instead.
 
    | Gate | Lens | Playbook |
    |---|---|---|
-   | `ELEN-CRITERION-UNDECLARED` | 立極 | [liji.md](lenses/liji.md) |
-   | `ELEN-TERM-UNSTIPULATED` | 正名 | [zhengming.md](lenses/zhengming.md) |
-   | `ELEN-FUNCTION-AS-SUBSTANCE` | 體用 | [tiyong.md](lenses/tiyong.md) |
-   | `ELEN-CLASS-EXTENSION-UNDECLARED` | 白馬非馬 | [baima.md](lenses/baima.md) |
-   | `ELEN-CORNERS-UNADDRESSED` | 四句 | [catuskoti.md](lenses/catuskoti.md) |
-   | `ELEN-WARRANT-MISSING` | Toulmin | [toulmin.md](lenses/toulmin.md) |
-   | `ELEN-GRADE-EXCEEDS-PRAMANA` | pramāṇa | [pramana.md](lenses/pramana.md) |
-   | `ELEN-CAUSAL-RUNG-UNREACHED`, `ELEN-BOUNDARIES-MISSING` | Causal ladder | [rung.md](lenses/rung.md) |
+   | `PEIR-CRITERION-UNDECLARED` | 立極 | [liji.md](lenses/liji.md) |
+   | `PEIR-TERM-UNSTIPULATED` | 正名 | [zhengming.md](lenses/zhengming.md) |
+   | `PEIR-FUNCTION-AS-SUBSTANCE` | 體用 | [tiyong.md](lenses/tiyong.md) |
+   | `PEIR-CLASS-EXTENSION-UNDECLARED` | 白馬非馬 | [baima.md](lenses/baima.md) |
+   | `PEIR-CORNERS-UNADDRESSED` | 四句 | [catuskoti.md](lenses/catuskoti.md) |
+   | `PEIR-WARRANT-MISSING` | Toulmin | [toulmin.md](lenses/toulmin.md) |
+   | `PEIR-GRADE-EXCEEDS-PRAMANA` | pramāṇa | [pramana.md](lenses/pramana.md) |
+   | `PEIR-CAUSAL-RUNG-UNREACHED`, `PEIR-BOUNDARIES-MISSING` | Causal ladder | [rung.md](lenses/rung.md) |
 
-   `elenchus lens <ID>` prints the failure mode, the operation and a worked example
+   `peira lens <ID>` prints the failure mode, the operation and a worked example
    for any of them.
 
 3. **Do the examination.** Follow the playbook. It will tell you what to look for
@@ -79,7 +79,7 @@ exists to produce. Write the evidence instead.
 5. **Re-run the checker.** Do not report a fix as done on your own authority:
 
    ```bash
-   elenchus gates <vault> --node <id>
+   peira gates <vault> --node <id>
    ```
 
 ## The move that resolves most blocks

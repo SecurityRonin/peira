@@ -1,4 +1,4 @@
-//! Typed node/edge model, vault parser and argumentation graph for elenchus.
+//! Typed node/edge model, vault parser and argumentation graph for peira.
 //!
 //! # The load-bearing invariant
 //!

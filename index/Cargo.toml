@@ -1,7 +1,7 @@
 [package]
-name = "elenchus-index"
+name = "peira-index"
 version = "0.1.0"
-description = "A derived, disposable SQLite index over an elenchus vault — rebuilt from committed markdown, never authoritative, never committed."
+description = "A derived, disposable SQLite index over a peira vault — rebuilt from committed markdown, never authoritative, never committed."
 edition.workspace = true
 rust-version = "1.85"
 license.workspace = true
@@ -12,8 +12,8 @@ keywords = ["knowledge-management", "sqlite", "index", "query", "graph"]
 categories = ["database"]
 
 [dependencies]
-elenchus-core = { workspace = true }
-elenchus-lens = { workspace = true }
+peira-core = { workspace = true }
+peira-lens = { workspace = true }
 # `bundled` compiles SQLite in, per the batteries-included rule: a capability not
 # compiled in is not there in the field, and an index that depends on whichever
 # libsqlite3 the host happens to ship is not reproducible.

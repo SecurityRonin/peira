@@ -1,6 +1,6 @@
 # Toulmin — Name the Warrant
 
-**Gate:** `ELEN-WARRANT-MISSING`
+**Gate:** `PEIR-WARRANT-MISSING`
 **Failure mode:** the unstated warrant — grounds and claim are given, and the rule
 connecting them never is.
 

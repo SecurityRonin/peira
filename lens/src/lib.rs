@@ -1,4 +1,4 @@
-//! The elenchus lens catalogue.
+//! The peira lens catalogue.
 //!
 //! Each entry names a **failure mode** that a specific critical-thinking tradition
 //! identified, and pairs it with a machine-checkable gate over the claim graph. The
@@ -12,8 +12,8 @@
 //! lens cites a source, every gate code is unique, every MVP lens actually has a
 //! gate — rather than of any code path.
 //!
-//! Only **domain-neutral** lenses live here. Domain packs (`elenchus-forensic`,
-//! `elenchus-legal`) depend down onto this crate and add their own criteria; that is
+//! Only **domain-neutral** lenses live here. Domain packs (`peira-forensic`,
+//! `peira-legal`) depend down onto this crate and add their own criteria; that is
 //! the mechanism by which "universal" stays universal instead of quietly becoming a
 //! forensics tool.
 
@@ -22,7 +22,7 @@
 pub mod gates;
 pub mod lints;
 
-use elenchus_core::{Graph, Node, NodeId, NodeKind};
+use peira_core::{Graph, Node, NodeId, NodeKind};
 use std::fmt;
 
 /// The intellectual lineage a lens comes from.
@@ -119,7 +119,7 @@ impl GateResult {
 #[non_exhaustive]
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Violation {
-    /// The stable gate code, e.g. `ELEN-WARRANT-MISSING`. A published contract:
+    /// The stable gate code, e.g. `PEIR-WARRANT-MISSING`. A published contract:
     /// packets cite these, so a shipped code never changes meaning.
     pub gate: &'static str,
     /// The lens the gate belongs to.
@@ -649,7 +649,7 @@ falsifiable, not merely plausible",
         for l in CATALOG {
             for g in l.gates {
                 assert!(
-                    g.code.starts_with("ELEN-"),
+                    g.code.starts_with("PEIR-"),
                     "{} is not scheme-prefixed; codes are a published contract",
                     g.code
                 );
@@ -741,7 +741,7 @@ falsifiable, not merely plausible",
 
     #[test]
     fn a_lens_reports_not_applicable_outside_its_scope() {
-        use elenchus_core::{parse_node, Graph};
+        use peira_core::{parse_node, Graph};
         let term =
             parse_node("---\nid: 60.01\ntype: term\ntitle: presence\n---\n").expect("parses");
         let graph = Graph::new();
@@ -756,14 +756,14 @@ falsifiable, not merely plausible",
     #[test]
     fn a_violation_renders_gate_lens_subject_and_remedy() {
         let v = Violation {
-            gate: "ELEN-TEST",
+            gate: "PEIR-TEST",
             lens: "TEST",
-            subject: elenchus_core::NodeId::new("c1"),
+            subject: peira_core::NodeId::new("c1"),
             detail: "what was found".to_owned(),
             remedy: "what to do".to_owned().leak(),
         };
         let rendered = v.to_string();
-        for part in ["ELEN-TEST", "TEST", "c1", "what was found", "what to do"] {
+        for part in ["PEIR-TEST", "TEST", "c1", "what was found", "what to do"] {
             assert!(rendered.contains(part), "missing {part} in {rendered}");
         }
     }
@@ -773,7 +773,7 @@ falsifiable, not merely plausible",
         // Vacuously clean, and it must not be confusable with "checked and passed" —
         // which is why the CLI reports counts rather than a bare tick for a vault it
         // could not find.
-        assert!(examine_graph(&elenchus_core::Graph::new()).is_empty());
+        assert!(examine_graph(&peira_core::Graph::new()).is_empty());
     }
 
     #[test]
@@ -786,9 +786,9 @@ falsifiable, not merely plausible",
     #[test]
     fn a_block_result_yields_its_violation_and_others_do_not() {
         let v = Violation {
-            gate: "ELEN-TEST",
+            gate: "PEIR-TEST",
             lens: "TEST",
-            subject: elenchus_core::NodeId::new("c1"),
+            subject: peira_core::NodeId::new("c1"),
             detail: String::new(),
             remedy: "",
         };

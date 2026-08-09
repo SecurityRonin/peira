@@ -1,6 +1,6 @@
 # Causal Ladder — Earn the Rung
 
-**Gates:** `ELEN-CAUSAL-RUNG-UNREACHED`, `ELEN-BOUNDARIES-MISSING`
+**Gates:** `PEIR-CAUSAL-RUNG-UNREACHED`, `PEIR-BOUNDARIES-MISSING`
 **Failure mode:** asserting interventional or counterfactual conclusions from
 observational data — and stating a conclusion with no conditions under which it would
 change.

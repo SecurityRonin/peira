@@ -1,4 +1,4 @@
-//! `elenchus` — the deterministic checker.
+//! `peira` — the deterministic checker.
 //!
 //! Note what is absent: there is **no subcommand that sets a claim's state**. State
 //! is computed from gates, reviewer records and the grounded extension, and the
@@ -6,8 +6,8 @@
 //! nodes and edges all day and never assert that anything is accepted.
 
 use clap::{Parser, Subcommand};
-use elenchus_core::{Graph, NodeId};
-use elenchus_lens::{examine_graph, lints, Violation, CATALOG};
+use peira_core::{Graph, NodeId};
+use peira_lens::{examine_graph, lints, Violation, CATALOG};
 use std::{
     path::{Path, PathBuf},
     process::ExitCode,
@@ -25,7 +25,7 @@ mod exit {
 
 #[derive(Parser)]
 #[command(
-    name = "elenchus",
+    name = "peira",
     about = "Examine a knowledge vault against classical critical-thinking gates.",
     long_about = "Examine a knowledge vault against classical critical-thinking gates.\n\n\
 There is deliberately no command that sets a claim's status. Status is derived from \
@@ -105,7 +105,7 @@ enum Command {
 }
 
 fn load(vault: &Path) -> Result<Graph, String> {
-    elenchus_core::load(vault).map_err(|e| e.to_string())
+    peira_core::load(vault).map_err(|e| e.to_string())
 }
 
 fn report(violations: &[Violation], what: &str) -> u8 {
@@ -131,7 +131,7 @@ fn blocking_for(graph: &Graph, id: &NodeId) -> Vec<Violation> {
         .collect()
 }
 
-/// The vault skeleton. Areas `00-59` belong to OGS; elenchus claims `60-99`.
+/// The vault skeleton. Areas `00-59` belong to OGS; peira claims `60-99`.
 const AREAS: &[(&str, &str)] = &[
     (
         "60-lexicon",
@@ -172,7 +172,7 @@ fn cmd_init(path: &Path) -> Result<u8, String> {
 
 fn cmd_index(vault: &Path, out: &Path) -> Result<u8, String> {
     let graph = load(vault)?;
-    elenchus_index::build(&graph, out).map_err(|e| format!("{}: {e}", out.display()))?;
+    peira_index::build(&graph, out).map_err(|e| format!("{}: {e}", out.display()))?;
     println!(
         "Indexed {} node(s) and {} edge(s) → {}",
         graph.nodes().count(),
@@ -276,7 +276,7 @@ fn cmd_graph(vault: &Path, grounded: bool) -> Result<u8, String> {
 
 fn cmd_lens(id: Option<String>) -> Result<u8, String> {
     let Some(id) = id else {
-        let enforced = elenchus_lens::enforced().count();
+        let enforced = peira_lens::enforced().count();
         println!("{} lenses ({enforced} enforced):\n", CATALOG.len());
         for l in CATALOG {
             println!("  {:<11} {:<11} {}", l.id, format!("{:?}", l.phase), l.name);
@@ -284,8 +284,8 @@ fn cmd_lens(id: Option<String>) -> Result<u8, String> {
         return Ok(exit::OK);
     };
 
-    let l = elenchus_lens::lens(&id)
-        .ok_or_else(|| format!("no lens `{id}`; run `elenchus lens` to list them"))?;
+    let l = peira_lens::lens(&id)
+        .ok_or_else(|| format!("no lens `{id}`; run `peira lens` to list them"))?;
     println!("{}  ({})\n", l.name, l.tradition);
     println!("  failure mode : {}", l.failure_mode);
     println!("  operation    : {}", l.operation);
@@ -306,7 +306,7 @@ fn cmd_lens(id: Option<String>) -> Result<u8, String> {
 
 fn cmd_packet(vault: &Path, id: &str, out: Option<PathBuf>) -> Result<u8, String> {
     let graph = load(vault)?;
-    match elenchus_court::freeze(&graph, &NodeId::new(id)) {
+    match peira_court::freeze(&graph, &NodeId::new(id)) {
         Ok(packet) => {
             if let Some(path) = out {
                 std::fs::write(&path, &packet.body)
@@ -336,7 +336,7 @@ fn cmd_verify(vault: &Path, packet: &Path) -> Result<u8, String> {
         .ok_or_else(|| format!("{} does not look like a packet", packet.display()))?
         .trim();
 
-    let fresh = elenchus_court::freeze(&graph, &NodeId::new(subject)).map_err(|e| e.to_string())?;
+    let fresh = peira_court::freeze(&graph, &NodeId::new(subject)).map_err(|e| e.to_string())?;
     if fresh.body == stored {
         println!(
             "✓ {} still matches the vault (sha256 {})",
@@ -374,7 +374,7 @@ fn main() -> ExitCode {
     match run() {
         Ok(code) => ExitCode::from(code),
         Err(msg) => {
-            eprintln!("elenchus: {msg}");
+            eprintln!("peira: {msg}");
             ExitCode::from(exit::ERROR)
         }
     }

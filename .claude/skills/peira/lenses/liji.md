@@ -1,6 +1,6 @@
 # 立極 — Set the Pole
 
-**Gate:** `ELEN-CRITERION-UNDECLARED`
+**Gate:** `PEIR-CRITERION-UNDECLARED`
 **Failure mode:** judging something without ever declaring the standard judged against.
 
 周敦頤's 太極圖說 has 聖人定之以中正仁義而主靜，立人極焉 — the sage *establishes the pole*

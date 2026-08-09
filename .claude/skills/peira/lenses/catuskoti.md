@@ -1,6 +1,6 @@
 # 四句 catuṣkoṭi — The Four Corners
 
-**Gate:** `ELEN-CORNERS-UNADDRESSED`
+**Gate:** `PEIR-CORNERS-UNADDRESSED`
 **Failure mode:** collapsing a contested question into a binary before the other
 positions have been stated.
 

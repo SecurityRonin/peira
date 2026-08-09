@@ -5,20 +5,20 @@
 //! nowhere, grades nobody stands behind, and corroboration counted as independence.
 
 use crate::Violation;
-use elenchus_core::{EdgeKind, Graph, Node, NodeId, NodeKind};
+use peira_core::{EdgeKind, Graph, Node, NodeId, NodeKind};
 
 /// Prose asserting more than evidence can carry.
-pub const FORBIDDEN_VERB: &str = "ELEN-LINT-FORBIDDEN-VERB";
+pub const FORBIDDEN_VERB: &str = "PEIR-LINT-FORBIDDEN-VERB";
 /// An edge pointing at a node that is not in the vault.
-pub const DANGLING_EDGE: &str = "ELEN-LINT-DANGLING-EDGE";
+pub const DANGLING_EDGE: &str = "PEIR-LINT-DANGLING-EDGE";
 /// A claim with nothing supporting it.
-pub const ORPHAN_CLAIM: &str = "ELEN-LINT-ORPHAN-CLAIM";
+pub const ORPHAN_CLAIM: &str = "PEIR-LINT-ORPHAN-CLAIM";
 /// A grade nobody has put their name to.
-pub const UNREVIEWED_GRADE: &str = "ELEN-LINT-UNREVIEWED-GRADE";
+pub const UNREVIEWED_GRADE: &str = "PEIR-LINT-UNREVIEWED-GRADE";
 /// Privileged material in the open tier.
-pub const PRIVILEGE_LEAK: &str = "ELEN-LINT-PRIVILEGE-LEAK";
+pub const PRIVILEGE_LEAK: &str = "PEIR-LINT-PRIVILEGE-LEAK";
 /// Restatements counted as though they were independent lines.
-pub const FALSE_INDEPENDENCE: &str = "ELEN-LINT-FALSE-INDEPENDENCE";
+pub const FALSE_INDEPENDENCE: &str = "PEIR-LINT-FALSE-INDEPENDENCE";
 
 /// Overstatements, and what to say instead.
 ///
@@ -245,7 +245,7 @@ pub fn lint(graph: &Graph) -> Vec<Violation> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use elenchus_core::{parse_node, Edge, Grade};
+    use peira_core::{parse_node, Edge, Grade};
 
     fn node(src: &str) -> Node {
         parse_node(src).expect("fixture parses")

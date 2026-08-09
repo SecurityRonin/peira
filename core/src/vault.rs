@@ -211,7 +211,7 @@ mod tests {
     use std::fs;
 
     fn scratch(name: &str) -> PathBuf {
-        let dir = std::env::temp_dir().join(format!("elenchus-vault-test-{name}"));
+        let dir = std::env::temp_dir().join(format!("peira-vault-test-{name}"));
         let _ = fs::remove_dir_all(&dir);
         fs::create_dir_all(&dir).unwrap();
         dir
@@ -316,7 +316,7 @@ mod tests {
 
     #[test]
     fn a_missing_root_is_reported_not_treated_as_empty() {
-        let missing = std::env::temp_dir().join("elenchus-definitely-not-here");
+        let missing = std::env::temp_dir().join("peira-definitely-not-here");
         let _ = fs::remove_dir_all(&missing);
         let err = load(&missing).unwrap_err();
         assert!(matches!(err, VaultError::NotADirectory(_)));

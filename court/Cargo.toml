@@ -1,11 +1,11 @@
 [package]
-name = "elenchus-court"
+name = "peira-court"
 version = "0.1.0"
-description = "Court Mode for elenchus — frozen, hash-verified citation packets whose safe statement is generated from the graph rather than authored."
+description = "Court Mode for peira — frozen, hash-verified citation packets whose safe statement is generated from the graph rather than authored."
 edition.workspace = true
 # NOT the workspace floor. blazehash-core declares 1.88, and that constraint lands
 # here — where the dependency is actually used — rather than being propagated up
-# into elenchus-core and elenchus-lens, whose low floor is a promise downstream
+# into peira-core and peira-lens, whose low floor is a promise downstream
 # consumers pin against. Fix the constraint at its root; do not let it travel.
 rust-version = "1.88"
 license.workspace = true
@@ -16,8 +16,8 @@ keywords = ["provenance", "citation", "expert-witness", "audit", "chain-of-custo
 categories = ["data-structures"]
 
 [dependencies]
-elenchus-core = { workspace = true }
-elenchus-lens = { workspace = true }
+peira-core = { workspace = true }
+peira-lens = { workspace = true }
 # Ours (ADR-0010): 27 algorithms behind one `hash_bytes`, and never a hand-rolled
 # digest.
 blazehash-core = "0.2"

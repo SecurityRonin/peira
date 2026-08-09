@@ -1,25 +1,25 @@
-# elenchus
+# peira
 
-[![CI](https://github.com/SecurityRonin/elenchus/actions/workflows/ci.yml/badge.svg)](https://github.com/SecurityRonin/elenchus/actions/workflows/ci.yml)
+[![CI](https://github.com/SecurityRonin/peira/actions/workflows/ci.yml/badge.svg)](https://github.com/SecurityRonin/peira/actions/workflows/ci.yml)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 [![Sponsor](https://img.shields.io/badge/sponsor-h4x0r-ea4aaa?logo=githubsponsors)](https://github.com/sponsors/h4x0r)
 
 **A knowledge system that refuses to promote a claim you have not examined — with gates drawn from Socratic elenchus, 金剛經, Nyāya, Madhyamaka and the causal ladder.**
 
 Your notes already hold claims. Nothing in them stops you writing *"this proves
-execution"* over evidence that shows presence. elenchus does — deterministically, with
+execution"* over evidence that shows presence. peira does — deterministically, with
 no model in the loop, naming the tradition that identified the mistake.
 
 ```console
-$ elenchus gates vault/
+$ peira gates vault/
 ✗ gates: 7 finding(s).
 
-  ELEN-FUNCTION-AS-SUBSTANCE [TIYONG]  c-overclaim
+  PEIR-FUNCTION-AS-SUBSTANCE [TIYONG]  c-overclaim
       substance claim "This Amcache entry proves execution of the suspicious binary"
       rests only on function evidence (o1, o2)
       → restate as a claim about what the thing did, or add evidence bearing on what it is
 
-  ELEN-CAUSAL-RUNG-UNREACHED [RUNG]  c-overclaim
+  PEIR-CAUSAL-RUNG-UNREACHED [RUNG]  c-overclaim
       claims the counterfactual rung but rests on observation alone —
       no executed protocol supports it
       → run a controlled protocol and cite the Run, or restate at the association rung
@@ -28,8 +28,8 @@ $ elenchus gates vault/
 ## Install
 
 ```bash
-cargo install elenchus-cli
-elenchus init vault/
+cargo install peira-cli
+peira init vault/
 ```
 
 ## The idea
@@ -48,7 +48,7 @@ as a rule about a claim graph, each becomes machine-checkable:
 | pramāṇa | testimony passed off as observation | grade ceilings by means of knowing |
 | Pearl's ladder | rung-3 claims from rung-1 data | interventional claims need an executed protocol |
 
-Twenty-one lenses are catalogued; eight are enforced today. `elenchus lens` lists them,
+Twenty-one lenses are catalogued; eight are enforced today. `peira lens` lists them,
 each with its sources and a worked example of its gate firing.
 
 ## The invariant
@@ -75,7 +75,7 @@ a human wrote is a sentence no checker can reliably police:
                   image, established only by evidence that observes process creation
 ```
 
-`elenchus packet` refuses to freeze while any gate blocks, and refuses a claim defeated
+`peira packet` refuses to freeze while any gate blocks, and refuses a claim defeated
 in the grounded extension. There is no override flag.
 
 ## Evidence that the gates work

@@ -60,19 +60,19 @@ jobs:
         with:
           toolchain: 1.96.0
       - uses: Swatinem/rust-cache@9bdad043e88c75890e36ad3bbc8d27f0090dd609
-      - run: cargo build --release -p elenchus-cli
+      - run: cargo build --release -p peira-cli
 
       - name: 'Control A — the over-claim must BLOCK'
         run: |
           set +e
-          ./target/release/elenchus gates tests/vaults/overclaim
+          ./target/release/peira gates tests/vaults/overclaim
           code=$?
           set -e
           if [ "$code" -ne 1 ]; then
             echo "::error::control A must exit 1 (violations); got $code"
             exit 1
           fi
-          n=$(./target/release/elenchus gates tests/vaults/overclaim | grep -c 'ELEN-')
+          n=$(./target/release/peira gates tests/vaults/overclaim | grep -c 'PEIR-')
           if [ "$n" -lt 5 ]; then
             echo "::error::control A must be blocked by at least 5 lenses; got $n"
             exit 1
@@ -81,14 +81,14 @@ jobs:
 
       - name: 'Control B — the bounded conclusion must PASS'
         run: |
-          ./target/release/elenchus gates tests/vaults/bounded
-          ./target/release/elenchus lint tests/vaults/bounded
-          ./target/release/elenchus packet tests/vaults/bounded c-bounded > /dev/null
+          ./target/release/peira gates tests/vaults/bounded
+          ./target/release/peira lint tests/vaults/bounded
+          ./target/release/peira packet tests/vaults/bounded c-bounded > /dev/null
 
       - name: 'Control C — an absent vault must be distinguishable from a clean one'
         run: |
           set +e
-          ./target/release/elenchus gates ./definitely-not-a-vault
+          ./target/release/peira gates ./definitely-not-a-vault
           code=$?
           set -e
           if [ "$code" -ne 2 ]; then
@@ -107,7 +107,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8
         with:
           toolchain: "1.85"
-      - run: cargo check -p elenchus-core -p elenchus-lens --all-features
+      - run: cargo check -p peira-core -p peira-lens --all-features
 
   deny:
     runs-on: ubuntu-latest
@@ -145,8 +145,8 @@ jobs:
           # An empty or crate-less LCOV renders as a green check over nothing.
           # Read the artifact, not the summary line.
           test -s lcov.info || { echo "::error::lcov.info is empty"; exit 1; }
-          grep -q 'elenchus' lcov.info || {
-            echo "::error::lcov.info contains no record for elenchus"; exit 1; }
+          grep -q 'peira' lcov.info || {
+            echo "::error::lcov.info contains no record for peira"; exit 1; }
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: lcov

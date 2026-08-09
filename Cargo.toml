@@ -10,21 +10,21 @@ edition = "2021"
 # msrv job ran: indexmap 2.14 (via serde_yaml_ng) requires `edition2024`, which
 # needs Cargo 1.85, so resolution fails before our code is even reached.
 #
-# This floor is therefore INHERITED, not our own. elenchus-core and elenchus-lens
+# This floor is therefore INHERITED, not our own. peira-core and peira-lens
 # very likely compile lower; that is simply unmeasured, because nothing can compile
 # them until the dependency graph resolves. Do not report it as this code's floor.
 # See docs/decisions/0005-dependency-and-msrv-scoping.md.
 rust-version = "1.85"
 license = "Apache-2.0"
 authors = ["Albert Hui"]
-repository = "https://github.com/SecurityRonin/elenchus"
+repository = "https://github.com/SecurityRonin/peira"
 readme = "README.md"
 
 [workspace.dependencies]
-elenchus-core = { path = "core", version = "0.1.0" }
-elenchus-lens = { path = "lens", version = "0.1.0" }
-elenchus-court = { path = "court", version = "0.1.0" }
-elenchus-index = { path = "index", version = "0.1.0" }
+peira-core = { path = "core", version = "0.1.0" }
+peira-lens = { path = "lens", version = "0.1.0" }
+peira-court = { path = "court", version = "0.1.0" }
+peira-index = { path = "index", version = "0.1.0" }
 serde = { version = "1", features = ["derive"] }
 # Maintained fork of the archived serde_yaml (RUSTSEC unmaintained advisory).
 # Chosen over serde-saphyr (1.0.1, young, wide dep graph) and saphyr (0.0.x, and

@@ -3,7 +3,7 @@
 //! # This index is never authoritative
 //!
 //! The markdown is the source of truth. This database is **rebuilt from scratch**
-//! by `elenchus index`, is gitignored, and is dropped and recreated on every build
+//! by `peira index`, is gitignored, and is dropped and recreated on every build
 //! rather than updated incrementally.
 //!
 //! That is a deliberate constraint, not laziness. An incrementally-updated index
@@ -15,8 +15,8 @@
 //! like *which claims lack boundaries*, *which edges rest on testimony*, or *what is
 //! out of the grounded extension and why* are SQL rather than a re-scan.
 
-use elenchus_core::{Graph, NodeId};
-use elenchus_lens::{examine_graph, lints};
+use peira_core::{Graph, NodeId};
+use peira_lens::{examine_graph, lints};
 use rusqlite::{params, Connection};
 use std::path::Path;
 
@@ -124,10 +124,10 @@ fn write_edges(tx: &rusqlite::Transaction<'_>, graph: &Graph) -> rusqlite::Resul
                 edge.from.as_str(),
                 edge.to.as_str(),
                 edge.kind.as_str(),
-                edge.grade().map(elenchus_core::Grade::as_str),
+                edge.grade().map(peira_core::Grade::as_str),
                 edge.grader(),
-                edge.grade_proposed.map(elenchus_core::Grade::as_str),
-                edge.pramana.map(elenchus_core::Pramana::as_str),
+                edge.grade_proposed.map(peira_core::Grade::as_str),
+                edge.pramana.map(peira_core::Pramana::as_str),
             ])?;
         }
     }
@@ -215,7 +215,7 @@ pub fn testimony_edges(conn: &Connection) -> rusqlite::Result<Vec<(NodeId, NodeI
 #[cfg(test)]
 mod tests {
     use super::*;
-    use elenchus_core::load;
+    use peira_core::load;
     use std::path::PathBuf;
 
     fn vault(name: &str) -> Graph {
@@ -231,7 +231,7 @@ mod tests {
     /// cargo runs in parallel produces `database is locked`, which reads as a bug
     /// in the code under test rather than in the harness.
     fn built(vault_name: &str, tag: &str) -> Connection {
-        let path = std::env::temp_dir().join(format!("elenchus-index-{vault_name}-{tag}.sqlite"));
+        let path = std::env::temp_dir().join(format!("peira-index-{vault_name}-{tag}.sqlite"));
         let _ = std::fs::remove_file(&path);
         let graph = vault(vault_name);
         build(&graph, &path).expect("index builds");
@@ -290,7 +290,7 @@ mod tests {
 
     #[test]
     fn rebuilding_over_an_existing_index_replaces_rather_than_accumulates() {
-        let path = std::env::temp_dir().join("elenchus-index-test-rebuild.sqlite");
+        let path = std::env::temp_dir().join("peira-index-test-rebuild.sqlite");
         let _ = std::fs::remove_file(&path);
         let graph = vault("bounded");
 

@@ -1,7 +1,7 @@
 [package]
-name = "elenchus-cli"
+name = "peira-cli"
 version = "0.1.0"
-description = "elenchus — examine a knowledge vault against classical critical-thinking gates, and export court-ready citation packets."
+description = "peira — examine a knowledge vault against classical critical-thinking gates, and export court-ready citation packets."
 edition.workspace = true
 rust-version = "1.88"
 license.workspace = true
@@ -10,17 +10,17 @@ repository.workspace = true
 readme.workspace = true
 keywords = ["knowledge-management", "critical-thinking", "argumentation", "cli", "provenance"]
 categories = ["command-line-utilities"]
-default-run = "elenchus"
+default-run = "peira"
 
 [[bin]]
-name = "elenchus"
+name = "peira"
 path = "src/main.rs"
 
 [dependencies]
-elenchus-core = { workspace = true }
-elenchus-lens = { workspace = true }
-elenchus-court = { workspace = true }
-elenchus-index = { workspace = true }
+peira-core = { workspace = true }
+peira-lens = { workspace = true }
+peira-court = { workspace = true }
+peira-index = { workspace = true }
 clap = { version = "4", features = ["derive"] }
 
 [lints]

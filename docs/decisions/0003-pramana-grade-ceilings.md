@@ -29,7 +29,7 @@ carry:
 materially independent convergent lines — a property of the graph, not of one piece of
 evidence.
 
-Separately, `ELEN-LINT-FALSE-INDEPENDENCE` reports two supporters of one claim that are
+Separately, `PEIR-LINT-FALSE-INDEPENDENCE` reports two supporters of one claim that are
 linked by a `duplicates` edge.
 
 ## Consequences
