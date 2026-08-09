@@ -12,3 +12,12 @@ index.sqlite-*
 
 # Coverage output — derived, like the index.
 lcov.info
+
+# libFuzzer crash reproducers. A crash worth keeping becomes a named unit test
+# with the input inline, not an opaque blob nobody can read the significance of.
+fuzz/artifacts/
+
+# `fuzz/corpus/` IS committed: the seeds there are the real vault fixtures, and a
+# fuzz run that starts from nothing spends its budget rediscovering YAML. Local
+# runs will drop coverage-increasing inputs alongside them — commit those only
+# when they are worth the review.

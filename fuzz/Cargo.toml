@@ -1,0 +1,31 @@
+[package]
+name = "peira-fuzz"
+version = "0.0.0"
+publish = false
+edition = "2021"
+
+[package.metadata]
+cargo-fuzz = true
+
+# Its own workspace: the fuzz crate must not inherit the parent's `[workspace.lints]`
+# (a fuzz harness unwraps freely, and production code must not) and must not drag
+# libfuzzer-sys into the published crates' dependency graph.
+[workspace]
+
+[dependencies]
+libfuzzer-sys = "0.4"
+peira-core = { path = "../core" }
+peira-lens = { path = "../lens" }
+peira-court = { path = "../court" }
+
+[[bin]]
+name = "fuzz_parse_node"
+path = "fuzz_targets/fuzz_parse_node.rs"
+test = false
+doc = false
+
+[[bin]]
+name = "fuzz_vault"
+path = "fuzz_targets/fuzz_vault.rs"
+test = false
+doc = false

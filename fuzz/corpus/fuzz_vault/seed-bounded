@@ -1,0 +1,88 @@
+---
+id: "60.01"
+type: term
+title: presence
+as_used: the file existed on this system at some point
+not_essence: >-
+  a catalogue record is not the file, and is not the file having run; the record
+  is a thing Windows did, not a thing the program did
+stipulated: >-
+  the operating system recorded this path and file identity in Amcache under the
+  named build
+---
+---
+id: "60.02"
+type: term
+title: execution
+as_used: a user or service ran the program
+not_essence: >-
+  Amcache does not observe process creation; nothing in the record distinguishes
+  a launch from an install, an inventory pass or a scan
+stipulated: >-
+  a process was created from this image, established only by evidence that
+  observes process creation
+---
+---
+id: c-bounded
+type: claim
+title: >-
+  The Amcache record establishes catalogued presence, and may contribute to an
+  execution inference only alongside independent, version-appropriate evidence
+warrant: >-
+  A catalogue entry evidences that Windows recorded the path and file identity.
+  It licenses a statement about recording, and nothing beyond it.
+aspect: function
+quantifier: singular
+causal_rung: association
+uses_term: ["60.01", "60.02"]
+boundaries:
+  - Windows 10 1809 and later, where InventoryApplicationFile is populated
+  - Amcache.hve as acquired; not a reconstructed or merged hive
+  - Says nothing about builds where the population mechanism differs
+---
+
+Catalogued presence, stated at the association rung, with the alternative
+mechanisms left standing rather than argued away.
+---
+id: h-install
+type: hypothesis
+title: Installation or inventory produced the record without user execution
+warrant: Windows populates the same table during install and inventory passes.
+quantifier: singular
+aspect: function
+causal_rung: association
+boundaries:
+  - Windows 10 1809 and later
+limits: [c-bounded]
+---
+
+A competing mechanism for the same observation. Against the bounded claim this
+is a LIMIT rather than an attack: the claim already declines to say the program
+ran, so the alternative bounds its scope instead of contradicting it.
+
+That change of edge is the whole lesson. Restating a claim within what the
+evidence carries turns an attack into a limit.
+---
+id: o1
+type: observation
+title: Acquired Amcache.hve has SHA-256 digest H
+aspect: function
+pramana: perception
+sealed: "sealed://case-001/amcache.hve"
+supports: ["c-bounded grade=G2 by=albert via=perception"]
+---
+
+The hive was acquired and hashed at acquisition time. The digest is recorded in
+the sealed tier; this node holds the pointer, never the bytes.
+---
+id: o2
+type: observation
+title: Parser P at commit V emitted path X and SHA-1 Y
+aspect: function
+pramana: testimony
+supports: ["c-bounded grade=G1 by=albert via=testimony"]
+---
+
+A parser reported an InventoryApplicationFile record for the path. This is the
+tool's report of what it read, which is testimony about the hive, not perception
+of the event that wrote it.

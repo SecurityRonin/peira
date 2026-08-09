@@ -1,0 +1,72 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended"
+  ],
+  "pinDigests": true,
+  "packageRules": [
+    {
+      "description": "Pin GitHub Actions to digest SHAs and automerge non-major bumps",
+      "matchManagers": [
+        "github-actions"
+      ],
+      "pinDigests": true,
+      "automerge": true,
+      "automergeType": "pr",
+      "automergeStrategy": "squash",
+      "matchUpdateTypes": [
+        "minor",
+        "patch",
+        "digest"
+      ]
+    },
+    {
+      "description": "Widen Rust requirement ranges (not just the lockfile) so caret pins do not silently go stale behind a published minor",
+      "matchManagers": [
+        "cargo"
+      ],
+      "rangeStrategy": "bump"
+    },
+    {
+      "description": "Automerge Rust dependency patch bumps",
+      "matchManagers": [
+        "cargo"
+      ],
+      "matchUpdateTypes": [
+        "patch"
+      ],
+      "automerge": true,
+      "automergeType": "pr",
+      "automergeStrategy": "squash"
+    },
+    {
+      "description": "Require review for Rust minor/major bumps. peira-core and peira-lens are published libraries whose 1.85 floor downstream consumers pin against, and a minor bump is the usual way an inherited edition2024 requirement raises it without anyone deciding to.",
+      "matchManagers": [
+        "cargo"
+      ],
+      "matchUpdateTypes": [
+        "minor",
+        "major"
+      ],
+      "automerge": false
+    }
+  ],
+  "lockFileMaintenance": {
+    "enabled": true,
+    "automerge": true,
+    "schedule": [
+      "before 5am on the first day of the month"
+    ]
+  },
+  "minimumReleaseAge": "21 days",
+  "prConcurrentLimit": 3,
+  "prHourlyLimit": 2,
+  "osvVulnerabilityAlerts": true,
+  "vulnerabilityAlerts": {
+    "minimumReleaseAge": null,
+    "labels": [
+      "security"
+    ],
+    "prPriority": 10
+  }
+}

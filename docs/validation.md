@@ -95,10 +95,13 @@ verify (restored)        ✓ exit=0
 ## Reproducing
 
 ```bash
-cargo test --workspace --no-fail-fast          # 91 tests, incl. the acceptance suite
-cargo run -p peira-cli -- gates tests/vaults/overclaim   # exit 1
-cargo run -p peira-cli -- gates tests/vaults/bounded     # exit 0
+cargo test --workspace --no-fail-fast          # 141 tests, incl. the acceptance suite
+cargo build -p peira-cli && tests/controls.sh target/debug/peira   # A, B and C
 ```
+
+The three controls live in `tests/controls.sh` rather than inline in the CI job, so
+the pre-commit hook and CI run the same bytes. Restated in two places they drift,
+and a drifted control still reports green.
 
 `--no-fail-fast` matters whenever test counts are compared across two trees: cargo
 abandons remaining targets after a failure, so the totals would otherwise be counts of
@@ -135,6 +138,52 @@ satisfy a coverage gate.
 The CI job enforces `--fail-under-lines 97`, and **the threshold was verified to
 fail**: at 99 it exits 1, at 97 it exits 0. A coverage job with no threshold
 proves only that the tool ran.
+
+## The supply-chain and robustness gates, each proven able to fail
+
+A gate that has never gone red is not known to work. Every gate added for publication
+was mutated until it failed, then restored and re-run — and each mutation was asserted
+present in the file before the run, because a mutation that silently fails to apply
+reports green while testing nothing.
+
+| Gate | Mutation | Observed |
+|---|---|---|
+| `cargo vet` | removed the `serde_yaml_ng` exemption | exit 255, *"1 unvetted dependencies"* → restored, exit 0 |
+| `tests/controls.sh` | `examine_graph` returns no violations | *"control A must exit 1; got 0"*, exit 1 → restored, exit 0 |
+| `fuzz_parse_node` | `reject_derived_fields` neutered | panic at the assertion in ~62k runs (≈9 s) → restored, 1.06 M runs clean |
+| gitleaks (`dir`) | planted a PAT in the working tree | exit 1 → clean tree, exit 0 |
+| gitleaks (`git`) | planted a PAT in a commit | exit 1 → clean history, exit 0 |
+| gitleaks (`stdin`) | planted a PAT in a commit *message* | exit 1, where `git` mode returns clean |
+
+Two things that surfaced only because the controls were run:
+
+**AWS's documented example key is allowlisted.** The first probe used
+`AKIAIOSFODNN7EXAMPLE` and gitleaks returned exit 0 — reading as *"the scanner is
+broken"* when the scanner was right. Probe a detector with a value it is meant to
+catch, not with the one every vendor prints in its own documentation.
+
+**`gitleaks git` and `gitleaks dir` are structurally blind to commit messages.** With
+the secret removed from the file and left only in a message, both return clean and
+only the `stdin` scan over `git log --format=%B` returns 1. A credential pasted into
+a message is exactly the kind that reaches a public repo, so CI runs all three.
+
+### Fuzzing
+
+Two targets, seeded from the real vault fixtures rather than from nothing:
+
+- **`fuzz_parse_node`** — one document. Beyond *does not panic*, it asserts the
+  load-bearing invariant directly: a parse that SUCCEEDS must not have admitted a
+  `status` or `confidence` field. The fuzzer is therefore searching for a way past
+  the refusal, not merely for a crash.
+- **`fuzz_vault`** — the whole pipeline over a directory of documents: edge
+  construction, the gates, the lints, the grounded extension, and a `freeze`/`verify`
+  round trip. It asserts that the grounded extension terminates and agrees with
+  `is_grounded`, and that a packet frozen from an unchanged graph verifies against it
+  — which is what would catch iteration order leaking into a digest.
+
+Clean at 1,059,003 and 291,704 runs respectively. **That is a smoke run, not a
+campaign**: 60 s per target is enough to gate a pull request and is not evidence of
+absence of defects.
 
 ## Known limits
 

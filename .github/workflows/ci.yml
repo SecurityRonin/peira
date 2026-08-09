@@ -61,40 +61,10 @@ jobs:
           toolchain: 1.96.0
       - uses: Swatinem/rust-cache@9bdad043e88c75890e36ad3bbc8d27f0090dd609
       - run: cargo build --release -p peira-cli
-
-      - name: 'Control A — the over-claim must BLOCK'
-        run: |
-          set +e
-          ./target/release/peira gates tests/vaults/overclaim
-          code=$?
-          set -e
-          if [ "$code" -ne 1 ]; then
-            echo "::error::control A must exit 1 (violations); got $code"
-            exit 1
-          fi
-          n=$(./target/release/peira gates tests/vaults/overclaim | grep -c 'PEIR-')
-          if [ "$n" -lt 5 ]; then
-            echo "::error::control A must be blocked by at least 5 lenses; got $n"
-            exit 1
-          fi
-          echo "control A blocked by $n gates, exit $code"
-
-      - name: 'Control B — the bounded conclusion must PASS'
-        run: |
-          ./target/release/peira gates tests/vaults/bounded
-          ./target/release/peira lint tests/vaults/bounded
-          ./target/release/peira packet tests/vaults/bounded c-bounded > /dev/null
-
-      - name: 'Control C — an absent vault must be distinguishable from a clean one'
-        run: |
-          set +e
-          ./target/release/peira gates ./definitely-not-a-vault
-          code=$?
-          set -e
-          if [ "$code" -ne 2 ]; then
-            echo "::error::an absent vault must exit 2, distinct from A's 1; got $code"
-            exit 1
-          fi
+      # The controls live in tests/controls.sh so this job and the pre-commit hook
+      # run the same bytes. Inlined here they would drift from the local copy, and
+      # a drifted control still reports green.
+      - run: ./tests/controls.sh target/release/peira
 
   msrv:
     runs-on: ubuntu-latest
@@ -116,6 +86,88 @@ jobs:
       - uses: EmbarkStudios/cargo-deny-action@3c6349835b2b7b196a839186cb8b78e02f7b5f25
         with:
           command: check advisories bans licenses sources
+
+  # `deny` covers known-bad — advisories, licenses, sources. `vet` covers the
+  # layer it cannot see: code nobody has read. Every dependency version must be
+  # human-source-reviewed or covered by an imported aggregate audit set
+  # (Google / Mozilla / Bytecode-Alliance / Embark).
+  vet:
+    name: cargo vet (supply-chain)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8
+        with:
+          toolchain: 1.96.0
+      - uses: taiki-e/install-action@59012be0884e296ca2da49b530610e72c49039ad
+        with:
+          tool: cargo-vet
+      - run: cargo fetch
+      - run: cargo vet --locked
+
+  secrets:
+    name: Secret Scan (gitleaks)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          # Full history: a secret removed in a later commit is still fetchable by
+          # SHA, so scanning only the tip scans the wrong thing.
+          fetch-depth: 0
+      # gitleaks-action v2+ demands a paid GITLEAKS_LICENSE for org repos; the
+      # upstream binary is unrestricted, so download and run it directly.
+      - name: Install gitleaks
+        run: |
+          set -euo pipefail
+          VERSION=8.30.1
+          curl -sSL "https://github.com/gitleaks/gitleaks/releases/download/v${VERSION}/gitleaks_${VERSION}_linux_x64.tar.gz" \
+            | tar -xz -C /usr/local/bin gitleaks
+          gitleaks version
+
+      # Three scans, because each is blind to what the others see.
+      - name: History
+        run: gitleaks git . --config .gitleaks.toml --redact --no-banner
+      - name: Working tree
+        run: gitleaks dir . --config .gitleaks.toml --redact --no-banner
+      # Neither of the above reads commit MESSAGES — they scan diff and blob
+      # content only. A backticked or pasted credential in a message is therefore
+      # structurally invisible to them, and is exactly the kind that reaches a
+      # public repo. Verified: with the secret removed from the file and left only
+      # in a message, `gitleaks git` returns clean and this returns 1.
+      - name: Commit messages
+        run: git log --format=%B | gitleaks stdin --config .gitleaks.toml --redact --no-banner
+
+  # The vault is untrusted input — a hand-edited markdown tree, and later a corpus
+  # an adversary may shape. `unwrap_used`/`expect_used` are denied in production
+  # code, which removes the obvious panics; fuzzing is what finds the rest.
+  # A short smoke run per target, so this gates PRs rather than replacing a
+  # long-running campaign.
+  fuzz:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8
+        with:
+          toolchain: nightly
+      - uses: taiki-e/install-action@59012be0884e296ca2da49b530610e72c49039ad
+        with:
+          tool: cargo-fuzz
+      - uses: Swatinem/rust-cache@9bdad043e88c75890e36ad3bbc8d27f0090dd609
+        with:
+          workspaces: |
+            .
+            fuzz
+      # `cargo +nightly`, not a bare `cargo`: rust-toolchain.toml pins 1.96.0, and a
+      # CHANNEL ref from the setup action loses to the toml (only an explicit
+      # version ref outranks it). Without the `+nightly` the job fails on
+      # `-Zsanitizer=address` having "learnt about" the pinned stable instead.
+      - run: |
+          set -euo pipefail
+          for t in $(cargo +nightly fuzz list); do
+            echo "::group::$t"
+            cargo +nightly fuzz run "$t" -- -max_total_time=60 -rss_limit_mb=4096
+            echo "::endgroup::"
+          done
 
   coverage:
     runs-on: ubuntu-latest

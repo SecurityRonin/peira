@@ -1,0 +1,48 @@
+---
+id: c-overclaim
+type: claim
+title: This Amcache entry proves execution of the suspicious binary
+aspect: substance
+quantifier: universal
+causal_rung: counterfactual
+---
+
+The record is in the hive, therefore the program ran.
+---
+id: h-install
+type: hypothesis
+title: Installation or inventory produced the record without user execution
+warrant: Windows populates the same table during install and inventory passes.
+quantifier: singular
+aspect: function
+causal_rung: association
+boundaries:
+  - Windows 10 1809 and later
+contradicts: [c-overclaim]
+---
+
+A competing mechanism accounting for the same observation.
+---
+id: o1
+type: observation
+title: Acquired Amcache.hve has SHA-256 digest H
+aspect: function
+pramana: perception
+sealed: "sealed://case-001/amcache.hve"
+supports: ["c-overclaim grade=G2 by=albert via=perception"]
+---
+
+The hive was acquired and hashed at acquisition time. The digest is recorded in
+the sealed tier; this node holds the pointer, never the bytes.
+---
+id: o2
+type: observation
+title: Parser P at commit V emitted path X and SHA-1 Y
+aspect: function
+pramana: testimony
+supports: ["c-overclaim grade=G1 by=albert via=testimony"]
+---
+
+A parser reported an InventoryApplicationFile record for the path. This is the
+tool's report of what it read, which is testimony about the hive, not perception
+of the event that wrote it.

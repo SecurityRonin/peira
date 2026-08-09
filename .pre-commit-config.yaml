@@ -1,0 +1,52 @@
+# Parity with .github/workflows/ci.yml — same commands, same flags. A local hook
+# that runs a weaker check than CI trains you to trust a green that means less
+# than the one that gates the merge.
+#
+# The acceptance controls are not restated here: both this file and the CI job
+# call tests/controls.sh, so there is one copy to drift from.
+#
+# `cargo vet` is deliberately absent — it needs the network to fetch imported
+# audit sets, and a pre-commit hook that fails on a flaky DNS lookup gets disabled
+# within a week. CI owns that one.
+repos:
+  - repo: local
+    hooks:
+      - id: cargo-fmt
+        name: cargo fmt
+        entry: cargo fmt --all -- --check
+        language: system
+        types: [rust]
+        pass_filenames: false
+
+      - id: cargo-clippy
+        name: cargo clippy
+        entry: cargo clippy --workspace --all-targets --all-features -- -D warnings
+        language: system
+        types: [rust]
+        pass_filenames: false
+
+      - id: cargo-test
+        name: cargo test
+        entry: cargo test --workspace --all-features --no-fail-fast
+        language: system
+        types: [rust]
+        pass_filenames: false
+
+      - id: peira-controls
+        name: acceptance controls (A blocks, B passes, C is distinguishable)
+        entry: bash -c 'cargo build -q -p peira-cli && tests/controls.sh target/debug/peira'
+        language: system
+        pass_filenames: false
+        files: (\.rs$|^tests/|^Cargo\.(toml|lock)$)
+
+      - id: cargo-deny
+        name: cargo deny
+        entry: cargo deny check advisories bans licenses sources
+        language: system
+        files: (Cargo\.toml|Cargo\.lock|deny\.toml)
+        pass_filenames: false
+
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.30.1
+    hooks:
+      - id: gitleaks
