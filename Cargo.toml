@@ -6,11 +6,15 @@ members = ["core", "lens", "court", "cli"]
 # independently, as in amcache-forensic.
 [workspace.package]
 edition = "2021"
-# Low, CI-verified floor: elenchus-core and elenchus-lens are published libraries,
-# so the floor is a promise downstreams pin against, not a copy of the dev
-# toolchain. A declared rust-version is a CLAIM until compiled — this one is
-# verified by the msrv CI job, never by assertion.
-rust-version = "1.75"
+# MEASURED, not asserted. 1.75 was declared first and proved false the moment the
+# msrv job ran: indexmap 2.14 (via serde_yaml_ng) requires `edition2024`, which
+# needs Cargo 1.85, so resolution fails before our code is even reached.
+#
+# This floor is therefore INHERITED, not our own. elenchus-core and elenchus-lens
+# very likely compile lower; that is simply unmeasured, because nothing can compile
+# them until the dependency graph resolves. Do not report it as this code's floor.
+# See docs/decisions/0005-dependency-and-msrv-scoping.md.
+rust-version = "1.85"
 license = "Apache-2.0"
 authors = ["Albert Hui"]
 repository = "https://github.com/SecurityRonin/elenchus"

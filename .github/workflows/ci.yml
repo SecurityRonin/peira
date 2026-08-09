@@ -1,0 +1,149 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# Actions are pinned to full commit SHAs, not floating tags: a tag can be moved
+# under you, and a supply-chain gate that trusts a mutable ref is not a gate.
+env:
+  CARGO_TERM_COLOR: always
+  RUSTFLAGS: -D warnings
+
+jobs:
+  fmt:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8
+        with:
+          toolchain: 1.96.0
+          components: rustfmt
+      - run: cargo fmt --all -- --check
+
+  clippy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8
+        with:
+          toolchain: 1.96.0
+          components: clippy
+      - uses: Swatinem/rust-cache@9bdad043e88c75890e36ad3bbc8d27f0090dd609
+      - run: cargo clippy --workspace --all-targets --all-features -- -D warnings
+
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8
+        with:
+          toolchain: 1.96.0
+      - uses: Swatinem/rust-cache@9bdad043e88c75890e36ad3bbc8d27f0090dd609
+      # --no-fail-fast: cargo abandons remaining targets after a failure, so a
+      # total compared across two trees would be a count of different test sets.
+      - run: cargo test --workspace --all-features --no-fail-fast
+
+  # The acceptance test as a BLOCKING gate, asserting on exit codes rather than
+  # on log text. Control A must block and control B must pass: a checker that
+  # blocks everything and one that works are indistinguishable from A alone.
+  acceptance:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8
+        with:
+          toolchain: 1.96.0
+      - uses: Swatinem/rust-cache@9bdad043e88c75890e36ad3bbc8d27f0090dd609
+      - run: cargo build --release -p elenchus-cli
+
+      - name: 'Control A — the over-claim must BLOCK'
+        run: |
+          set +e
+          ./target/release/elenchus gates tests/vaults/overclaim
+          code=$?
+          set -e
+          if [ "$code" -ne 1 ]; then
+            echo "::error::control A must exit 1 (violations); got $code"
+            exit 1
+          fi
+          n=$(./target/release/elenchus gates tests/vaults/overclaim | grep -c 'ELEN-')
+          if [ "$n" -lt 5 ]; then
+            echo "::error::control A must be blocked by at least 5 lenses; got $n"
+            exit 1
+          fi
+          echo "control A blocked by $n gates, exit $code"
+
+      - name: 'Control B — the bounded conclusion must PASS'
+        run: |
+          ./target/release/elenchus gates tests/vaults/bounded
+          ./target/release/elenchus lint tests/vaults/bounded
+          ./target/release/elenchus packet tests/vaults/bounded c-bounded > /dev/null
+
+      - name: 'Control C — an absent vault must be distinguishable from a clean one'
+        run: |
+          set +e
+          ./target/release/elenchus gates ./definitely-not-a-vault
+          code=$?
+          set -e
+          if [ "$code" -ne 2 ]; then
+            echo "::error::an absent vault must exit 2, distinct from A's 1; got $code"
+            exit 1
+          fi
+
+  msrv:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      # The published libraries promise 1.85. This job is what makes that a
+      # measurement rather than a claim -- it already caught a false 1.75.
+      # court/ and cli/ declare 1.88 (scoped there by blazehash-core) and are
+      # excluded deliberately.
+      - uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8
+        with:
+          toolchain: "1.85"
+      - run: cargo check -p elenchus-core -p elenchus-lens --all-features
+
+  deny:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: EmbarkStudios/cargo-deny-action@3c6349835b2b7b196a839186cb8b78e02f7b5f25
+        with:
+          command: check advisories bans licenses sources
+
+  coverage:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8
+        with:
+          toolchain: 1.96.0
+          components: llvm-tools-preview
+      - uses: taiki-e/install-action@59012be0884e296ca2da49b530610e72c49039ad
+        with:
+          tool: cargo-llvm-cov
+      - uses: Swatinem/rust-cache@9bdad043e88c75890e36ad3bbc8d27f0090dd609
+      # --workspace, never --lib: --lib builds only the lib's own unit tests and
+      # so cannot see integration-test coverage. --workspace selects packages,
+      # not targets, and does not compensate for that.
+      - run: |
+          cargo llvm-cov --workspace --all-features --no-fail-fast \
+            --ignore-filename-regex '(^|/)src/(main\.rs|bin/)' \
+            --lcov --output-path lcov.info
+      - name: Coverage report is non-empty
+        run: |
+          # An empty or crate-less LCOV renders as a green check over nothing.
+          # Read the artifact, not the summary line.
+          test -s lcov.info || { echo "::error::lcov.info is empty"; exit 1; }
+          grep -q 'elenchus' lcov.info || {
+            echo "::error::lcov.info contains no record for elenchus"; exit 1; }
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: lcov
+          path: lcov.info
