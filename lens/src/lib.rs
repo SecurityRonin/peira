@@ -20,6 +20,7 @@
 #![cfg_attr(test, allow(clippy::unwrap_used, clippy::expect_used))]
 
 pub mod gates;
+pub mod lints;
 
 use elenchus_core::{Graph, Node, NodeId, NodeKind};
 use std::fmt;
