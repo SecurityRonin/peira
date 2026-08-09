@@ -776,6 +776,84 @@ falsifiable, not merely plausible",
         assert!(examine_graph(&peira_core::Graph::new()).is_empty());
     }
 
+    /// A claim must say what would make it wrong.
+    ///
+    /// Written against the public verdict rather than against a gate function, so it
+    /// compiles before the gate exists and fails because the examination does not
+    /// happen — not because a symbol is missing.
+    ///
+    /// The three cases are one contract: the demand is for a recorded defeater, and
+    /// a defeater already recorded AS A NODE satisfies it. Requiring a duplicate
+    /// string as well would be bookkeeping, not examination.
+    #[test]
+    fn a_claim_with_no_recorded_falsifier_is_blocked() {
+        use peira_core::{parse_node, Edge, EdgeKind, Graph, NodeId};
+
+        let falsifier_findings = |g: &Graph| {
+            examine_graph(g)
+                .into_iter()
+                .filter(|v| v.gate == "PEIR-FALSIFIER-MISSING")
+                .count()
+        };
+
+        // Everything else the enforced gates ask for is present, so the only thing
+        // under test is the falsifier.
+        let complete = "warrant: A catalogue entry evidences that the path was recorded.\n\
+quantifier: singular\naspect: function\ncausal_rung: association\n\
+boundaries:\n  - Windows 10 1809 and later\n";
+
+        let mut bare = Graph::new();
+        bare.insert_node(
+            parse_node(&format!(
+                "---\nid: c1\ntype: claim\ntitle: The hive catalogued the file\n{complete}---\n"
+            ))
+            .expect("fixture parses"),
+        );
+        assert_eq!(
+            falsifier_findings(&bare),
+            1,
+            "a claim stating no condition that would defeat it must be blocked"
+        );
+
+        let mut stated = Graph::new();
+        stated.insert_node(
+            parse_node(&format!(
+                "---\nid: c1\ntype: claim\ntitle: The hive catalogued the file\n{complete}\
+falsifier:\n  - the entry predates the file's creation timestamp\n---\n"
+            ))
+            .expect("fixture parses"),
+        );
+        assert_eq!(
+            falsifier_findings(&stated),
+            0,
+            "a stated falsifier satisfies the gate"
+        );
+
+        let mut attacked = Graph::new();
+        attacked.insert_node(
+            parse_node(&format!(
+                "---\nid: c1\ntype: claim\ntitle: The hive catalogued the file\n{complete}---\n"
+            ))
+            .expect("fixture parses"),
+        );
+        attacked.insert_node(
+            parse_node(
+                "---\nid: c2\ntype: claim\ntitle: The entry predates the file\naspect: function\n---\n",
+            )
+            .expect("fixture parses"),
+        );
+        attacked.insert_edge(Edge::new(
+            NodeId::new("c2"),
+            NodeId::new("c1"),
+            EdgeKind::Contradicts,
+        ));
+        assert_eq!(
+            falsifier_findings(&attacked),
+            0,
+            "a defeater recorded as a node satisfies the gate without a duplicate field"
+        );
+    }
+
     #[test]
     fn enforced_is_a_strict_subset_of_the_catalogue() {
         let n = enforced().count();
