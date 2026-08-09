@@ -1,0 +1,11 @@
+# Unanchored: cargo puts a `target/` under every package root, not only the repo
+# root — fuzz/ gets its own.
+target/
+.DS_Store
+
+# The derived index is REBUILT from committed markdown by `elenchus index` and is
+# never authoritative. Committing it would create a second source of truth and
+# would let a CI gate pass on bytes nobody reviewed.
+*.elenchus-index
+index.sqlite
+index.sqlite-*

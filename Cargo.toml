@@ -1,0 +1,46 @@
+[workspace]
+resolver = "2"
+members = ["core", "lens"]
+
+# Shared package fields (DRY). `version` is NOT hoisted — members version
+# independently, as in amcache-forensic.
+[workspace.package]
+edition = "2021"
+# Low, CI-verified floor: elenchus-core and elenchus-lens are published libraries,
+# so the floor is a promise downstreams pin against, not a copy of the dev
+# toolchain. A declared rust-version is a CLAIM until compiled — this one is
+# verified by the msrv CI job, never by assertion.
+rust-version = "1.75"
+license = "Apache-2.0"
+authors = ["Albert Hui"]
+repository = "https://github.com/SecurityRonin/elenchus"
+readme = "README.md"
+
+[workspace.dependencies]
+elenchus-core = { path = "core", version = "0.1.0" }
+serde = { version = "1", features = ["derive"] }
+# Maintained fork of the archived serde_yaml (RUSTSEC unmaintained advisory).
+# Chosen over serde-saphyr (1.0.1, young, wide dep graph) and saphyr (0.0.x, and
+# its 1.85 floor would drag this workspace's MSRV promise up by ten releases).
+serde_yaml_ng = "0.10"
+
+[workspace.lints.rust]
+unsafe_code = "forbid"
+
+[workspace.lints.clippy]
+all                      = { level = "warn", priority = -1 }
+pedantic                 = { level = "warn", priority = -1 }
+correctness              = { level = "deny", priority = -1 }
+suspicious               = { level = "deny", priority = -1 }
+# The vault is untrusted input: a hand-edited markdown tree, and later a corpus
+# an adversary may shape. Production code never panics on it.
+unwrap_used              = { level = "deny", priority = 0 }
+expect_used              = { level = "deny", priority = 0 }
+module_name_repetitions  = { level = "allow", priority = 1 }
+must_use_candidate       = { level = "allow", priority = 1 }
+missing_errors_doc       = { level = "allow", priority = 1 }
+missing_panics_doc       = { level = "allow", priority = 1 }
+cast_possible_truncation = { level = "allow", priority = 1 }
+cast_possible_wrap       = { level = "allow", priority = 1 }
+cast_sign_loss           = { level = "allow", priority = 1 }
+cast_precision_loss      = { level = "allow", priority = 1 }

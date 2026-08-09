@@ -1,0 +1,9 @@
+# Byte-exact fixtures: git must never translate line endings in them.
+#
+# "It contains NUL bytes so git treats it as binary" is FALSE in general — git
+# scans only the first 8000 bytes for a NUL, and `core.autocrlf` defaults to TRUE
+# on GitHub's windows-latest runners. A vault fixture is plain text, so without
+# this it WILL have its LF bytes rewritten to CRLF on a Windows checkout, and any
+# test asserting on a content hash fails there and nowhere else.
+tests/data/** -text
+fuzz/corpus/** -text

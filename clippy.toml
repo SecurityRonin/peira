@@ -1,0 +1,14 @@
+# Tests legitimately unwrap to fail loudly; production keeps unwrap_used = deny
+# (workspace Cargo.toml). Upstream-recommended exception, rather than scattering
+# #[allow] across every test module.
+allow-unwrap-in-tests = true
+allow-expect-in-tests = true
+
+# Terms that look like code identifiers to doc_markdown but are domain vocabulary:
+# classical logic traditions, the OGS tiers, and the fleet's own names.
+doc-valid-idents = [
+    "Amcache", "OGS", "DFIR", "SecurityRonin", "Johnny.Decimal",
+    "Madhyamaka", "Nyaya", "Toulmin", "Dung", "catuskoti", "pramana",
+    "hetvabhasa", "pancavayava", "Aufhebung", "elenchus", "Zettelkasten",
+    "MoC", "MoCs", "WORM", "RFC",
+]

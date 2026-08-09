@@ -1,0 +1,21 @@
+[package]
+name = "elenchus-lens"
+version = "0.1.0"
+description = "The elenchus lens catalogue — classical critical-thinking examinations (Socratic, Toulmin, catuskoti, 體用, 白馬非馬, Ship of Theseus) as typed, cited, machine-checkable gates."
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+readme.workspace = true
+keywords = ["critical-thinking", "argumentation", "epistemics", "dialectic", "logic"]
+categories = ["data-structures"]
+
+# Deliberately ZERO runtime dependencies, mirroring forensicnomicon's knowledge
+# leaf: the catalogue compiles to `static`/`const` memory. No I/O, no database,
+# no runtime parse step — so a malformed catalogue is a compile error, matches are
+# exhaustive at compile time, and the catalogue is auditable as source.
+[dependencies]
+
+[lints]
+workspace = true

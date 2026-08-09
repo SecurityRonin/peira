@@ -1,0 +1,19 @@
+[package]
+name = "elenchus-core"
+version = "0.1.0"
+description = "Typed node/edge model, vault parser and argumentation graph for elenchus — a knowledge system whose promotion gates are classical critical-thinking moves."
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+readme.workspace = true
+keywords = ["knowledge-management", "argumentation", "epistemics", "claim-graph", "provenance"]
+categories = ["data-structures", "parser-implementations"]
+
+[dependencies]
+serde = { workspace = true }
+serde_yaml_ng = { workspace = true }
+
+[lints]
+workspace = true
