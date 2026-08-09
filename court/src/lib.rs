@@ -132,6 +132,32 @@ fn bullet_list(nodes: &[&Node], empty: &str) -> String {
     })
 }
 
+/// What would defeat the claim, from BOTH things the falsifier gate accepts.
+///
+/// Stated `falsifier:` entries, and defeaters recorded as attacking nodes. A node
+/// satisfying the gate has no string of its own, so it is named here rather than
+/// leaving a heading over an empty list — which would read as *"nothing would"*, the
+/// opposite of what the graph says.
+fn defeat_block(graph: &Graph, claim: &Node) -> String {
+    let mut out = String::new();
+    for f in claim.field_list("falsifier") {
+        let _ = writeln!(out, "  - {f}");
+    }
+    for e in graph.edges_to(&claim.id).filter(|e| e.kind.is_attack()) {
+        if let Some(n) = graph.node(&e.from) {
+            let _ = writeln!(out, "  - [{}] {} — on record as an attack", n.id, n.title);
+        }
+    }
+    if out.is_empty() {
+        // cov:unreachable: PEIR-FALSIFIER-MISSING blocks any claim with neither a
+        // `falsifier:` field nor an incoming attack, and freeze refuses while any
+        // gate blocks. Kept so that decoupling the two degrades into a visible
+        // "(none recorded)" instead of a heading over silence.
+        out.push_str("  (none recorded)\n");
+    }
+    out
+}
+
 /// Every violation bearing on one claim.
 fn violations_for(graph: &Graph, id: &NodeId) -> Vec<Violation> {
     examine_graph(graph)
@@ -173,6 +199,8 @@ pub fn freeze(graph: &Graph, id: &NodeId) -> Result<Packet, PacketError> {
     let contradicts = related(graph, claim, EdgeKind::Contradicts);
     let limits = related(graph, claim, EdgeKind::Limits);
 
+    let defeat_block = defeat_block(graph, claim);
+
     let boundaries = claim.field_list("boundaries");
     let boundary_block = if boundaries.is_empty() {
         "  (none declared)\n".to_owned()
@@ -212,6 +240,10 @@ pub fn freeze(graph: &Graph, id: &NodeId) -> Result<Packet, PacketError> {
          ## Boundary conditions\n\
          \n\
          {boundary_block}\
+         \n\
+         ## What would defeat this\n\
+         \n\
+         {defeat_block}\
          \n\
          ## Standing\n\
          \n\
@@ -314,10 +346,22 @@ stipulated: the OS recorded this path in Amcache\n---\n",
             p.body
         );
 
-        // Satisfied by an attack edge rather than a field. The attacker must itself
-        // be defeated, or c1 falls out of the grounded extension and freeze refuses
-        // — so a2 attacks a1, leaving a1 OUT and c1 IN.
+        // Satisfied by an attack edge rather than a field. Two consequences of
+        // adding the edge, both of them the gates working rather than obstacles:
+        // the attacker must itself be defeated or c1 leaves the grounded extension
+        // and freeze refuses; and c1 becomes CONTESTED, so 四句 now demands all four
+        // corners of it.
+        // Built from clean_graph so o1 and the term survive — the orphan-claim lint
+        // blocks a claim with no supporting evidence, and `insert_node` replaces by
+        // id, so only c1 itself is swapped: no `falsifier:` field, four corners.
         let mut g = clean_graph();
+        g.insert_node(node(
+            "---\nid: c1\ntype: claim\ntitle: The hive catalogued the file at that path\n\
+warrant: A catalogue entry evidences that the path was recorded.\n\
+quantifier: singular\naspect: function\ncausal_rung: association\n\
+boundaries:\n  - Windows 10 1809 and later\n\
+corners:\n  - it was catalogued\n  - it was not catalogued\n  - catalogued under one mechanism and not another\n  - the question does not arise\n---\n",
+        ));
         g.insert_node(node(
             "---\nid: c2\ntype: claim\ntitle: Catalogued without the path ever being present\n\
 aspect: function\n---\n",
