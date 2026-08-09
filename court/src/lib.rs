@@ -288,6 +288,63 @@ stipulated: the OS recorded this path in Amcache\n---\n",
         g
     }
 
+    /// A packet must disclose what would defeat the claim.
+    ///
+    /// The gates refuse to promote a claim that records nothing which could count
+    /// against it, so every packet that freezes at all has an answer. Demanding it
+    /// and then withholding it from the one artifact made for people outside the
+    /// vault would be the exact asymmetry this project exists to remove.
+    ///
+    /// Both ways of satisfying the gate must render. A falsifier recorded as an
+    /// attacking NODE has no string to print, and an empty section under a heading
+    /// reads as "nothing would" — the opposite of what the graph says.
+    #[test]
+    fn a_packet_discloses_what_would_defeat_the_claim() {
+        let g = clean_graph();
+        let p = freeze(&g, &NodeId::new("c1")).expect("clean claim should freeze");
+        assert!(
+            p.body.contains("## What would defeat this"),
+            "no defeat section:\n{}",
+            p.body
+        );
+        assert!(
+            p.body
+                .contains("an entry shown to be written without the path ever being present"),
+            "the stated falsifier is not disclosed:\n{}",
+            p.body
+        );
+
+        // Satisfied by an attack edge rather than a field. The attacker must itself
+        // be defeated, or c1 falls out of the grounded extension and freeze refuses
+        // — so a2 attacks a1, leaving a1 OUT and c1 IN.
+        let mut g = clean_graph();
+        g.insert_node(node(
+            "---\nid: c2\ntype: claim\ntitle: Catalogued without the path ever being present\n\
+aspect: function\n---\n",
+        ));
+        g.insert_node(node(
+            "---\nid: c3\ntype: claim\ntitle: The write path requires the file on the volume\n\
+aspect: function\n---\n",
+        ));
+        g.insert_edge(Edge::new(
+            NodeId::new("c2"),
+            NodeId::new("c1"),
+            EdgeKind::Attacks,
+        ));
+        g.insert_edge(Edge::new(
+            NodeId::new("c3"),
+            NodeId::new("c2"),
+            EdgeKind::Attacks,
+        ));
+        let p = freeze(&g, &NodeId::new("c1")).expect("c1 survives, its attacker being defeated");
+        assert!(
+            p.body
+                .contains("Catalogued without the path ever being present"),
+            "an attack edge satisfied the gate but the attacker is not named:\n{}",
+            p.body
+        );
+    }
+
     #[test]
     fn freezes_a_clean_claim_and_renders_the_three_moments() {
         let g = clean_graph();
