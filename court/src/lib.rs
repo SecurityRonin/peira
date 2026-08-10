@@ -320,6 +320,29 @@ stipulated: the OS recorded this path in Amcache\n---\n",
         g
     }
 
+    /// A packet must declare the format it was written in.
+    ///
+    /// Inside the hashed body, never beside it: a version a tamperer can edit without
+    /// changing the digest proves nothing. Being inside means it costs a digest change
+    /// to introduce, which is why it lands with one rather than on its own.
+    ///
+    /// It sits below the title because `peira verify` reads the subject from line 1.
+    #[test]
+    fn a_packet_declares_its_format_version() {
+        let g = clean_graph();
+        let p = freeze(&g, &NodeId::new("c1")).expect("clean claim should freeze");
+        assert!(
+            p.body.contains("Packet format: 1"),
+            "no format declaration:\n{}",
+            p.body
+        );
+        assert!(
+            p.body.starts_with("# Citation packet — c1\n"),
+            "the format line must not displace the title `peira verify` parses:\n{}",
+            p.body
+        );
+    }
+
     /// A packet must disclose what would defeat the claim.
     ///
     /// The gates refuse to promote a claim that records nothing which could count
