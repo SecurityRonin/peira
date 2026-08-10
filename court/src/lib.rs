@@ -74,6 +74,43 @@ impl fmt::Display for PacketError {
 
 impl std::error::Error for PacketError {}
 
+/// What `verify` concluded about a stored packet.
+///
+/// A `bool` collapsed four different situations into `false`, and only one of them is
+/// an accusation. "Your evidence was altered" and "a gate was added since this was
+/// frozen" are not the same sentence to say to someone holding a packet.
+#[non_exhaustive]
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum Verification {
+    /// Re-derived byte-identically from the vault as it stands.
+    Verified,
+    /// The vault changed under the packet. This is the one that is an accusation.
+    DigestMismatch {
+        /// What the packet carries.
+        stored: String,
+        /// What the vault produces now.
+        fresh: String,
+    },
+    /// Written by a different renderer, so no comparison against it is meaningful.
+    FormatSuperseded {
+        /// The format the packet declares.
+        stored: u32,
+        /// The format this build renders.
+        current: u32,
+    },
+    /// The claim no longer freezes at all — a gate now blocks it, or it has since been
+    /// defeated. Nothing is wrong with the packet; the claim stopped qualifying.
+    NoLongerFreezable(PacketError),
+}
+
+impl Verification {
+    /// Whether the packet still stands.
+    #[must_use]
+    pub fn is_verified(&self) -> bool {
+        matches!(self, Verification::Verified)
+    }
+}
+
 /// The packet body format this build renders, and the only one it can verify.
 ///
 /// Declared INSIDE the hashed body. A version beside the digest rather than under it
@@ -289,8 +326,21 @@ pub fn freeze(graph: &Graph, id: &NodeId) -> Result<Packet, PacketError> {
 /// Re-derives the packet and compares digests, so a mutated source node shows up as
 /// a mismatch rather than as silence.
 #[must_use]
-pub fn verify(graph: &Graph, packet: &Packet) -> bool {
-    freeze(graph, &packet.subject).is_ok_and(|fresh| fresh.digest == packet.digest)
+pub fn verify(graph: &Graph, packet: &Packet) -> Verification {
+    match freeze(graph, &packet.subject) {
+        Ok(fresh) if fresh.digest == packet.digest => Verification::Verified,
+        Ok(fresh) => Verification::DigestMismatch {
+            stored: packet.digest.clone(),
+            fresh: fresh.digest,
+        },
+        // Placeholder, and the conflation #6 exists to remove: a claim that no longer
+        // freezes is reported as though its evidence had been altered. Preserved
+        // deliberately so the reshape adds no discrimination the test has not demanded.
+        Err(_) => Verification::DigestMismatch {
+            stored: packet.digest.clone(),
+            fresh: String::new(),
+        },
+    }
 }
 
 #[cfg(test)]
@@ -332,6 +382,65 @@ stipulated: the OS recorded this path in Amcache\n---\n",
             EdgeKind::UsesTerm,
         ));
         g
+    }
+
+    /// `verify` must say WHY, not just no.
+    ///
+    /// Four situations, and a `bool` renders them identically. Only one of them —
+    /// `DigestMismatch` — is an accusation; reporting the others in the same breath
+    /// tells whoever holds the packet that their evidence was altered when it was not.
+    #[test]
+    fn verify_says_why_it_failed() {
+        let g = clean_graph();
+        let packet = freeze(&g, &NodeId::new("c1")).expect("clean claim should freeze");
+        assert_eq!(verify(&g, &packet), Verification::Verified);
+
+        // Frozen by an older renderer: its body honestly declares format 0 and its
+        // digest honestly covers that body. Nothing is wrong with it — it is simply
+        // not comparable against what this build renders.
+        let mut stale = packet.clone();
+        stale.body = stale.body.replace("Packet format: 1", "Packet format: 0");
+        stale.digest = hash_bytes(Algorithm::Sha256, stale.body.as_bytes());
+        assert_eq!(
+            verify(&g, &stale),
+            Verification::FormatSuperseded {
+                stored: 0,
+                current: PACKET_FORMAT
+            },
+            "a packet from an older renderer must not be reported as tampering"
+        );
+
+        // The claim stopped qualifying: the falsifier is gone, so a gate blocks and
+        // the packet cannot be re-derived at all. Also not tampering.
+        let mut regressed = clean_graph();
+        regressed.insert_node(node(
+            "---\nid: c1\ntype: claim\ntitle: The hive catalogued the file at that path\n\
+warrant: A catalogue entry evidences that the path was recorded.\n\
+quantifier: singular\naspect: function\ncausal_rung: association\n\
+boundaries:\n  - Windows 10 1809 and later\n---\n",
+        ));
+        assert!(
+            matches!(
+                verify(&regressed, &packet),
+                Verification::NoLongerFreezable(PacketError::Blocked { .. })
+            ),
+            "a claim a gate now blocks must not be reported as tampering, got {:?}",
+            verify(&regressed, &packet)
+        );
+
+        // And the one that IS an accusation still reads as one.
+        let mut tampered = clean_graph();
+        tampered.insert_node(node(
+            "---\nid: o1\ntype: observation\ntitle: SOMETHING ELSE ENTIRELY\n\
+aspect: function\n---\n",
+        ));
+        assert!(
+            matches!(
+                verify(&tampered, &packet),
+                Verification::DigestMismatch { .. }
+            ),
+            "a mutated cited node must still read as a mismatch"
+        );
     }
 
     /// A packet must declare the format it was written in.
@@ -495,14 +604,17 @@ boundaries:\n  - Windows 10 1809 and later\n---\n",
     fn verify_goes_red_when_a_source_node_is_mutated() {
         let g = clean_graph();
         let packet = freeze(&g, &NodeId::new("c1")).unwrap();
-        assert!(verify(&g, &packet), "unmutated vault must verify");
+        assert!(
+            verify(&g, &packet).is_verified(),
+            "unmutated vault must verify"
+        );
 
         let mut tampered = clean_graph();
         tampered.insert_node(node(
             "---\nid: o1\ntype: observation\ntitle: SOMETHING ELSE ENTIRELY\naspect: function\n---\n",
         ));
         assert!(
-            !verify(&tampered, &packet),
+            !verify(&tampered, &packet).is_verified(),
             "a mutated source node must break the packet's digest"
         );
     }

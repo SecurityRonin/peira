@@ -76,7 +76,7 @@ fuzz_target!(|data: &[u8]| {
     for id in ids.iter().take(MAX_PACKETS) {
         if let Ok(packet) = peira_court::freeze(&graph, id) {
             assert!(
-                peira_court::verify(&graph, &packet),
+                peira_court::verify(&graph, &packet).is_verified(),
                 "a packet frozen from an unchanged graph failed to verify against it"
             );
         }

@@ -154,7 +154,7 @@ classic false green"
 fn a_frozen_packet_stops_verifying_when_its_evidence_changes() {
     let graph = vault("bounded");
     let packet = peira_court::freeze(&graph, &NodeId::new("c-bounded")).unwrap();
-    assert!(peira_court::verify(&graph, &packet));
+    assert!(peira_court::verify(&graph, &packet).is_verified());
 
     // Re-load and mutate an observation the packet cites.
     let mut tampered = vault("bounded");
@@ -166,7 +166,7 @@ pramana: perception\nsupports: [\"c-bounded grade=G2 by=albert via=perception\"]
     tampered.insert_node(doctored);
 
     assert!(
-        !peira_court::verify(&tampered, &packet),
+        !peira_court::verify(&tampered, &packet).is_verified(),
         "changing cited evidence under a frozen packet must break it"
     );
 }
