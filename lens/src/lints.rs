@@ -19,6 +19,8 @@ pub const UNREVIEWED_GRADE: &str = "PEIR-LINT-UNREVIEWED-GRADE";
 pub const PRIVILEGE_LEAK: &str = "PEIR-LINT-PRIVILEGE-LEAK";
 /// Restatements counted as though they were independent lines.
 pub const FALSE_INDEPENDENCE: &str = "PEIR-LINT-FALSE-INDEPENDENCE";
+/// A grade settled by the author of the very claim it grades.
+pub const SELF_GRADED: &str = "PEIR-LINT-SELF-GRADED";
 
 /// Overstatements, and what to say instead.
 ///
@@ -171,6 +173,43 @@ it — asserts nothing",
         .collect()
 }
 
+/// Findings signed off by their own author.
+///
+/// The sibling of [`unreviewed_grades`], one field further along: that one catches a
+/// grade nobody stands behind, this one catches a grade the claimant stands behind
+/// alone. Everything it needs is already in the graph — a settled grade is stored
+/// inseparably from its grader, and `author:` is an ordinary frontmatter key.
+///
+/// Attributed to the claim rather than to the evidence: "the author of a finding" is
+/// the author of the finding, and that is what a reader needs named.
+///
+/// A claim declaring no author is left alone. There is nothing to compare, and
+/// guessing — from git blame, from the last editor — would put a name to a sign-off
+/// nobody gave.
+fn self_graded(graph: &Graph) -> Vec<Violation> {
+    graph
+        .edges()
+        .filter_map(|e| {
+            let grader = e.grader()?;
+            let subject = graph.node(&e.to)?;
+            let author = subject.field("author")?;
+            if author != grader {
+                return None;
+            }
+            Some(violation(
+                SELF_GRADED,
+                &e.to,
+                format!(
+                    "the grade on {} → {} was settled by `{grader}`, who authored \"{}\"",
+                    e.from, e.to, subject.title
+                ),
+                "an independent reviewer must settle it — an author signing off their \
+own finding is the one signature that carries no information",
+            ))
+        })
+        .collect()
+}
+
 /// Privileged material that has escaped into the open tier.
 fn privilege_leak(node: &Node) -> Vec<Violation> {
     PRIVILEGED_FIELDS
@@ -233,6 +272,7 @@ is not corroboration",
 pub fn lint(graph: &Graph) -> Vec<Violation> {
     let mut out = dangling_edges(graph);
     out.extend(unreviewed_grades(graph));
+    out.extend(self_graded(graph));
     for node in graph.nodes() {
         out.extend(forbidden_verbs(node));
         out.extend(orphan_claims(graph, node));
