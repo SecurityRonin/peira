@@ -121,7 +121,7 @@ version freely and the packet asserts a format the digest never covered.
 ## Reproducing
 
 ```bash
-cargo test --workspace --no-fail-fast          # 146 tests, incl. the acceptance suite
+cargo test --workspace --no-fail-fast          # 147 tests, incl. the acceptance suite
 cargo build -p peira-cli && tests/controls.sh target/debug/peira   # A, B and C
 ```
 
@@ -181,6 +181,7 @@ reports green while testing nothing.
 | gitleaks (`git`) | planted a PAT in a commit | exit 1 → clean history, exit 0 |
 | gitleaks (`stdin`) | planted a PAT in a commit *message* | exit 1, where `git` mode returns clean |
 | `PEIR-LINT-SELF-GRADED` | a claim whose author settled its own supporting grade | exit 1 → the same vault with an independent reviewer, exit 0 |
+| `PEIR-LINT-WINDOW-EDGE-AS-ONSET` | an onset equal to every supporter's `window_from` | exit 1 → one supporter looking further back, exit 0 |
 
 Two things that surfaced only because the controls were run:
 

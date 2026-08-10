@@ -21,6 +21,8 @@ pub const PRIVILEGE_LEAK: &str = "PEIR-LINT-PRIVILEGE-LEAK";
 pub const FALSE_INDEPENDENCE: &str = "PEIR-LINT-FALSE-INDEPENDENCE";
 /// A grade settled by the author of the very claim it grades.
 pub const SELF_GRADED: &str = "PEIR-LINT-SELF-GRADED";
+/// An onset that is only where somebody started looking.
+pub const WINDOW_EDGE_AS_ONSET: &str = "PEIR-LINT-WINDOW-EDGE-AS-ONSET";
 
 /// Overstatements, and what to say instead.
 ///
@@ -210,6 +212,52 @@ own finding is the one signature that carries no information",
         .collect()
 }
 
+/// An onset read off the edge of the window somebody happened to query.
+///
+/// A windowed query returns a true fact *about the window*. Its edge is not the start
+/// of a behaviour — but the earliest record in a collected range is exactly what gets
+/// written up as "when it began", and the coincidence is invisible once the window is
+/// no longer in front of you.
+///
+/// Distinct from the boundary gate, which asks *where* a claim holds. This asks
+/// whether its ONSET is an artefact of where the looking started.
+///
+/// The comparison is string equality, never a date parse. Ordering dates would make
+/// this lint's correctness depend on a date format the vault has never promised;
+/// comparing opaque strings cannot be wrong about an order it never computes.
+///
+/// Conservative by construction: it fires only when EVERY supporter declaring a window
+/// began at the asserted onset. One supporter that looked elsewhere means the onset
+/// sits inside a window rather than on its edge. It will therefore miss cases — which
+/// is the right way round, because a lint that cries wolf gets switched off, and a
+/// lint that is switched off catches nothing.
+fn window_edge_as_onset(graph: &Graph, node: &Node) -> Vec<Violation> {
+    let Some(onset) = node.field("onset") else {
+        return Vec::new();
+    };
+    let windows: Vec<&str> = graph
+        .edges_to(&node.id)
+        .filter(|e| e.kind == EdgeKind::Supports)
+        .filter_map(|e| graph.node(&e.from))
+        .filter_map(|n| n.field("window_from"))
+        .collect();
+
+    if windows.is_empty() || windows.iter().any(|w| *w != onset) {
+        return Vec::new();
+    }
+
+    vec![violation(
+        WINDOW_EDGE_AS_ONSET,
+        &node.id,
+        format!(
+            "onset `{onset}` is also where every one of the {} supporting window(s) began looking",
+            windows.len()
+        ),
+        "query the full history, then window it — and when an onset coincides with the \
+edge of the search, widen before writing",
+    )]
+}
+
 /// Privileged material that has escaped into the open tier.
 fn privilege_leak(node: &Node) -> Vec<Violation> {
     PRIVILEGED_FIELDS
@@ -278,6 +326,7 @@ pub fn lint(graph: &Graph) -> Vec<Violation> {
         out.extend(orphan_claims(graph, node));
         out.extend(privilege_leak(node));
         out.extend(false_independence(graph, node));
+        out.extend(window_edge_as_onset(graph, node));
     }
     out
 }
