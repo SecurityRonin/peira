@@ -245,7 +245,7 @@ pub fn lint(graph: &Graph) -> Vec<Violation> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use peira_core::{parse_node, Edge, Grade};
+    use peira_core::{parse_node, Edge, EdgeKind, Grade, NodeId};
 
     fn node(src: &str) -> Node {
         parse_node(src).expect("fixture parses")
@@ -264,6 +264,69 @@ mod tests {
 
     fn codes(v: &[Violation]) -> Vec<&str> {
         v.iter().map(|x| x.gate).collect()
+    }
+
+    /// The author of a finding must not issue its own sign-off.
+    ///
+    /// Written against the public `lint` output rather than a private predicate, so it
+    /// compiles before the lint exists and fails because the check does not happen —
+    /// not because a symbol is missing.
+    ///
+    /// Everything this needs is already in the graph: a settled grade is stored
+    /// inseparably from its grader, and `author:` rides in `Fields` like any other
+    /// frontmatter key. Nothing compares the two.
+    #[test]
+    fn a_grade_set_by_the_claims_own_author_is_flagged() {
+        let self_graded = |author: &str, grader: &str| {
+            let g = graph_of(
+                vec![
+                    node(&format!(
+                        "---\nid: c1\ntype: claim\ntitle: t\nauthor: {author}\n---\n"
+                    )),
+                    node("---\nid: o1\ntype: observation\ntitle: o\n---\n"),
+                ],
+                vec![
+                    Edge::new(NodeId::new("o1"), NodeId::new("c1"), EdgeKind::Supports)
+                        .graded_by(Grade::G3, grader),
+                ],
+            );
+            lint(&g)
+                .into_iter()
+                .filter(|v| v.gate == "PEIR-LINT-SELF-GRADED")
+                .count()
+        };
+
+        assert_eq!(
+            self_graded("albert", "albert"),
+            1,
+            "a claim whose own author settled the grade supporting it must be flagged"
+        );
+        assert_eq!(
+            self_graded("albert", "someone-else"),
+            0,
+            "an independent reviewer is the whole point — it must not be flagged"
+        );
+
+        // No `author:` declared: nothing to compare, and inventing an answer would be
+        // worse than staying quiet. The claim is caught by other lints, not this one.
+        let undeclared = graph_of(
+            vec![
+                node("---\nid: c1\ntype: claim\ntitle: t\n---\n"),
+                node("---\nid: o1\ntype: observation\ntitle: o\n---\n"),
+            ],
+            vec![
+                Edge::new(NodeId::new("o1"), NodeId::new("c1"), EdgeKind::Supports)
+                    .graded_by(Grade::G3, "albert"),
+            ],
+        );
+        assert_eq!(
+            lint(&undeclared)
+                .into_iter()
+                .filter(|v| v.gate == "PEIR-LINT-SELF-GRADED")
+                .count(),
+            0,
+            "with no author declared there is nothing to compare"
+        );
     }
 
     #[test]
