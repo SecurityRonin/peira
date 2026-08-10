@@ -1,0 +1,55 @@
+name: Azure OIDC check
+
+# Proves the Azure federated credential for THIS repo works, without cutting a
+# release tag and without building anything.
+#
+# Why it exists: release.yml signs Windows binaries via Azure Trusted Signing, and
+# `azure/login` must complete the OIDC exchange before the signer runs. If the
+# federated credential does not match this repo's subject, that login fails and the
+# whole Windows build fails with it — so the first thing a `v[0-9]*` tag would do is
+# die, after the matrix has already spent its time.
+#
+# GitHub applies the IMMUTABLE-ID subject form to any repo created, renamed or
+# transferred after 2026-07-15:
+#
+#   repo:SecurityRonin@<org-id>/<repo>@<repo-id>:environment:release
+#
+# The fleet's plain-name wildcard credential cannot match that, and the flexible
+# expression validator rejects the `@id` shape, so each such repo needs its own
+# standard subject-based credential.
+#
+# Run it BEFORE creating the credential: it fails, and the log prints the exact
+# subject claim to paste into `az ad app federated-credential create`. Run it after,
+# and it passes. Red then green is the only evidence the credential actually works.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  oidc:
+    runs-on: ubuntu-latest
+    # Must match the credential's subject. The environment is part of the subject,
+    # so a login that works outside it proves nothing about the release build.
+    environment: release
+    steps:
+      - name: Show the subject this repo will present
+        run: |
+          echo "expected subject:"
+          echo "  repo:${GITHUB_REPOSITORY_OWNER}@${{ github.repository_owner_id }}/${GITHUB_REPOSITORY#*/}@${{ github.repository_id }}:environment:release"
+          echo
+          echo "If the login below fails with AADSTS7002131, take the subject from"
+          echo "its error text verbatim rather than from this line."
+
+      - name: Azure login (OIDC)
+        uses: azure/login@93381592711f247e165c389ebb30b596c84cdc48 # v3.0.0
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Confirm the token is usable
+        run: az account show --output table
