@@ -74,6 +74,17 @@ impl fmt::Display for PacketError {
 
 impl std::error::Error for PacketError {}
 
+/// The packet body format this build renders, and the only one it can verify.
+///
+/// Declared INSIDE the hashed body. A version beside the digest rather than under it
+/// is one an adversary rewrites at will, so the packet would assert a format without
+/// that assertion being covered by the hash it is checked against.
+///
+/// Bumping this invalidates every packet frozen before the bump — deliberately, and
+/// visibly, which is the whole point. A body change that did not bump it would be the
+/// silent case this exists to remove.
+pub const PACKET_FORMAT: u32 = 1;
+
 /// A frozen citation packet.
 #[non_exhaustive]
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -214,6 +225,8 @@ pub fn freeze(graph: &Graph, id: &NodeId) -> Result<Packet, PacketError> {
     let body = format!(
         "# Citation packet — {id}\n\
          \n\
+         Packet format: {format}\n\
+         \n\
          ## Safe statement (世俗諦 — the conventional register)\n\
          \n\
          {statement}\
@@ -250,6 +263,7 @@ pub fn freeze(graph: &Graph, id: &NodeId) -> Result<Packet, PacketError> {
          Survives in the grounded extension; every attack on it is itself defeated.\n\
          All enforced gates pass.\n",
         id = claim.id,
+        format = PACKET_FORMAT,
         statement = if safe_statement(graph, claim).is_empty() {
             String::new()
         } else {
