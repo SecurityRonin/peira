@@ -23,5 +23,30 @@ peira-court = { workspace = true }
 peira-index = { workspace = true }
 clap = { version = "4", features = ["derive"] }
 
+# `cargo deb -p peira-cli` on a `v[0-9]*` tag. `name` overrides the crate name so
+# apt installs `peira`, matching the binary and every other channel — a package
+# called `peira-cli` would be the only place the tool answers to a different name.
+[package.metadata.deb]
+name = "peira"
+maintainer = "SecurityRonin <security-ronin@users.noreply.github.com>"
+section = "utils"
+priority = "optional"
+extended-description = """\
+peira is a markdown-native knowledge vault plus a deterministic checker that \
+refuses to promote a claim which has not been examined for specific, named \
+failure modes — each drawn from a critical-thinking tradition that identified \
+it: Socratic elenchus, the Diamond Sutra's three-moment definitional form, \
+Nyaya pramana, Madhyamaka catuskoti, ti-yong, the White Horse paradox, Toulmin \
+warrants, Pearl's causal ladder, and Dung's grounded extension. It exports \
+court-ready citation packets whose safe statement is generated from the claim \
+graph rather than authored, so it cannot overstate."""
+# cargo-deb rewrites `target/release/` to the --target directory automatically.
+assets = [
+    ["target/release/peira", "usr/bin/", "755"],
+    # Relative to THIS manifest's directory, not the workspace root — a bare
+    # "README.md" resolves to cli/README.md, which does not exist.
+    ["../README.md", "usr/share/doc/peira/README.md", "644"],
+]
+
 [lints]
 workspace = true

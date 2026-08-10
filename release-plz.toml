@@ -1,0 +1,75 @@
+# release-plz owns crates.io publishing + changelogs + version bumps for the four
+# workspace LIBRARIES (peira-core, peira-lens, peira-court, peira-index). It runs on
+# pushes to main (see .github/workflows/release-plz.yml):
+#   - `release-pr`  opens a human-reviewed version-bump PR (conventional commits)
+#   - `release`     publishes any crate whose Cargo.toml version is ahead of
+#                   crates.io, in dependency order, and creates its git tag
+#
+# The PR is not code review. It is the one reviewable checkpoint before an
+# IRREVERSIBLE crates.io publish — versions yank but never delete, names are claimed
+# forever — and it writes the changelog on the way past.
+#
+# `peira-cli` is `release = false` here: its version bump, crates.io publish, and
+# binary distribution (MSI/deb/Homebrew/winget) are all owned by release.yml on a
+# manual `v[0-9]*` tag, decoupled from library publishing.
+
+[workspace]
+# Per-package git tags, e.g. `peira-core-v0.1.1`. These deliberately do NOT match
+# release.yml's `v[0-9]*` trigger — a `<name>-v…` tag has a letter after the `v` —
+# so a library release never kicks off a binary build. Cutting a binary release
+# stays a deliberate `v[0-9]*` tag push.
+#
+# This setting is HALF of a required pair. Without it release-plz's default tag for
+# a workspace is the bare `v{{ version }}`, which collides with the binary tags and
+# makes release-plz die on a manually-pushed `vX.Y.Z` ("local package has a greater
+# version … but the git tag exists"). The other half is release.yml's `v[0-9]*`
+# trigger; neither control is sufficient alone.
+git_tag_enable = true
+git_tag_name = "{{ package }}-v{{ version }}"
+# GitHub Releases (with downloadable assets) are owned by release.yml; library
+# crates get a git tag + CHANGELOG entry, not a separate GitHub Release.
+git_release_enable = false
+changelog_update = true
+# Each crate versions independently. peira-core and peira-lens move at very
+# different cadences from peira-index, and a shared version would force empty
+# releases on crates nothing changed in.
+dependencies_update = false
+# Only prepare a release when a real change exists since the last one. release-plz's
+# release detection is file-based, so a changelog-only "chore: release" commit
+# otherwise re-triggers a release (the churn loop). This allowlist makes
+# feat/fix/perf/refactor/doc/revert the only release triggers; chore/ci/test/style/
+# build — including release-plz's own release commits — never prepare a release.
+#
+# NOTE for security fixes: use `fix(security):`, never a bare `security:` type. This
+# regex does not match `security:`, which would silently strand the fix on main,
+# unpublished, while crates.io keeps serving the vulnerable version.
+release_commits = "^(feat|fix|perf|refactor|doc|revert)"
+
+# Skip release-plz's own release commits so merging a release PR does not trigger
+# yet another release. Library releases still fire on feat/fix/perf/refactor/doc;
+# ci/chore/test/build no longer cause churn.
+[changelog]
+commit_parsers = [
+    { message = "^chore\\(release\\):", skip = true },
+    { message = "^chore: release", skip = true },
+    { message = "^feat", group = "added" },
+    { message = "^fix", group = "fixed" },
+    { message = "^perf", group = "performance" },
+    { message = "^refactor", group = "other" },
+    { message = "^doc", group = "documentation" },
+    { message = "^revert", group = "other" },
+    { message = "^style", skip = true },
+    { message = "^test", skip = true },
+    { message = "^ci", skip = true },
+    { message = "^build", skip = true },
+    { message = "^chore", skip = true },
+    { message = "^.*", group = "other" },
+]
+
+# The CLI. Published to crates.io by release.yml's `crate` job on a `v[0-9]*` tag,
+# not here — so release-plz must not bump or tag it. `publish` is deliberately NOT
+# set to false: the crate IS published, just by the other pipeline, and claiming
+# otherwise in Cargo.toml would block `cargo publish -p peira-cli` outright.
+[[package]]
+name = "peira-cli"
+release = false
