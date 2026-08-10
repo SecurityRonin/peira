@@ -7,6 +7,7 @@
 
 use clap::{Parser, Subcommand};
 use peira_core::{Graph, NodeId};
+use peira_court::Verification;
 use peira_lens::{examine_graph, lints, Violation, CATALOG};
 use std::{
     path::{Path, PathBuf},
@@ -336,20 +337,61 @@ fn cmd_verify(vault: &Path, packet: &Path) -> Result<u8, String> {
         .ok_or_else(|| format!("{} does not look like a packet", packet.display()))?
         .trim();
 
-    let fresh = peira_court::freeze(&graph, &NodeId::new(subject)).map_err(|e| e.to_string())?;
-    if fresh.body == stored {
-        println!(
-            "✓ {} still matches the vault (sha256 {})",
-            packet.display(),
-            fresh.digest
-        );
-        Ok(exit::OK)
-    } else {
-        println!(
-            "✗ {} does NOT match the vault — the graph changed under a frozen packet",
-            packet.display()
-        );
-        Ok(exit::VIOLATIONS)
+    // The library owns the comparison, including reading the packet's declared format.
+    // Re-implementing it here is how a checker and the thing it checks drift apart.
+    let doc = peira_court::Packet::from_stored(NodeId::new(subject), stored);
+    match peira_court::verify(&graph, &doc) {
+        Verification::Verified => {
+            println!(
+                "✓ {} still matches the vault (sha256 {})",
+                packet.display(),
+                doc.digest
+            );
+            Ok(exit::OK)
+        }
+        // The only one of these that is an accusation.
+        Verification::DigestMismatch { stored, fresh } => {
+            println!(
+                "✗ {} does NOT match the vault — the graph changed under a frozen packet",
+                packet.display()
+            );
+            println!("  packet sha256 {stored}");
+            println!("  vault  sha256 {fresh}");
+            Ok(exit::VIOLATIONS)
+        }
+        // Exit 2, the same code an absent vault returns, because this is the same
+        // category: not a verdict, an inability to reach one. Reporting it as a
+        // mismatch would accuse the holder of a packet that is perfectly intact.
+        Verification::FormatSuperseded { stored, current } => {
+            println!(
+                "? {} was written in packet format {stored}; this build renders {current}",
+                packet.display()
+            );
+            println!("  no verdict — re-freeze the claim to compare against this format");
+            Ok(exit::ERROR)
+        }
+        // A verdict, but about the CLAIM rather than the packet: something now blocks
+        // it. `e` names which gates, in full.
+        Verification::NoLongerFreezable(e) => {
+            println!(
+                "✗ {} cannot be re-derived — the claim no longer qualifies",
+                packet.display()
+            );
+            println!("  {e}");
+            Ok(exit::VIOLATIONS)
+        }
+        // `Verification` is #[non_exhaustive], so a newer library can hand this build
+        // a verdict it has never heard of. Show the value verbatim and refuse to reach
+        // a conclusion: an unrecognised verdict rendered as a pass is the exact failure
+        // this crate exists to prevent.
+        other => {
+            println!(
+                "? {} — this build does not recognise the verdict {other:?}",
+                packet.display()
+            );
+            println!("  no verdict — upgrade the CLI to match the library");
+            Ok(exit::ERROR)
+        }
     }
 }
 

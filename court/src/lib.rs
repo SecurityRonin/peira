@@ -134,6 +134,25 @@ pub struct Packet {
     pub digest: String,
 }
 
+impl Packet {
+    /// A packet read back from storage, digested from the bytes exactly as stored.
+    ///
+    /// The counterpart to [`freeze`]: `freeze` renders and hashes, this takes bytes
+    /// somebody kept and hashes them the same way, so [`verify`] compares like with
+    /// like. Without it a caller outside this crate cannot present a stored packet at
+    /// all — `Packet` is `#[non_exhaustive]` — and would have to re-implement the
+    /// comparison, which is how a checker and the thing it checks drift apart.
+    #[must_use]
+    pub fn from_stored(subject: NodeId, body: String) -> Self {
+        let digest = hash_bytes(Algorithm::Sha256, body.as_bytes());
+        Self {
+            subject,
+            body,
+            digest,
+        }
+    }
+}
+
 /// Render the three-moment safe statement for a claim.
 ///
 /// Falls back gracefully when a claim declares no key term: the moments still hold,
@@ -327,20 +346,42 @@ pub fn freeze(graph: &Graph, id: &NodeId) -> Result<Packet, PacketError> {
 /// a mismatch rather than as silence.
 #[must_use]
 pub fn verify(graph: &Graph, packet: &Packet) -> Verification {
+    // Format first, and deliberately before touching the graph. It is a property of
+    // the stored artifact alone, and once it differs, a digest comparison is
+    // guaranteed to differ too — reporting THAT would be true and useless, and would
+    // read as an accusation.
+    let stored = declared_format(&packet.body);
+    if stored != PACKET_FORMAT {
+        return Verification::FormatSuperseded {
+            stored,
+            current: PACKET_FORMAT,
+        };
+    }
+
     match freeze(graph, &packet.subject) {
         Ok(fresh) if fresh.digest == packet.digest => Verification::Verified,
         Ok(fresh) => Verification::DigestMismatch {
             stored: packet.digest.clone(),
             fresh: fresh.digest,
         },
-        // Placeholder, and the conflation #6 exists to remove: a claim that no longer
-        // freezes is reported as though its evidence had been altered. Preserved
-        // deliberately so the reshape adds no discrimination the test has not demanded.
-        Err(_) => Verification::DigestMismatch {
-            stored: packet.digest.clone(),
-            fresh: String::new(),
-        },
+        // Not tampering: the claim stopped qualifying. The packet is untouched and the
+        // error says which gate or defeat is responsible, so it is carried rather than
+        // flattened.
+        Err(e) => Verification::NoLongerFreezable(e),
     }
+}
+
+/// The format a stored packet declares.
+///
+/// A body with no declaration was rendered before formats were declared at all, and
+/// reads as 0 — which is never [`PACKET_FORMAT`], so it is reported as superseded
+/// rather than compared. Scans lines rather than assuming a position, because the
+/// stored body is untrusted input: it is whatever is on disk, not what we rendered.
+fn declared_format(body: &str) -> u32 {
+    body.lines()
+        .find_map(|l| l.strip_prefix("Packet format: "))
+        .and_then(|v| v.trim().parse().ok())
+        .unwrap_or(0)
 }
 
 #[cfg(test)]
@@ -398,9 +439,10 @@ stipulated: the OS recorded this path in Amcache\n---\n",
         // Frozen by an older renderer: its body honestly declares format 0 and its
         // digest honestly covers that body. Nothing is wrong with it — it is simply
         // not comparable against what this build renders.
-        let mut stale = packet.clone();
-        stale.body = stale.body.replace("Packet format: 1", "Packet format: 0");
-        stale.digest = hash_bytes(Algorithm::Sha256, stale.body.as_bytes());
+        let stale = Packet::from_stored(
+            packet.subject.clone(),
+            packet.body.replace("Packet format: 1", "Packet format: 0"),
+        );
         assert_eq!(
             verify(&g, &stale),
             Verification::FormatSuperseded {

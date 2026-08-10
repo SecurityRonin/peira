@@ -93,10 +93,35 @@ verify (tampered)        ✗ exit=1
 verify (restored)        ✓ exit=0
 ```
 
+### A failed verification says which failure it was
+
+Only one of these is an accusation. A `bool` rendered all four alike, so *"your
+evidence was altered"* and *"a gate was added since this was frozen"* reached the
+holder of a packet as the same sentence. Each row below was run end to end against a
+copy of the bounded vault, and each mutation was asserted present before the run.
+
+| Situation | Verdict | Exit | Reads as |
+|---|---|---|---|
+| unchanged vault | `Verified` | 0 | still matches |
+| packet declares format 0 | `FormatSuperseded` | **2** | no verdict — re-freeze to compare |
+| cited observation rewritten | `DigestMismatch` | 1 | the graph changed under a frozen packet |
+| `falsifier:` removed from the claim | `NoLongerFreezable` | 1 | the claim no longer qualifies, naming the gate |
+
+**Exit 2 is reused deliberately.** It is already the code for an absent vault — *"could
+not look"* — and a superseded format is the same category: an inability to reach a
+verdict, not a verdict. Rendering it as a mismatch would accuse the holder of a packet
+that is perfectly intact.
+
+The two `1`s are both verdicts about the vault, and their messages differ: one prints
+both digests, the other prints the blocking gate in full.
+
+The format marker lives INSIDE the hashed body. Beside it, a tamperer rewrites the
+version freely and the packet asserts a format the digest never covered.
+
 ## Reproducing
 
 ```bash
-cargo test --workspace --no-fail-fast          # 142 tests, incl. the acceptance suite
+cargo test --workspace --no-fail-fast          # 145 tests, incl. the acceptance suite
 cargo build -p peira-cli && tests/controls.sh target/debug/peira   # A, B and C
 ```
 
