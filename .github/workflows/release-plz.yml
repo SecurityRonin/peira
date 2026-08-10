@@ -33,6 +33,16 @@ jobs:
   release-plz-release:
     name: release-plz release
     runs-on: ubuntu-latest
+    # Publishing is opt-in, and stays opt-in. release-plz publishes any crate whose
+    # version is not on crates.io — so on a repo that has never published, the FIRST
+    # run publishes immediately, with no prior version to compute a bump from and
+    # therefore no release PR to review. That inverts the reason this pipeline
+    # exists: the PR is the one reviewable checkpoint before an irreversible publish.
+    #
+    # The PR job below still runs, so you can always see what WOULD be published.
+    # To arm publishing:
+    #   gh variable set RELEASE_PLZ_PUBLISH --body true -R SecurityRonin/peira
+    if: vars.RELEASE_PLZ_PUBLISH == 'true'
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
         with:

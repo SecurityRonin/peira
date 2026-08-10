@@ -23,6 +23,26 @@ delete and names are claimed forever.
   `release_commits` does not match `security:`, so the fix would sit on `main`
   unpublished while crates.io keeps serving the vulnerable version.
 
+### Publishing is armed, not automatic
+
+`release-plz-release` is gated on a repository variable:
+
+```yaml
+if: vars.RELEASE_PLZ_PUBLISH == 'true'
+```
+
+release-plz publishes any crate whose version is not on crates.io, so on a repo that
+has never published, the first run would publish immediately — no prior version to
+bump from, therefore no PR to review, therefore none of the checkpoint this pipeline
+exists to provide. The PR job runs regardless, so what *would* be published is always
+visible.
+
+Arm it once, deliberately:
+
+```bash
+gh variable set RELEASE_PLZ_PUBLISH --body true -R SecurityRonin/peira
+```
+
 ## The CLI — a signed tag
 
 ```bash
