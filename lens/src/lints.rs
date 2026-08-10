@@ -306,6 +306,64 @@ mod tests {
         v.iter().map(|x| x.gate).collect()
     }
 
+    /// A window's edge is not the start of a behaviour.
+    ///
+    /// The check is string equality between the claim's `onset:` and its supporters'
+    /// `window_from:` — no date parsing, so no date-format assumption and no way for
+    /// the lint to be wrong about ordering. Deliberately conservative: if any
+    /// supporter looked at a different window it stays quiet, because the onset then
+    /// sits inside a window rather than on its edge.
+    #[test]
+    fn an_onset_sitting_on_the_only_window_edge_is_flagged() {
+        let findings = |claim: &str, windows: &[&str]| {
+            let mut nodes = vec![node(&format!(
+                "---\nid: c1\ntype: claim\ntitle: t\n{claim}---\n"
+            ))];
+            let mut edges = Vec::new();
+            for (i, w) in windows.iter().enumerate() {
+                nodes.push(node(&format!(
+                    "---\nid: o{i}\ntype: observation\ntitle: o\n{w}---\n"
+                )));
+                edges.push(Edge::new(
+                    NodeId::new(format!("o{i}")),
+                    NodeId::new("c1"),
+                    EdgeKind::Supports,
+                ));
+            }
+            lint(&graph_of(nodes, edges))
+                .into_iter()
+                .filter(|v| v.gate == "PEIR-LINT-WINDOW-EDGE-AS-ONSET")
+                .count()
+        };
+
+        assert_eq!(
+            findings(
+                "onset: 2026-01-01\n",
+                &["window_from: 2026-01-01\n", "window_from: 2026-01-01\n"]
+            ),
+            1,
+            "every supporter began looking exactly when the behaviour supposedly began"
+        );
+        assert_eq!(
+            findings(
+                "onset: 2026-01-01\n",
+                &["window_from: 2026-01-01\n", "window_from: 2025-06-01\n"]
+            ),
+            0,
+            "a supporter looked at a different window, so the onset is not the edge"
+        );
+        assert_eq!(
+            findings("", &["window_from: 2026-01-01\n"]),
+            0,
+            "no onset declared, nothing to compare"
+        );
+        assert_eq!(
+            findings("onset: 2026-01-01\n", &["title_only: x\n"]),
+            0,
+            "no supporter declares a window, nothing to compare"
+        );
+    }
+
     /// The author of a finding must not issue its own sign-off.
     ///
     /// Written against the public `lint` output rather than a private predicate, so it
