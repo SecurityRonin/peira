@@ -121,7 +121,7 @@ version freely and the packet asserts a format the digest never covered.
 ## Reproducing
 
 ```bash
-cargo test --workspace --no-fail-fast          # 147 tests, incl. the acceptance suite
+cargo test --workspace --no-fail-fast          # 149 tests, incl. the acceptance suite
 cargo build -p peira-cli && tests/controls.sh target/debug/peira   # A, B and C
 ```
 

@@ -88,6 +88,7 @@ const EDGE_KEYS: &[EdgeKind] = &[
     EdgeKind::JudgedBy,
     EdgeKind::UsesTerm,
     EdgeKind::Examines,
+    EdgeKind::MeasuredBy,
 ];
 
 /// Parse `id grade=G2 by=albert via=perception` into an edge.
