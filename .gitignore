@@ -13,6 +13,9 @@ index.sqlite-*
 # Coverage output — derived, like the index.
 lcov.info
 
+# serena's per-project index and config — a tool's local state, not the project's.
+.serena/
+
 # libFuzzer crash reproducers. A crash worth keeping becomes a named unit test
 # with the input inline, not an opaque blob nobody can read the significance of.
 fuzz/artifacts/
