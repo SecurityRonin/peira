@@ -6,6 +6,7 @@
 
 use crate::Violation;
 use peira_core::{EdgeKind, Graph, Node, NodeId, NodeKind};
+use std::collections::BTreeSet;
 
 /// Prose asserting more than evidence can carry.
 pub const FORBIDDEN_VERB: &str = "PEIR-LINT-FORBIDDEN-VERB";
@@ -23,6 +24,8 @@ pub const FALSE_INDEPENDENCE: &str = "PEIR-LINT-FALSE-INDEPENDENCE";
 pub const SELF_GRADED: &str = "PEIR-LINT-SELF-GRADED";
 /// An onset that is only where somebody started looking.
 pub const WINDOW_EDGE_AS_ONSET: &str = "PEIR-LINT-WINDOW-EDGE-AS-ONSET";
+/// A claim whose support never reaches anything that touched the world.
+pub const UNGROUNDED_CHAIN: &str = "PEIR-LINT-UNGROUNDED-CHAIN";
 
 /// Overstatements, and what to say instead.
 ///
@@ -152,6 +155,69 @@ fn orphan_claims(graph: &Graph, node: &Node) -> Vec<Violation> {
         format!("\"{}\" has no supporting evidence", node.title),
         "attach an observation, a run, or another claim — or record it as a hypothesis \
 until something supports it",
+    )]
+}
+
+/// Claims resting on claims, all the way down.
+///
+/// [`orphan_claims`] checks depth 1 and accepts another claim as support. This walks
+/// the support subtree and asks whether any path reaches something that touched the
+/// world — an `Observation` or a `Run`. A claim that never does is standing on
+/// narrative: its credibility is inherited from the story around it rather than from
+/// anything observed.
+///
+/// `Term`, `Criterion` and `Protocol` do not ground anything. A stipulated meaning, a
+/// declared standard and an unexecuted procedure are all reference material; only a
+/// `Run` of that procedure, or an `Observation`, is contact with the world.
+///
+/// A claim with NO support is left to [`orphan_claims`] — reporting both would say the
+/// same thing twice in different words.
+///
+/// The visited set is what makes a cycle terminate, and a cycle is itself the finding:
+/// claims that support each other and nothing else are grounded in nothing.
+fn ungrounded_chains(graph: &Graph, node: &Node) -> Vec<Violation> {
+    if node.kind != NodeKind::Claim {
+        return Vec::new();
+    }
+
+    let supporters = |id: &NodeId| -> Vec<NodeId> {
+        graph
+            .edges_to(id)
+            .filter(|e| e.kind == EdgeKind::Supports)
+            .map(|e| e.from.clone())
+            .collect()
+    };
+
+    let direct = supporters(&node.id);
+    if direct.is_empty() {
+        return Vec::new();
+    }
+
+    let mut seen: BTreeSet<NodeId> = BTreeSet::new();
+    let mut stack = direct;
+    let mut depth = 0usize;
+    while let Some(id) = stack.pop() {
+        if !seen.insert(id.clone()) {
+            continue;
+        }
+        depth += 1;
+        if let Some(n) = graph.node(&id) {
+            if matches!(n.kind, NodeKind::Observation | NodeKind::Run) {
+                return Vec::new();
+            }
+        }
+        stack.extend(supporters(&id));
+    }
+
+    vec![violation(
+        UNGROUNDED_CHAIN,
+        &node.id,
+        format!(
+            "\"{}\" is supported through {depth} node(s), none of which is an observation or a run",
+            node.title
+        ),
+        "attach evidence that touched the world — an observation, or a run of a \
+protocol; inference resting on inference is a claim standing on its own narrative",
     )]
 }
 
@@ -327,6 +393,7 @@ pub fn lint(graph: &Graph) -> Vec<Violation> {
         out.extend(privilege_leak(node));
         out.extend(false_independence(graph, node));
         out.extend(window_edge_as_onset(graph, node));
+        out.extend(ungrounded_chains(graph, node));
     }
     out
 }
