@@ -60,6 +60,8 @@ pub enum EdgeKind {
     UsesTerm,
     /// An examination's subject.
     Examines,
+    /// The source observation came off the target instrument.
+    MeasuredBy,
 }
 
 impl EdgeKind {
@@ -86,6 +88,7 @@ impl EdgeKind {
             EdgeKind::JudgedBy => "judged_by",
             EdgeKind::UsesTerm => "uses_term",
             EdgeKind::Examines => "examines",
+            EdgeKind::MeasuredBy => "measured_by",
         }
     }
 
@@ -112,6 +115,7 @@ impl EdgeKind {
             "judged_by" => EdgeKind::JudgedBy,
             "uses_term" => EdgeKind::UsesTerm,
             "examines" => EdgeKind::Examines,
+            "measured_by" => EdgeKind::MeasuredBy,
             _ => return None,
         })
     }
@@ -434,6 +438,7 @@ mod tests {
             EdgeKind::JudgedBy,
             EdgeKind::UsesTerm,
             EdgeKind::Examines,
+            EdgeKind::MeasuredBy,
         ] {
             assert_eq!(EdgeKind::from_str_opt(kind.as_str()), Some(kind));
             assert_eq!(kind.to_string(), kind.as_str());

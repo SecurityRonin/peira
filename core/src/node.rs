@@ -28,6 +28,11 @@ pub enum NodeKind {
     Run,
     /// The record of a lens having been run against a subject.
     Examination,
+    /// A detector an observation came off: a tool, a query, a procedure someone
+    /// else's software performs. Reference material, never an argument — an
+    /// instrument does not compete in the grounded extension, it qualifies what
+    /// does.
+    Instrument,
     /// A preserved minority position (machloket) — rejection never deletes.
     Dissent,
     /// A frozen Court Mode export.
@@ -48,6 +53,7 @@ impl NodeKind {
             NodeKind::Protocol => "protocol",
             NodeKind::Run => "run",
             NodeKind::Examination => "examination",
+            NodeKind::Instrument => "instrument",
             NodeKind::Dissent => "dissent",
             NodeKind::Packet => "packet",
         }
@@ -66,6 +72,7 @@ impl NodeKind {
             "protocol" => NodeKind::Protocol,
             "run" => NodeKind::Run,
             "examination" => NodeKind::Examination,
+            "instrument" => NodeKind::Instrument,
             "dissent" => NodeKind::Dissent,
             "packet" => NodeKind::Packet,
             _ => return None,
@@ -636,6 +643,7 @@ Body.
             NodeKind::Protocol,
             NodeKind::Run,
             NodeKind::Examination,
+            NodeKind::Instrument,
             NodeKind::Dissent,
             NodeKind::Packet,
         ] {
@@ -661,6 +669,7 @@ Body.
             NodeKind::Protocol,
             NodeKind::Run,
             NodeKind::Examination,
+            NodeKind::Instrument,
             NodeKind::Packet,
             NodeKind::Question,
         ] {
