@@ -355,6 +355,77 @@ mod tests {
         v.iter().map(|x| x.gate).collect()
     }
 
+    /// A claim's support must reach the world, not just more claims.
+    ///
+    /// `orphan_claims` checks depth 1 and accepts another claim as support, so a tower
+    /// of claims resting on claims — grounded in nothing that ever touched the world —
+    /// passes every other check. That is a claim standing on narrative.
+    ///
+    /// A cycle is itself the finding, and must terminate rather than hang.
+    #[test]
+    fn a_claim_supported_only_by_other_claims_is_flagged() {
+        let ungrounded = |g: &Graph, subject: &str| {
+            lint(g)
+                .into_iter()
+                .filter(|v| v.gate == "PEIR-LINT-UNGROUNDED-CHAIN" && v.subject.as_str() == subject)
+                .count()
+        };
+        let claim = |id: &str| node(&format!("---\nid: {id}\ntype: claim\ntitle: t\n---\n"));
+        let obs = |id: &str| {
+            node(&format!(
+                "---\nid: {id}\ntype: observation\ntitle: o\n---\n"
+            ))
+        };
+        let supports = |from: &str, to: &str| {
+            Edge::new(NodeId::new(from), NodeId::new(to), EdgeKind::Supports)
+        };
+
+        // c1 <- c2 <- c3, and c3 rests on nothing. Every link is inference.
+        let tower = graph_of(
+            vec![claim("c1"), claim("c2"), claim("c3")],
+            vec![supports("c2", "c1"), supports("c3", "c2")],
+        );
+        assert_eq!(
+            ungrounded(&tower, "c1"),
+            1,
+            "a claim whose whole support subtree is claims must be flagged"
+        );
+
+        // Grounded directly.
+        let direct = graph_of(vec![claim("c1"), obs("o1")], vec![supports("o1", "c1")]);
+        assert_eq!(ungrounded(&direct, "c1"), 0, "an observation grounds it");
+
+        // Grounded through a chain — the walk must not stop at depth 1.
+        let chain = graph_of(
+            vec![claim("c1"), claim("c2"), obs("o1")],
+            vec![supports("c2", "c1"), supports("o1", "c2")],
+        );
+        assert_eq!(
+            ungrounded(&chain, "c1"),
+            0,
+            "reaching the world through an intermediate claim still grounds it"
+        );
+
+        // Mutual support, grounded in nothing. Must terminate AND flag.
+        let cycle = graph_of(
+            vec![claim("c1"), claim("c2")],
+            vec![supports("c2", "c1"), supports("c1", "c2")],
+        );
+        assert_eq!(
+            ungrounded(&cycle, "c1"),
+            1,
+            "claims supporting each other are grounded in nothing"
+        );
+
+        // No support at all is the orphan lint's business, not this one.
+        let orphan = graph_of(vec![claim("c1")], vec![]);
+        assert_eq!(
+            ungrounded(&orphan, "c1"),
+            0,
+            "an unsupported claim is PEIR-LINT-ORPHAN-CLAIM, and must not be double-reported"
+        );
+    }
+
     /// A window's edge is not the start of a behaviour.
     ///
     /// The check is string equality between the claim's `onset:` and its supporters'
