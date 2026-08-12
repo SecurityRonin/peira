@@ -225,6 +225,59 @@ mod tests {
     }
 
     #[test]
+    /// A vault may name the detector an observation came off.
+    ///
+    /// peira models what was concluded and who graded it, never what produced the
+    /// evidence — so a claim resting on a tool whose failure mode nobody established
+    /// is indistinguishable from one resting on a validated instrument. Nothing about
+    /// an instrument can be said until there is somewhere to say it.
+    ///
+    /// Asserted through `as_str` rather than the enum variants, so this compiles
+    /// before they exist and fails because the vault refuses the document.
+    #[test]
+    fn an_observation_may_name_the_instrument_that_produced_it() {
+        let dir = scratch("instrument");
+        write(
+            &dir,
+            "70-inquiry/i1.md",
+            "---\nid: i1\ntype: instrument\ntitle: Reactor, cluster attribution\n\
+positive_control: fires on the known mixer deposit in the 2025 sample\n\
+negative_control: silent on the exchange hot wallet in the same sample\n---\n",
+        );
+        write(
+            &dir,
+            "70-inquiry/o1.md",
+            "---\nid: o1\ntype: observation\ntitle: Address clustered to entity E\n\
+measured_by: [i1]\n---\n",
+        );
+
+        let graph = load(&dir).expect("a vault naming an instrument must load");
+
+        let instrument = graph
+            .node(&NodeId::new("i1"))
+            .expect("the instrument is a node");
+        assert_eq!(instrument.kind.as_str(), "instrument");
+        assert_eq!(
+            instrument.field("positive_control"),
+            Some("fires on the known mixer deposit in the 2025 sample")
+        );
+
+        // Bound to a local: `edges_from` ties the iterator's lifetime to the id, so
+        // a temporary would be dropped while still borrowed.
+        let o1 = NodeId::new("o1");
+        let measured: Vec<&Edge> = graph
+            .edges_from(&o1)
+            .filter(|e| e.kind.as_str() == "measured_by")
+            .collect();
+        assert_eq!(
+            measured.len(),
+            1,
+            "`measured_by:` must build an edge from the observation to the instrument"
+        );
+        assert_eq!(measured[0].to, NodeId::new("i1"));
+    }
+
+    #[test]
     fn loads_nodes_and_builds_edges_from_frontmatter() {
         let dir = scratch("basic");
         write(
