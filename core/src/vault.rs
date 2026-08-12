@@ -224,7 +224,6 @@ mod tests {
         fs::write(dir.join(name), body).unwrap();
     }
 
-    #[test]
     /// A vault may name the detector an observation came off.
     ///
     /// peira models what was concluded and who graded it, never what produced the
