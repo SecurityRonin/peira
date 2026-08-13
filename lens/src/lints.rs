@@ -422,6 +422,64 @@ mod tests {
         v.iter().map(|x| x.gate).collect()
     }
 
+    /// A retracted claim must not pass silently.
+    ///
+    /// The parser refuses `status: withdrawn` with a principled message; a
+    /// `retracts:` edge says exactly that, is parsed, is recorded — and is read by
+    /// nothing. A packet freezes for a claim the vault itself records as withdrawn,
+    /// and never mentions the retraction. A refusal enforced at one entry point is a
+    /// convention, not an impossibility.
+    ///
+    /// Deliberately NOT an attack edge: a retraction is a lifecycle fact, not a
+    /// dialectical move, and making it one would let a claim defeat its own
+    /// withdrawal by counter-argument.
+    #[test]
+    fn a_retracted_claim_is_flagged() {
+        let retracted = |g: &Graph, subject: &str| {
+            lint(g)
+                .into_iter()
+                .filter(|v| v.gate == "PEIR-LINT-RETRACTED" && v.subject.as_str() == subject)
+                .count()
+        };
+        let claim = |id: &str| node(&format!("---\nid: {id}\ntype: claim\ntitle: t\n---\n"));
+        let obs = node("---\nid: o1\ntype: observation\ntitle: o\n---\n");
+        let supports =
+            |f: &str, t: &str| Edge::new(NodeId::new(f), NodeId::new(t), EdgeKind::Supports);
+
+        let withdrawn = graph_of(
+            vec![claim("c1"), obs.clone(), node("---\nid: d1\ntype: dissent\ntitle: withdrawn after the parser was found wrong\n---\n")],
+            vec![
+                supports("o1", "c1"),
+                Edge::new(NodeId::new("d1"), NodeId::new("c1"), EdgeKind::Retracts),
+            ],
+        );
+        assert_eq!(
+            retracted(&withdrawn, "c1"),
+            1,
+            "a claim the vault records as retracted must be flagged"
+        );
+
+        let superseded = graph_of(
+            vec![claim("c1"), claim("c2"), obs.clone()],
+            vec![
+                supports("o1", "c1"),
+                Edge::new(NodeId::new("c2"), NodeId::new("c1"), EdgeKind::Supersedes),
+            ],
+        );
+        assert_eq!(
+            retracted(&superseded, "c1"),
+            1,
+            "a superseded claim is the same shape: the record says a newer version replaces it"
+        );
+
+        let live = graph_of(vec![claim("c1"), obs], vec![supports("o1", "c1")]);
+        assert_eq!(
+            retracted(&live, "c1"),
+            0,
+            "a claim nothing withdraws must not be flagged"
+        );
+    }
+
     /// A claim's support must reach the world, not just more claims.
     ///
     /// `orphan_claims` checks depth 1 and accepts another claim as support, so a tower
