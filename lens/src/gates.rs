@@ -328,6 +328,20 @@ pub fn grades_within_pramana_ceiling(graph: &Graph, node: &Node) -> GateResult {
         return GateResult::NotApplicable;
     }
     for edge in incoming {
+        // A settled grade with no declared means of knowing is not within its
+        // ceiling — it has no ceiling. The comparison in `exceeds_pramana_ceiling`
+        // needs both halves, so an undeclared pramāṇa silently removed the cap: the
+        // constraint activated on a field's presence and was evaded by its absence.
+        // No verdict is the honest answer, and no verdict never permits promotion.
+        if let (Some(grade), None) = (edge.grade(), edge.pramana) {
+            return GateResult::Unassessed {
+                why: format!(
+                    "edge {} → {} is settled at {grade} but declares no means of knowing, \
+so no ceiling applies to it",
+                    edge.from, edge.to
+                ),
+            };
+        }
         if edge.exceeds_pramana_ceiling() {
             let (Some(grade), Some(pramana)) = (edge.grade(), edge.pramana) else {
                 continue;
