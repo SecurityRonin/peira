@@ -136,7 +136,7 @@ to prevent.
 | A reference that goes nowhere is a defect | `PEIR-LINT-DANGLING-EDGE` | **enforced** |
 | Privileged material stays out of the open tier | `PEIR-LINT-PRIVILEGE-LEAK` | **flagged, not withheld** ⁹ |
 | **A deliverable is compiled from the record and re-derivable** | `peira packet` / `peira verify` — digest re-derivation | **enforced for the rendered projection** ⁷ |
-| **Supersession and retraction take effect downstream** | `supersedes:` / `retracts:` edges | **recorded, read by nothing** |
+| A withdrawn or replaced claim is not citable | `PEIR-LINT-RETRACTED` | **enforced** |
 | **An unrecognised value goes red, never silently interpreted** | — | **violated by the loader** ⁸ |
 | **An observation names the instrument it came off** | `measured_by:` edge to an `instrument` node | **expressible, unenforced** |
 | **Instrument validity: positive and negative controls** | `instrument` node fields | **node only, no checks** |

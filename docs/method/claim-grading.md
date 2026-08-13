@@ -293,14 +293,16 @@ peira is this section as machinery, and the mapping is exact where it holds:
 - **Projection** — a packet renders a fixed subset: titles of direct supporters, contradictors and
   limiters, the warrant, boundaries, falsifiers and term moments. The vault stays the superset.
 
-And where it does not hold: **supersession is the gap.** `supersedes:` and `retracts:` edges are
-parsed and recorded, and then read by nothing — no gate, no lint, no freeze check. A packet
-freezes for a claim the vault records as withdrawn. Until that closes, rule 3 is yours to enforce **outside the tool**.
-Re-freezing does **not** help and is worse than doing nothing: `Retracts` appears nowhere in the
-gate, lint, freeze or status code, so a re-frozen packet reproduces the withdrawn claim and looks
-freshly generated while doing it. The only safe procedure today is to **delete or quarantine the
-packets that cite a retracted claim**, and to track retractions in a register the tool does not
-own. See the
+And this one the tool now honours: a `retracts:` or `supersedes:` edge is reported by
+`PEIR-LINT-RETRACTED`, and because `freeze` refuses while any violation is attributed to the claim,
+**a retracted claim can no longer be frozen into a packet.** The remedies differ by kind —
+retraction says cite it or delete the claim; supersession says cite the newer version.
+
+Two limits worth stating. Neither edge is an *attack*, deliberately: a retraction is a lifecycle
+fact, not a dialectical move, and modelling it as one would let a claim defeat its own withdrawal in
+the grounded extension. And **packets frozen before a retraction do not know about it** — the
+digest covers what was rendered, and a retraction that arrives afterwards is invisible to a packet
+already in someone's hands. Withdrawing a claim still means retrieving the artifacts that cite it. See the
 [architecture defect register](../architecture.md#defect-register), defect 3.
 
 ---

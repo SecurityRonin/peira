@@ -26,6 +26,8 @@ pub const SELF_GRADED: &str = "PEIR-LINT-SELF-GRADED";
 pub const WINDOW_EDGE_AS_ONSET: &str = "PEIR-LINT-WINDOW-EDGE-AS-ONSET";
 /// A claim whose support never reaches anything that touched the world.
 pub const UNGROUNDED_CHAIN: &str = "PEIR-LINT-UNGROUNDED-CHAIN";
+/// A claim the record itself withdraws or replaces.
+pub const RETRACTED: &str = "PEIR-LINT-RETRACTED";
 
 /// Overstatements, and what to say instead.
 ///
@@ -221,6 +223,51 @@ protocol; inference resting on inference is a claim standing on its own narrativ
     )]
 }
 
+/// Claims the vault's own record retires.
+///
+/// The parser refuses `status: withdrawn` with a principled message. A `retracts:`
+/// edge says exactly that in the graph's own grammar — and was parsed, recorded and
+/// read by nothing, so a packet froze for a claim the record had withdrawn without
+/// ever mentioning it. **When you forbid something, sweep for the other grammars
+/// that express it.**
+///
+/// `Supersedes` is included: "a newer version replaces this" is the same lifecycle
+/// statement, and citing the retired version is the same error.
+///
+/// This is a lint rather than an attack edge on purpose. A retraction is not a
+/// dialectical move that a counter-argument could defeat — modelling it as one would
+/// let a claim win against its own withdrawal in the grounded extension.
+fn retracted(graph: &Graph, node: &Node) -> Vec<Violation> {
+    graph
+        .edges_to(&node.id)
+        .filter(|e| matches!(e.kind, EdgeKind::Retracts | EdgeKind::Supersedes))
+        .map(|e| {
+            let (verb, remedy) = if e.kind == EdgeKind::Retracts {
+                (
+                    "retracted",
+                    "cite the retraction, or delete the claim — a packet frozen over a \
+withdrawn claim is a conclusion the record itself retired",
+                )
+            } else {
+                (
+                    "superseded",
+                    "cite the superseding version instead; the retired one is history, \
+not a finding",
+                )
+            };
+            violation(
+                RETRACTED,
+                &node.id,
+                format!(
+                    "\"{}\" is {verb} by `{}`, and the vault records it",
+                    node.title, e.from
+                ),
+                remedy,
+            )
+        })
+        .collect()
+}
+
 /// Grades nobody stands behind.
 fn unreviewed_grades(graph: &Graph) -> Vec<Violation> {
     graph
@@ -394,6 +441,7 @@ pub fn lint(graph: &Graph) -> Vec<Violation> {
         out.extend(false_independence(graph, node));
         out.extend(window_edge_as_onset(graph, node));
         out.extend(ungrounded_chains(graph, node));
+        out.extend(retracted(graph, node));
     }
     out
 }
