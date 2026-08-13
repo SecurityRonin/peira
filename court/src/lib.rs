@@ -412,11 +412,13 @@ aspect: function\n---\n",
 not_essence: a catalogue record is not the file, and not its running\n\
 stipulated: the OS recorded this path in Amcache\n---\n",
         ));
-        g.insert_edge(Edge::new(
-            NodeId::new("o1"),
-            NodeId::new("c1"),
-            EdgeKind::Supports,
-        ));
+        // Graded and attributed: a packet may not rest on evidence nobody weighed,
+        // and this fixture stands for a claim that clears every check.
+        g.insert_edge(
+            Edge::new(NodeId::new("o1"), NodeId::new("c1"), EdgeKind::Supports)
+                .graded_by(Grade::G2, "a-reviewer")
+                .via(Pramana::Perception),
+        );
         g.insert_edge(Edge::new(
             NodeId::new("c1"),
             NodeId::new("60.01"),
@@ -497,8 +499,24 @@ aspect: function\n---\n",
     /// arrives when a claim is about to become a court artifact.
     #[test]
     fn a_packet_refuses_evidence_that_was_never_graded() {
-        let mut g = clean_graph();
-        // clean_graph's supporting edge carries no grade at all.
+        // Strip the grade from the otherwise-clean fixture: everything else about
+        // this claim is in order, so the only thing under test is the missing grade.
+        let mut g = Graph::new();
+        for n in ["c1", "o1", "60.01"] {
+            if let Some(node) = clean_graph().node(&NodeId::new(n)) {
+                g.insert_node(node.clone());
+            }
+        }
+        g.insert_edge(Edge::new(
+            NodeId::new("c1"),
+            NodeId::new("60.01"),
+            EdgeKind::UsesTerm,
+        ));
+        g.insert_edge(Edge::new(
+            NodeId::new("o1"),
+            NodeId::new("c1"),
+            EdgeKind::Supports,
+        ));
         let err = freeze(&g, &NodeId::new("c1"))
             .expect_err("a packet resting on an ungraded support edge must be refused");
         let rendered = err.to_string();
@@ -508,11 +526,7 @@ aspect: function\n---\n",
         );
 
         // Graded and attributed, within its ceiling: freezes.
-        g.insert_edge(
-            Edge::new(NodeId::new("o1"), NodeId::new("c1"), EdgeKind::Supports)
-                .graded_by(Grade::G2, "a-reviewer")
-                .via(Pramana::Perception),
-        );
+        let g = clean_graph();
         assert!(
             freeze(&g, &NodeId::new("c1")).is_ok(),
             "a graded, attributed support edge within its ceiling must freeze"

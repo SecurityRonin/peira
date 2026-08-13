@@ -28,6 +28,8 @@ pub const WINDOW_EDGE_AS_ONSET: &str = "PEIR-LINT-WINDOW-EDGE-AS-ONSET";
 pub const UNGROUNDED_CHAIN: &str = "PEIR-LINT-UNGROUNDED-CHAIN";
 /// A claim the record itself withdraws or replaces.
 pub const RETRACTED: &str = "PEIR-LINT-RETRACTED";
+/// Support nobody has weighed.
+pub const UNGRADED_SUPPORT: &str = "PEIR-LINT-UNGRADED-SUPPORT";
 
 /// Overstatements, and what to say instead.
 ///
@@ -268,6 +270,38 @@ not a finding",
         .collect()
 }
 
+/// Support nobody has weighed.
+///
+/// The sibling of [`unreviewed_grades`] one step earlier: that catches a grade
+/// PROPOSED and never settled, this catches an edge nobody graded at all. Until now
+/// an ungraded, unattributed edge supported promotion exactly as effectively as
+/// reviewed direct perception, so `Grade` and `Pramana` bound only authors who chose
+/// to be bound — the apparatus was inert unless volunteered into.
+///
+/// Claims only, and support edges only. A hypothesis may rest on anything while it is
+/// still a candidate; an observation is not graded, it is what does the grading.
+fn ungraded_support(graph: &Graph, node: &Node) -> Vec<Violation> {
+    if node.kind != NodeKind::Claim {
+        return Vec::new();
+    }
+    graph
+        .edges_to(&node.id)
+        .filter(|e| e.kind == EdgeKind::Supports && e.grade().is_none())
+        .map(|e| {
+            violation(
+                UNGRADED_SUPPORT,
+                &node.id,
+                format!(
+                    "support edge {} → {} carries no settled grade, so nothing has weighed it",
+                    e.from, e.to
+                ),
+                "grade the edge and attribute it — `grade=G2 by=<reviewer> via=<means>` \
+— or record why it is cited ungraded",
+            )
+        })
+        .collect()
+}
+
 /// Grades nobody stands behind.
 fn unreviewed_grades(graph: &Graph) -> Vec<Violation> {
     graph
@@ -442,6 +476,7 @@ pub fn lint(graph: &Graph) -> Vec<Violation> {
         out.extend(window_edge_as_onset(graph, node));
         out.extend(ungrounded_chains(graph, node));
         out.extend(retracted(graph, node));
+        out.extend(ungraded_support(graph, node));
     }
     out
 }
