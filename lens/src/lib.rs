@@ -97,6 +97,13 @@ pub enum GateResult {
     },
 }
 
+/// A gate reached no verdict. **Never a pass**, and never silent.
+///
+/// Published like any other code, because a packet may cite it: a claim blocked for
+/// want of a verdict is blocked for a different reason than one that failed a check,
+/// and the reader is entitled to the difference.
+pub const GATE_UNASSESSED: &str = "PEIR-GATE-UNASSESSED";
+
 impl GateResult {
     /// Whether this result permits promotion. Only [`GateResult::Pass`] and
     /// [`GateResult::NotApplicable`] do.
@@ -211,8 +218,27 @@ pub fn examine_graph(graph: &Graph) -> Vec<Violation> {
     for node in graph.nodes() {
         for lens in enforced() {
             for result in lens.examine(graph, node) {
-                if let Some(v) = result.violation() {
-                    out.push(v.clone());
+                // Every result that does NOT permit promotion must reach the caller.
+                // Filtering on `violation()` alone discarded `Unassessed`, and with it
+                // the rule that a gate which could not run has cleared nothing — the
+                // predicate encoding that rule then had no production caller at all.
+                if result.permits_promotion() {
+                    continue;
+                }
+                match &result {
+                    GateResult::Block(v) => out.push(v.clone()),
+                    GateResult::Unassessed { why } => out.push(Violation {
+                        gate: GATE_UNASSESSED,
+                        lens: lens.id,
+                        subject: node.id.clone(),
+                        detail: format!("[{}] reached no verdict: {why}", lens.id),
+                        remedy: "supply what the gate needs, or say plainly that this \
+claim was never examined for it — a gate that could not run has cleared nothing",
+                    }),
+                    // Unreachable: both permit promotion and were skipped above. A
+                    // future variant lands here and is DROPPED, so the match is
+                    // exhaustive on purpose rather than a catch-all.
+                    GateResult::Pass | GateResult::NotApplicable => {}
                 }
             }
         }

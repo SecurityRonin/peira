@@ -8,6 +8,9 @@ aspect: function
 causal_rung: association
 boundaries:
   - Windows 10 1809 and later
+# The rival hypothesis turns on the same two terms the claim does, so it is held to
+# the same stipulations rather than being allowed looser language.
+uses_term: ["60.01", "60.02"]
 falsifier:
   - >-
     A prefetch or SRUM record placing the image in execution within the same
