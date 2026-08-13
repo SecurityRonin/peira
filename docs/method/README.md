@@ -140,8 +140,6 @@ to prevent.
 | **An unrecognised value goes red, never silently interpreted** | — | **violated by the loader** ⁸ |
 | **An observation names the instrument it came off** | `measured_by:` edge to an `instrument` node | **expressible, unenforced** |
 | **Instrument validity: positive and negative controls** | `instrument` node fields | **node only, no checks** |
-| **Competing hypotheses enumerated, weighted by diagnosticity** | `ACH` | catalogued, **no gate** |
-| **Rejected alternatives preserved** | `MACHLOKET` | catalogued, **no gate** |
 | **Refusal counted separately from zero** | — | **not mechanised** |
 | **A cap yields a floor, never a total** | — | **not mechanised** |
 | **Extraordinary claims need extraordinary evidence** | — | **not mechanised** |
@@ -172,6 +170,30 @@ links are not rendered, so they change without disturbing it — architecture de
 ⁸ The loader drops an unknown edge attribute, an invalid `grade=` and a misspelt `via=` without a
 diagnostic; a typo removes the pramāṇa ceiling or the review semantics instead of going red —
 architecture defect 9.
+
+## The ten that are catalogued and enforce nothing
+
+Named, sourced, given a worked example — and owning no gate. A meta-test asserts that a catalogued
+lens has none, so the catalogue cannot quietly imply an examination it does not perform. Listed in
+full because a reader would otherwise have no way to tell an omission from a deliberate deferral.
+
+| Lens | | The failure it names |
+|---|---|---|
+| `ELENCHUS` | ἔλεγχος elenchus — Socratic Cross-Examination | premises that were never examined because nobody asked |
+| `ACH` | Analysis of Competing Hypotheses | confirmation by consistency — collecting evidence that fits the favoured hypothesis without asking what it rules out |
+| `PANCAVAYAVA` | पञ्चावयव pañcāvayava — The Five-Membered Argument | a reason that looks valid but is unestablished, contradictory, inconclusive, counterbalanced, or already defeated |
+| `STEELMAN` | Rapoport's Rules — Steelman First | attacking a position its holder would not recognise |
+| `DOUBLECRUX` | Double Crux | disagreement that circles because the load-bearing belief was never located |
+| `MACHLOKET` | מחלוקת machloket — Preserve the Minority | deleting the losing argument, so the reasoning that rejected it becomes unreviewable |
+| `AUFHEBUNG` | Aufhebung — Synthesis That Preserves | a synthesis that quietly discards what it claimed to reconcile |
+| `THESEUS` | Ship of Theseus — Amend or Supersede | silent identity drift: a claim's meaning changes across edits while its id, and everything citing it, stays put |
+| `CHESTERTON` | Chesterton's Fence | removing something without recovering why it was put there |
+| `ERDI` | 二諦 — The Two Truths, and Court Mode | a courtroom sentence that asserts more than the graph behind it supports |
+
+**Socratic questioning is here, not missing** — `ELENCHUS`, with its six question families. So are
+competing-hypothesis analysis (`ACH`) and the preservation of rejected alternatives (`MACHLOKET`).
+Each is specified and unmechanised: read them as a reading list for what to ask by hand, not as
+checks the tool performs.
 
 **Ten of twenty catalogued lenses are enforced.** A lens marked catalogued owns no gates, and a
 meta-test asserts that — so the catalogue cannot quietly imply an examination it does not perform.
