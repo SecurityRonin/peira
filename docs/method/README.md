@@ -3,12 +3,13 @@
 peira is a checker. This directory is the reasoning it checks *for*, written out so the tool is
 usable by someone who has never met its author. Nothing here depends on any private configuration.
 
-Distilled from forensic and investigative practice — most of it from defects that reached, or nearly
-reached, a client. The instances are domain-specific and will not recur; the **shapes** do.
+Distilled from forensic and investigative practice — most of it from defects that reached, or
+nearly reached, a client. The instances are domain-specific and will not recur; the **shapes** do.
 
 | | |
 |---|---|
-| [`claim-grading.md`](claim-grading.md) | the normative standard: tags, independence tiers, source classes, instrument validity, confidence expression |
+| [`claim-grading.md`](claim-grading.md) | the normative standard: tags, independence tiers, source classes, instrument validity, the compiled-deliverable rule, confidence expression |
+| [`source-register.md`](source-register.md) | sources that fail silently: the register, its ownership split, and the controls |
 | [`expert-witness.md`](expert-witness.md) | least disclosure, the three epistemic layers, the overstatement substitution table |
 | this file | the six structures of investigative error, the controls, and **what peira actually enforces** |
 
@@ -35,22 +36,23 @@ flowchart TB
     R --> C["a conclusion"]
 
     A["A. The instrument answered a<br/>DIFFERENT question than you asked"] -.-> I
-    B["B. Absence read as evidence<br/>the system said 'I do not know'<br/>and you recorded 'no'"] -.-> R
+    B["B. Absence read as evidence —<br/>the system said 'I do not know'<br/>and you recorded 'no'"] -.-> R
     D["C. A part measured,<br/>and named the whole"] -.-> R
     E["D. A property of the INFRASTRUCTURE<br/>attributed to the subject"] -.-> R
     F["E. A real value bound to<br/>the wrong context"] -.-> C
     G["F. The narrative outran<br/>the evidence"] -.-> C
 ```
 
-**A — the instrument answered a different question.** You asked Q; the tool answered Q′; Q′ returned
-a plausible value. A filter on a field that does not exist returns zero every time.
+**A — the instrument answered a different question.** You asked Q; the tool answered Q′; Q′
+returned a plausible value. A filter on a field that does not exist returns zero every time.
 *Defence: build the control from the **same expression** as the query, varying only the input. A
 control that exercises part of the selector certifies only that part.*
 
-**B — absence read as evidence.** Refusals counted as zeros. A total assembled only from the queries
-that **succeeded**, when the ones that refused were the busy ones.
+**B — absence read as evidence.** Refusals counted as zeros. A total assembled only from the
+queries that **succeeded**, when the ones that refused were the busy ones.
 *Defence: a refusal is a **third state**. Count it, carry it into the artifact, and make any claim
-resting on completeness **assert** that refusals are zero rather than assume it.*
+resting on completeness **assert** that refusals are zero rather than assume it. The sources that
+manufacture this error are catalogued in [`source-register.md`](source-register.md).*
 
 **C — a part measured and named the whole.** A windowed query's own edge read as the start of a
 behaviour. A sample drawn only from the pages that did not hit the cap.
@@ -63,13 +65,14 @@ event, a registrar every registration passes through.
 *Defence: before attributing an action, ask what intermediary would leave the same trace.*
 
 **E — a real value bound to the wrong context.** A figure read correctly from the right source and
-attached to the wrong instant, subject, or unit. No lineage check sees it: the number genuinely came
-from the data.
+attached to the wrong instant, subject, or unit. No lineage check sees it: the number genuinely
+came from the data.
 *Defence: every stored figure carries **subject, instant and unit**. Drop any one and the value
 survives while its meaning does not.*
 
-**F — the narrative outran the evidence.** The most dangerous, because it is invisible from inside.
-Each claim inherits credibility from the story around it rather than from anything observed.
+**F — the narrative outran the evidence.** The most dangerous, because it is invisible from
+inside. Each claim inherits credibility from the story around it rather than from anything
+observed.
 *Defence: ask of each claim whether its support reaches the world, or only more claims.*
 
 ---
@@ -80,57 +83,95 @@ A negative finding — *"no evidence of X"*, *"cannot be determined"*, *"nothing
 unfalsifiable, and therefore attracts **less** challenge than a positive one. That asymmetry is
 backwards.
 
-**Every zero is a possible instrument failure until the instrument has been shown to fire on a known
-positive.** A Type II error in the instrument becomes a Type I error in the conclusion: a silent miss
-does not stay silent, it is promoted into a confident positive claim about absence — and it is
-confident *precisely because* the search found nothing.
+**Every zero is a possible instrument failure until the instrument has been shown to fire on a
+known positive.** A Type II error in the instrument becomes a Type I error in the conclusion: a
+silent miss does not stay silent, it is promoted into a confident positive claim about absence —
+and it is confident *precisely because* the search found nothing.
 
-The same applies to an asserted impossibility. *"That cannot be determined"* receives less scrutiny
-than an asserted fact because it looks like a closed question. Re-test claimed impossibilities first;
-they are the cheapest wins available.
+The same applies to an asserted impossibility. *"That cannot be determined"* receives less
+scrutiny than an asserted fact because it looks like a closed question. Re-test claimed
+impossibilities first; they are the cheapest wins available.
+
+---
+
+## The record is the source; deliverables are compiled
+
+The second discipline this directory exists to carry, stated in full in
+[`claim-grading.md` §8](claim-grading.md) and mapped onto the machinery in
+[`../architecture.md` §1](../architecture.md): findings, corrections and retractions land in the
+knowledge base first, and every deliverable is a build artifact regenerated from it. A correction
+applied only to a deliverable does not fix an error — it forks it. peira is the mechanical form of
+this rule: the vault is the source, `peira packet` is the generator, and `peira verify` re-derives
+and compares digests. Two limits the audits established: supersession is recorded without being
+honoured, and the digest covers only the packet's rendered projection — see the coverage map
+below.
 
 ---
 
 ## What peira actually enforces
 
-Honest coverage. A discipline shipped without this table would be the overstatement peira exists to
-prevent.
+Honest coverage. A discipline shipped without this table would be the overstatement peira exists
+to prevent.
 
 | Rule | Mechanised as | Status |
 |---|---|---|
-| A judgement declares the standard it is judged by | `PEIR-CRITERION-UNDECLARED` (立極) | **enforced** |
-| Load-bearing terms are stipulated before use | `PEIR-TERM-UNSTIPULATED` (正名) | **enforced** |
-| What a thing *did* is not what it *is* | `PEIR-FUNCTION-AS-SUBSTANCE` (體用) | **enforced** |
-| A universal quantifier declares its extension | `PEIR-CLASS-EXTENSION-UNDECLARED` (白馬非馬) | **enforced** |
+| A judgement declares the standard it is judged by | `PEIR-CRITERION-UNDECLARED` (立極) | **enforced** ⁴ |
+| Load-bearing terms are stipulated before use | `PEIR-TERM-UNSTIPULATED` (正名) | **checked when declared** ⁴ |
+| What a thing *did* is not what it *is* | `PEIR-FUNCTION-AS-SUBSTANCE` (體用) | **checked when declared** ⁴ |
+| A universal quantifier declares its extension | `PEIR-CLASS-EXTENSION-UNDECLARED` (白馬非馬) | **checked when declared** ⁴ |
 | A contested question addresses all four corners | `PEIR-CORNERS-UNADDRESSED` (四句) | **enforced** |
 | The rule licensing grounds → claim is written down | `PEIR-WARRANT-MISSING` (Toulmin) | **enforced** |
 | Evidence grade is capped by means of knowing | `PEIR-GRADE-EXCEEDS-PRAMANA` (pramāṇa) | **enforced, evadable** ¹ |
-| A causal claim earns its rung | `PEIR-CAUSAL-RUNG-UNREACHED` (Pearl) | **enforced** |
+| A causal claim earns its rung | `PEIR-CAUSAL-RUNG-UNREACHED` (Pearl) | **checked when declared** ⁴ |
 | A claim states where it holds | `PEIR-BOUNDARIES-MISSING` | **enforced** |
 | A claim states what would defeat it | `PEIR-FALSIFIER-MISSING` (Popper / premortem) | **enforced** |
 | What survives attack is computed, not asserted | grounded extension (Dung) | **enforced** |
-| Overstated verbs are substituted | `PEIR-LINT-FORBIDDEN-VERB` | **enforced, partial** ² |
-| A grade nobody stands behind asserts nothing | `PEIR-LINT-UNREVIEWED-GRADE` | **enforced** |
-| Authors do not sign off their own findings | `PEIR-LINT-SELF-GRADED` | **enforced** |
+| A claim with no support at all is flagged | `PEIR-LINT-ORPHAN-CLAIM` | **enforced** |
+| Support must reach the world, not only more claims | `PEIR-LINT-UNGROUNDED-CHAIN` | **enforced** |
+| Overstated verbs are flagged, with the safe form named | `PEIR-LINT-FORBIDDEN-VERB` | **enforced, partial** ² |
+| A grade nobody stands behind asserts nothing | `PEIR-LINT-UNREVIEWED-GRADE` | **enforced, narrow** ⁵ |
+| Authors do not sign off their own findings | `PEIR-LINT-SELF-GRADED` | **checked when declared** ⁶ |
 | Restatements are not corroboration | `PEIR-LINT-FALSE-INDEPENDENCE` | **enforced, narrow** ³ |
 | A window's edge is not the start of a behaviour | `PEIR-LINT-WINDOW-EDGE-AS-ONSET` | **enforced** |
-| Support must reach the world, not only more claims | `PEIR-LINT-UNGROUNDED-CHAIN` | **enforced** |
 | A reference that goes nowhere is a defect | `PEIR-LINT-DANGLING-EDGE` | **enforced** |
-| Privileged material stays out of the open tier | `PEIR-LINT-PRIVILEGE-LEAK` | **enforced** |
+| Privileged material stays out of the open tier | `PEIR-LINT-PRIVILEGE-LEAK` | **flagged, not withheld** ⁹ |
+| **A deliverable is compiled from the record and re-derivable** | `peira packet` / `peira verify` — digest re-derivation | **enforced for the rendered projection** ⁷ |
+| **Supersession and retraction take effect downstream** | `supersedes:` / `retracts:` edges | **recorded, read by nothing** |
+| **An unrecognised value goes red, never silently interpreted** | — | **violated by the loader** ⁸ |
+| **An observation names the instrument it came off** | `measured_by:` edge to an `instrument` node | **expressible, unenforced** |
+| **Instrument validity: positive and negative controls** | `instrument` node fields | **node only, no checks** |
 | **Competing hypotheses enumerated, weighted by diagnosticity** | `ACH` | catalogued, **no gate** |
 | **Rejected alternatives preserved** | `MACHLOKET` | catalogued, **no gate** |
-| **Instrument validity: positive and negative controls** | `Instrument` node kind exists | **node only, no checks** |
 | **Refusal counted separately from zero** | — | **not mechanised** |
 | **A cap yields a floor, never a total** | — | **not mechanised** |
 | **Extraordinary claims need extraordinary evidence** | — | **not mechanised** |
 | **The prosecutor's fallacy** | — | **not mechanised** |
 | **Custody and pedigree of an observation** | — | **not mechanised** |
+⁹ The lint reports a leak on the node that carries it. `freeze` filters violations to the claim's
+own id, so a privilege leak on a *supporting* node does not stop a packet — and the packet renders
+that supporter's id and title. Flagging is not exclusion; read the lint output before exporting.
 
 ¹ The ceiling binds only edges that declare a means of knowing; omitting the declaration evades it.
-² The lint scans a claim's title and body — not the warrant, and not the term fields the court
-packet renders from.
-³ Fires only where one supporter is explicitly marked as duplicating another; it does not detect two
-supporters that share an instrument or a source.
+² The lint reports; it rewrites nothing — the safe form travels in the violation's detail line.
+And it scans a node's title and body only: not the warrant, not boundaries or falsifiers, and not
+the term fields the court packet renders from.
+³ Fires only where one supporter is explicitly marked as duplicating another; it does not detect
+two supporters that share an instrument or a source.
+⁴ Reaches a verdict only when the claim declares the triggering field (`uses_term`, `quantifier`,
+`causal_rung`, `aspect`, an evaluative word or `evaluative: true`). With the field absent, the gate
+returns `Unassessed` or `NotApplicable` — and defect 1 in the
+[architecture defect register](../architecture.md#defect-register) means `Unassessed` currently
+vanishes before anything acts on it, so silence passes.
+⁵ Fires only on a *proposed* grade with no reviewer; an edge carrying no grade at all trips
+nothing (architecture defect 4).
+⁶ Compares the grader against `author:` only when the claim declares one; with `author:` absent
+there is nothing to compare and the lint reports nothing.
+⁷ The digest covers the packet's rendered body only. Grades, graders, pramāṇas and `measured_by:`
+links are not rendered, so they change without disturbing it — architecture defect 8. An edited
+`Packet format:` line yields no verdict rather than a mismatch — architecture defect 6.
+⁸ The loader drops an unknown edge attribute, an invalid `grade=` and a misspelt `via=` without a
+diagnostic; a typo removes the pramāṇa ceiling or the review semantics instead of going red —
+architecture defect 9.
 
 **Ten of twenty catalogued lenses are enforced.** A lens marked catalogued owns no gates, and a
 meta-test asserts that — so the catalogue cannot quietly imply an examination it does not perform.
@@ -144,7 +185,7 @@ enforced set. Several rules above are correct in the code and lost at an aggrega
 
 ```mermaid
 flowchart LR
-    S1["1. State the question<br/>and what would answer it"] --> S2["2. Validate the instrument<br/>positive AND negative control"]
+    S1["1. State the question<br/>and what would answer it"] --> S2["2. Validate the instrument —<br/>positive AND negative control"]
     S2 --> S3["3. Query the full population,<br/>then window it"]
     S3 --> S4["4. Separate refusals<br/>from zeros"]
     S4 --> S5["5. Reproduce by a second,<br/>differently-shaped method"]
@@ -159,10 +200,10 @@ Steps 2, 4 and 5 are the ones habitually skipped, and they are where the defects
 
 ## Two ideas that carry more weight than their length
 
-**Review and refutation are different instruments.** A reviewer handed a document spreads attention
-across it and tends to *restate* rather than re-test. A refuter handed **one claim**, told to attack
-it, and given named lines of attack, spends everything on that claim. If you want a finding tested,
-scope the task to the finding and say *refute*, not *review*.
+**Review and refutation are different instruments.** A reviewer handed a document spreads
+attention across it and tends to *restate* rather than re-test. A refuter handed **one claim**,
+told to attack it, and given named lines of attack, spends everything on that claim. If you want a
+finding tested, scope the task to the finding and say *refute*, not *review*.
 
-**Verify the critic.** A hostile reviewer overstates too. Reviewer findings are quoted material until
-checked — treat them exactly as you would any other secondary source.
+**Verify the critic.** A hostile reviewer overstates too. Reviewer findings are quoted material
+until checked — treat them exactly as you would any other secondary source.

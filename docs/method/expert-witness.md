@@ -23,12 +23,14 @@ flowchart TB
 ```
 
 Layer 3 is **never** the expert's. Layer-3 overreach concentrates in **callout boxes, opinion
-summaries and section conclusions** — review those first, because they are where a hedge gets dropped
-for punchiness.
+summaries and section conclusions** — review those first, because they are where a hedge gets
+dropped for punchiness.
 
 peira mechanises the layer-1/layer-2 boundary as the causal ladder gate
-(`PEIR-CAUSAL-RUNG-UNREACHED`) and the substance/function gate (`PEIR-FUNCTION-AS-SUBSTANCE`). It
-does **not** detect layer-3 overreach — that remains a human obligation.
+(`PEIR-CAUSAL-RUNG-UNREACHED`) and the substance/function gate (`PEIR-FUNCTION-AS-SUBSTANCE`) —
+noting that each reaches a verdict only when the claim declares `causal_rung:` or `aspect:`; a
+claim that declares neither is not examined by them. It does **not** detect layer-3 overreach —
+that remains a human obligation.
 
 ---
 
@@ -46,20 +48,27 @@ does **not** detect layer-3 overreach — that remains a human obligation.
 | "X is confirmed active and targeted" | "X activity confirmed; the pattern is consistent with targeting" |
 
 **Never make a definitive negative ownership finding from absence of a connection.** *"No
-relationship found"*, not *"is not D1's"*. **Never state a party's witness-statement fact as your own
-finding** — attribute it.
+relationship found"*, not *"is not D1's"*. And before any negative finding at all, ask whether the
+source it rests on has passed the controls in
+[`source-register.md`](source-register.md) — a silent failure upstream becomes a confident
+negative here. **Never state a party's witness-statement fact as your own finding** — attribute it.
 
 ---
 
 ## The principle of least disclosure
 
+This principle governs **correspondence about your own process** — a conflict-check confirmation,
+a scope or fee letter, a reply to an instructing solicitor. It does not govern findings: the scope
+of a search a finding rests on is part of the finding, and the hard limit below takes over there.
+
 Answer with the **bare minimum information that fully and honestly answers the question**. Every
 additional word, category, qualifier or volunteered detail is surface a cross-examiner can probe, or
 use to define a limit you did not intend.
 
-- **Do not enumerate the scope of a check.** *"I checked clients, employers and relationships"*
-  invites *"so you did not check X?"*. Say *"I have checked the names provided against my records"* —
-  broad, complete, not self-limiting.
+- **In a conflict-check confirmation, do not enumerate the categories you searched.** *"I checked
+  clients, employers and relationships"* invites *"so you did not check X?"* — and the enumeration
+  asserts **less** than the broad form, not more: any list omits a category. *"I have checked the
+  names provided against my records"* is the wider claim, and complete.
 - **Do not assert more than the question asks.** A conflict check asks whether you have a conflict.
   It does not ask you to certify *"no prior relationship of any kind"* — a different, broader and
   falsifiable claim.
@@ -69,14 +78,19 @@ use to define a limit you did not intend.
 
 ### The hard limit: least disclosure is not concealment
 
-It governs *words about process and scope*. It is overridden, absolutely, for two things that
-**MUST** be disclosed fully and early:
+It governs *words about your own process in correspondence*. It is overridden, absolutely, for two
+things that **MUST** be disclosed fully and early:
 
 1. **Any conflict or connection that is not obviously immaterial.** Do not decide materiality
    yourself — disclose it and let the instructing party assess. **Non-disclosure is what destroys an
    expert, not the connection itself.**
 2. **Any fact, limitation or assumption bearing on the opinion.** Candour to the tribunal is the
-   overriding duty.
+   overriding duty. **The scope of a search underlying a finding is always in this category.** A
+   negative finding — *"no relationship found"*, *"nothing located"* — carries exactly the weight of
+   the search behind it, so what was searched, over what period, with what instrument, is material
+   to that weight and stays in the report ([`claim-grading.md` §9](claim-grading.md): scope limits
+   stay in regardless). Cutting a search boundary does not tighten the prose; it converts a bounded
+   check into a broader implication — overstatement by omission.
 
 Minimal words about *how* you work; hide nothing about *what affects the opinion*.
 
@@ -109,22 +123,35 @@ person who wrote the sentence is the last one able to see it.
 
 peira inverts it. The safe statement is **rendered from the graph** in the 金剛經 three-moment form —
 *what is called X*, *X is not the thing itself*, *it is named X under these conditions*. Nobody
-writes the sentence, so nobody can overstate it.
+writes the sentence, so nobody can overstate it. This is one instance of the wider rule that a
+deliverable is **compiled from the record**, never authored beside it — stated in
+[`claim-grading.md` §8](claim-grading.md) and mapped onto the machinery in
+[`../architecture.md` §1](../architecture.md). `peira verify` then re-derives the packet from the
+vault and compares digests, so drift that reaches the rendered body announces itself — within two
+limits established by audit: fields the packet does not render (grades, graders, instrument links)
+change no digest, and a packet whose `Packet format:` line was edited returns no verdict rather
+than a mismatch. See [`../architecture.md`](../architecture.md), defects 6 and 8.
 
-**A known limit, from an adversarial audit:** the rendered statement quotes author-written term
-fields verbatim, so an overstatement placed in a term's stipulation reaches the packet unaltered, and
-the forbidden-verb lint does not scan those fields. See [`../architecture.md`](../architecture.md).
-The generation is a structural defence, not a complete one.
+**A known limit, found by an adversarial audit and confirmed in the source:** the rendered
+statement quotes the author-written term fields — `as_used`, `not_essence`, `stipulated` —
+verbatim, and the forbidden-verb lint scans only a node's title and body, never those fields. An
+overstatement placed in a term's stipulation therefore reaches the packet unaltered. See
+[`../architecture.md`](../architecture.md), defect 5. The generation is a structural defence, not a
+complete one: read the rendered statement as your own prose before it leaves your hand, because in
+those three fields it is.
 
 ---
 
 ## Before anything leaves your hand
 
 - Does it answer the exact question and nothing wider?
-- Any enumerated scope or categories that define a limit? Cut them.
+- In correspondence: any enumerated categories where the broad formulation says more? Prefer the
+  broad form. In a finding: the scope of the search stays — a negative finding stripped of its
+  search scope overclaims.
 - Any volunteered reasoning not asked for? Cut it.
 - Any assertion made twice in different words? Reduce to one.
 - Any not-obviously-immaterial connection, or opinion-bearing fact or limitation? Disclose in full.
 - Inferences hedged, legal conclusions handed to the tribunal?
+- Any negative finding resting on a source that never passed a positive control?
 - Every identifier written in full, never elided?
 - Dated, and filed in the record?

@@ -31,8 +31,17 @@ at once, and a scheme that forces one tag makes you drop a fact to satisfy it.
 | `[NOT ESTABLISHED]` | tested and not answerable by the method used. A **result**, not a gap |
 | `[WAS-UNVERIFIED — CLOSED]` | formerly open, since resolved; retained for audit only |
 
-**In peira the first axis rides on the edge as `pramāṇa` and the second is computed** — there is no
-`status` field, and the parser refuses a document carrying one.
+**peira separates the two axes but does NOT implement these tags.** An earlier draft of this
+document claimed the first axis "rides on the edge as `pramāṇa`" and the second "is computed". Both
+halves were false and are retracted. `Pramana` has four values — perception, inference, comparison,
+testimony — not the three tags above, and it is optional on an edge; nothing requires a claim to
+carry one. The states peira computes are `review_ready`, `contested` and `evidence_pending`, none of
+which is `[UNVERIFIED]`, `[NOT ESTABLISHED]` or `[WAS-UNVERIFIED — CLOSED]`.
+
+What peira does share is the *shape* of the separation: how a claim is known is authored on the
+edge, and its standing is computed — there is no `status` field, and the parser refuses a document
+carrying one. **Tag your claims by this standard in your own prose; the tool will not do it for
+you, and will not check that you did.**
 
 ### Rules per tag
 
@@ -121,6 +130,12 @@ A claim **MUST NOT** be recorded from a detector whose failure mode is unknown.
 6. **Symmetric truncation hides itself.** If a cap trims inflows and outflows equally, in still
    equals out and the set looks complete. Assert full pagination and print record counts.
 
+Where a source has been *observed* failing silently — answering successfully with the wrong
+thing — that observation **MUST** be recorded in the matter's source register, which has its own
+rules of ownership and expiry: see [`source-register.md`](source-register.md). In peira, the
+register entry is an `instrument` node and the observation names it with a `measured_by:` edge —
+expressible today, enforced by nothing.
+
 ### Verdict gating
 
 A conclusion **MUST** be gated on its diagnostic, not merely followed by it. Printing a verdict and
@@ -175,7 +190,7 @@ Confidence **MUST** be expressed in words tied to evidence, not as a bare percen
 
 ### Forbidden upgrades
 
-*(peira: `PEIR-LINT-FORBIDDEN-VERB` — note it scans a claim's title and body only.)*
+*(peira: `PEIR-LINT-FORBIDDEN-VERB` — note it scans a node's title and body only.)*
 
 | Overstatement | Correct form |
 |---|---|
@@ -189,7 +204,8 @@ Confidence **MUST** be expressed in words tied to evidence, not as a bare percen
 
 *"every"*, *"all"*, *"none"*, *"never"*, *"anywhere"* **MUST** be scoped to what was actually
 queried. *"No footprint anywhere"* is false when six sources were probed and others exist.
-*(peira: `PEIR-CLASS-EXTENSION-UNDECLARED`.)*
+*(peira: `PEIR-CLASS-EXTENSION-UNDECLARED` — which reaches a verdict only when the claim declares
+`quantifier:`; an undeclared one currently vanishes with architecture defect 1.)*
 
 ### Extreme values
 
@@ -225,7 +241,71 @@ instrument than the world.
 
 ---
 
-## 8. Deliverable rules
+## 8. One source of truth — deliverables are compiled from it
+
+The knowledge base is the source; every report, chart, table and memo is a **build artifact**.
+Treat it exactly as source code is treated: nothing is written straight into a report, and nothing
+is fixed only in a report.
+
+The failure this prevents is fast, not hypothetical. A wrong figure gets found, corrected in the
+deliverable, and left standing in the record — the same fact, two values, within the hour. The
+stale copy is the dangerous one, because it reads as the record and gets inherited:
+
+```mermaid
+flowchart TB
+    R["the record<br/>figure: X — wrong"] -->|"compile"| D1["deliverable, v1<br/>figure: X"]
+    D1 -->|"defect found; edited in<br/>the deliverable ONLY"| D2["deliverable, v2<br/>figure: Y — correct"]
+    R -->|"next compile,<br/>or next reader"| D3["a later document<br/>figure: X — the error returns"]
+    D2 -.->|"never flows back"| R
+
+    D3:::broken
+    classDef broken fill:#5a1a1a,stroke:#d33,color:#fff,stroke-width:2px
+```
+
+The discipline, in the order it must happen:
+
+1. **Record before you report.** Every finding, correction and retraction **MUST** land in the
+   knowledge base, with its tag, before it appears anywhere else.
+2. **Correct at the source, then rebuild.** A defect found in a deliverable is a defect in the
+   source. Fix it upstream and regenerate — never patch the output alone. **Search the record for
+   the superseded figure and supersede it explicitly**: a correction that does not reach its copies
+   is barely a correction.
+3. **Mark supersession; never silently overwrite.** Record what was wrong and what produced it. The
+   retraction is more valuable than the correction — it is the only record of a failure mode you
+   are otherwise going to repeat.
+4. **The deliverable is a projection, not the whole.** Know everything; report only what answers
+   the question asked. The record is a superset by design.
+5. **If it cannot be regenerated, it is not compiled — it is a fork.** A hand-edited deliverable
+   has silently become a second source of truth.
+
+### The mechanical form
+
+peira is this section as machinery, and the mapping is exact where it holds:
+
+- **Record before you report** — a packet has no prose write path: `peira packet` renders it from
+  the graph, and the parser refuses a hand-written `status:` or `confidence:` at the front door.
+- **Rebuild, and prove the rebuild** — `peira verify` re-derives the packet from the vault as it
+  stands and compares digests. An edit that reaches the rendered body surfaces as
+  `DigestMismatch`; one confined to fields the packet does not render — a grade, a grader, an
+  instrument link — changes no digest, and a packet edit touching the `Packet format:` line
+  returns no verdict at all. *"The rendered projection agrees with the record"* becomes a build
+  step — that far, and no further (architecture defects 6 and 8).
+- **Projection** — a packet renders a fixed subset: titles of direct supporters, contradictors and
+  limiters, the warrant, boundaries, falsifiers and term moments. The vault stays the superset.
+
+And where it does not hold: **supersession is the gap.** `supersedes:` and `retracts:` edges are
+parsed and recorded, and then read by nothing — no gate, no lint, no freeze check. A packet
+freezes for a claim the vault records as withdrawn. Until that closes, rule 3 is yours to enforce **outside the tool**.
+Re-freezing does **not** help and is worse than doing nothing: `Retracts` appears nowhere in the
+gate, lint, freeze or status code, so a re-frozen packet reproduces the withdrawn claim and looks
+freshly generated while doing it. The only safe procedure today is to **delete or quarantine the
+packets that cite a retracted claim**, and to track retractions in a register the tool does not
+own. See the
+[architecture defect register](../architecture.md#defect-register), defect 3.
+
+---
+
+## 9. Deliverable rules
 
 1. Every figure **MUST** trace to an artefact or a declared source. Prose-embedded numbers defeat
    this; declare them in a data block with a source string.
@@ -247,7 +327,7 @@ evidence**, and **what is not established**.
 
 ---
 
-## 9. Review
+## 10. Review
 
 - The author of a finding **MUST NOT** issue its final sign-off.
   *(peira: `PEIR-LINT-SELF-GRADED`.)*
