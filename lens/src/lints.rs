@@ -30,6 +30,8 @@ pub const UNGROUNDED_CHAIN: &str = "PEIR-LINT-UNGROUNDED-CHAIN";
 pub const RETRACTED: &str = "PEIR-LINT-RETRACTED";
 /// Support nobody has weighed.
 pub const UNGRADED_SUPPORT: &str = "PEIR-LINT-UNGRADED-SUPPORT";
+/// A finding that decides the ultimate issue — the tribunal's question, not the expert's.
+pub const LEGAL_CONCLUSION: &str = "PEIR-LINT-LEGAL-CONCLUSION";
 
 /// Scan arbitrary rendered text for overstatement.
 ///
@@ -94,6 +96,81 @@ const OVERSTATEMENTS: &[(&str, &str)] = &[
     ("clearly shows", "shows"),
 ];
 
+/// Words that decide the ultimate issue rather than describe evidence.
+///
+/// Unlike [`OVERSTATEMENTS`], this list can be COMPLETE for its purpose. Overstatement
+/// is open-ended — there is always another way to assert too much — but the ultimate
+/// issues a tribunal decides are a closed set, and naming them is the whole of the
+/// layer-3 boundary: *"the Court may draw its own conclusions"*.
+///
+/// This is our own table rather than a decode of anyone's spec, so it is a T3
+/// instrument and says so. It catches the sentence a technical author writes without
+/// noticing they have crossed from evidence into verdict — the case that survives
+/// every verb check because it contains no overstated verb at all.
+const ULTIMATE_ISSUES: &[&str] = &[
+    "guilty",
+    "innocent",
+    "liable",
+    "not liable",
+    "negligent",
+    "fraudulent",
+    "committed fraud",
+    "is fraud",
+    "stole",
+    "theft by",
+    "breached the contract",
+    "in breach of contract",
+    "unlawful",
+    "criminally",
+    "defamed",
+    "infringed",
+];
+
+/// A claim that decides the tribunal's question instead of describing evidence.
+///
+/// Layer 3 is never the expert's — see `docs/method/expert-witness.md`. The
+/// forbidden-verb lint cannot reach this: *"the suspect is guilty of unauthorised
+/// access"* contains no overstated verb, passes every check, and freezes into a court
+/// packet under the tool's own authority.
+///
+/// Reports rather than blocks would be the softer choice, and is the wrong one here: a
+/// packet is the artifact that reaches a tribunal, and this is the one sentence that
+/// must never reach one.
+fn legal_conclusions(node: &Node) -> Vec<Violation> {
+    let haystack = format!("{} {}", node.title, node.body).to_ascii_lowercase();
+    // SENTENCE-level negation, not the four-word lookback the verb lint uses. "The
+    // record is not evidence that the account holder is liable" is a correct negative
+    // finding, and the negator sits eight words from the word it negates — it denies
+    // the whole proposition rather than the adjacent term.
+    //
+    // The trade is deliberate and costs real coverage: "X is guilty, and NOTHING
+    // contradicts it" is missed because it contains a negator. That is the right
+    // direction for a check that BLOCKS. A false positive here refuses the careful,
+    // properly-hedged sentence an expert is obliged to write, and a checker that
+    // punishes the discipline it teaches is one people switch off. What it misses was
+    // caught by nothing before.
+    let sentence_negated = haystack
+        .split(|c: char| !c.is_alphanumeric() && c != '\'')
+        .any(|w| NEGATORS.contains(&w));
+    if sentence_negated {
+        return Vec::new();
+    }
+
+    ULTIMATE_ISSUES
+        .iter()
+        .filter(|w| contains_phrase(&haystack, w))
+        .map(|w| {
+            violation(
+                LEGAL_CONCLUSION,
+                &node.id,
+                format!("says \"{w}\" — that is the tribunal's question, not the evidence's"),
+                "state what the evidence shows and hand the conclusion back: \
+\"the Court may draw its own conclusions\"",
+            )
+        })
+        .collect()
+}
+
 /// Fields that must never appear in the open tier.
 const PRIVILEGED_FIELDS: &[&str] = &["privilege", "client", "matter_id", "instructing_solicitor"];
 
@@ -136,7 +213,10 @@ fn is_negated(haystack: &str, needle: &str) -> bool {
         .split(|c: char| !c.is_alphanumeric() && c != '\'')
         .filter(|w| !w.is_empty())
         .rev()
-        .take(4)
+        // Six words, not four: "is NOT evidence that the account holder is liable"
+        // puts the negator six back, and flagging that sentence would block the exact
+        // careful phrasing the expert-witness discipline asks for.
+        .take(6)
         .any(|w| NEGATORS.contains(&w))
 }
 
@@ -590,6 +670,7 @@ pub fn lint(graph: &Graph) -> Vec<Violation> {
         out.extend(ungrounded_chains(graph, node));
         out.extend(retracted(graph, node));
         out.extend(ungraded_support(graph, node));
+        out.extend(legal_conclusions(node));
     }
     out
 }
@@ -650,6 +731,46 @@ stipulated: the entry proves the suspect executed the binary\n---\n",
             found[0].detail.contains("stipulated"),
             "the finding must name WHICH field carries it, since three are rendered: {}",
             found[0].detail
+        );
+    }
+
+    /// A claim may not decide the tribunal's question.
+    ///
+    /// Layer 3 is never the expert's. The forbidden-verb lint cannot reach this —
+    /// "the suspect is guilty of unauthorised access" contains no overstated verb, so
+    /// it passed every check and froze into a court packet.
+    ///
+    /// The negative case is the one that keeps this honest: a careful negative finding
+    /// uses the same words and must pass.
+    #[test]
+    fn a_claim_may_not_decide_the_ultimate_issue() {
+        let fired = |title: &str| {
+            let g = graph_of(
+                vec![node(&format!(
+                    "---\nid: c1\ntype: claim\ntitle: {title}\n---\n"
+                ))],
+                vec![],
+            );
+            lint(&g)
+                .into_iter()
+                .filter(|v| v.gate == "PEIR-LINT-LEGAL-CONCLUSION")
+                .count()
+        };
+        assert_eq!(
+            fired("The suspect is guilty of unauthorised access"),
+            1,
+            "a bald legal conclusion must be caught"
+        );
+        assert_eq!(
+            fired("The record is not evidence that the account holder is liable"),
+            0,
+            "a careful negative finding uses the same words and must pass — blocking it \
+would punish the discipline this lint teaches"
+        );
+        assert_eq!(
+            fired("The record shows a process was created from this image"),
+            0,
+            "an ordinary evidential statement must pass"
         );
     }
 

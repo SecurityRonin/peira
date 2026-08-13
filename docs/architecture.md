@@ -414,13 +414,19 @@ falsehood into the docket and told the judges one was fabricated. It was rejecte
 judge refuting it by running the binary. That number is why the second round's findings carry
 weight the first round's counts did not.
 
-**Still open**, from eighteen sustained:
+**All three of the previously-open findings are now closed**, and the closing changed two of them:
 
-| | |
+| Was open | Outcome |
 |---|---|
-| A support hop through a `hypothesis` | the closure walks `Supports` edges; a hypothesis in the chain is examined by fewer gates |
-| `verify` on a stale packet | a packet frozen before a retraction cannot know about it; withdrawing a claim still means retrieving the artifacts that cite it |
-| The forbidden-verb list is finite | rejected 1-4 by the panel as "a denylist is a denylist", and they were right that it is not a *defect* — but a bald conclusion in unlisted words still passes |
+| A support hop through a `hypothesis` reaches fewer gates | **fixed** — promotion obligations attach to being *load-bearing*, not to the node kind. A hypothesis nothing leans on is still a candidate; one supporting a claim answers for itself |
+| `verify` cannot know about a retraction added after freezing | **was already closed** by the evidential-closure walk, and this document was stale. `verify` re-derives from the live vault, so it reports "the claim no longer qualifies" and names the retraction. The *packet* is ignorant; the *tool* is not |
+| The forbidden-verb list is finite | **the panel rejected this 1-4 and the panel was half right.** A denylist being finite is not a defect. But *"the suspect is guilty of unauthorised access"* contains no forbidden verb, passed every check, and froze into a packet — so `PEIR-LINT-LEGAL-CONCLUSION` now catches the ultimate issue, which unlike overstatement is a closed vocabulary |
+
+The layer-3 lint uses **sentence-level** negation rather than the verb lint's short lookback, and the
+trade costs real coverage: *"X is guilty, and nothing contradicts it"* is missed because it contains
+a negator. That is the right direction for a check that blocks — a false positive here refuses the
+carefully hedged sentence an expert is obliged to write, and what it misses was caught by nothing
+before.
 
 **Only one lineage ran the second round.** The outside critic was blocked by its provider's safety
 classifier — the session shape (an agent building a tool, then constructing inputs to defeat its

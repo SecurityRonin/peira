@@ -80,6 +80,29 @@ impl CausalRung {
     }
 }
 
+/// Whether a promotion gate examines this node.
+///
+/// A `Hypothesis` is a candidate explanation, and demanding boundaries, a falsifier
+/// and a causal rung before it may exist inverts what the kind is for — a checker that
+/// blocks you for thinking out loud is a checker you switch off.
+///
+/// But the exemption ends where something LEANS on it. A hypothesis supporting a claim
+/// is doing a claim's work, and scoping these gates to `Claim` alone let an unexamined
+/// hypothesis carry an over-statement into a frozen packet: put the conclusion on a
+/// hypothesis, support the claim with it, and every promotion gate looked away.
+///
+/// Same rule as `PEIR-LINT-RETRACTED`: the obligation attaches to being load-bearing,
+/// not to the node kind.
+fn under_promotion(graph: &Graph, node: &Node) -> bool {
+    match node.kind {
+        NodeKind::Claim => true,
+        NodeKind::Hypothesis => graph
+            .edges_from(&node.id)
+            .any(|e| e.kind == EdgeKind::Supports),
+        _ => false,
+    }
+}
+
 /// Build a blocking result.
 fn block(
     gate: &'static str,
@@ -155,6 +178,9 @@ const TERM_MOMENTS: &[&str] = &["as_used", "not_essence", "stipulated"];
 
 /// Every load-bearing term resolves to a fully stipulated Term node.
 pub fn key_terms_stipulated(graph: &Graph, node: &Node) -> GateResult {
+    if !under_promotion(graph, node) {
+        return GateResult::NotApplicable;
+    }
     let uses: Vec<_> = graph
         .edges_from(&node.id)
         .filter(|e| e.kind == EdgeKind::UsesTerm)
@@ -250,7 +276,10 @@ what it is",
 // ── 白馬非馬 ─────────────────────────────────────────────────────────────────
 
 /// A claim quantifying over a class must say what the class contains.
-pub fn class_extension_declared(_graph: &Graph, node: &Node) -> GateResult {
+pub fn class_extension_declared(graph: &Graph, node: &Node) -> GateResult {
+    if !under_promotion(graph, node) {
+        return GateResult::NotApplicable;
+    }
     let Some(quantifier) = node.field("quantifier") else {
         return GateResult::Unassessed {
             why: format!(
@@ -310,7 +339,10 @@ as addressing it",
 // ── Toulmin ──────────────────────────────────────────────────────────────────
 
 /// The rule licensing grounds → claim must be written down.
-pub fn warrant_present(_graph: &Graph, node: &Node) -> GateResult {
+pub fn warrant_present(graph: &Graph, node: &Node) -> GateResult {
+    if !under_promotion(graph, node) {
+        return GateResult::NotApplicable;
+    }
     if node.field("warrant").is_some() {
         return GateResult::Pass;
     }
@@ -388,6 +420,9 @@ so no ceiling applies to it",
 
 /// A claim above the association rung needs an executed protocol behind it.
 pub fn causal_rung_earned(graph: &Graph, node: &Node) -> GateResult {
+    if !under_promotion(graph, node) {
+        return GateResult::NotApplicable;
+    }
     let Some(raw) = node.field("causal_rung") else {
         return GateResult::Unassessed {
             why: format!(
@@ -436,7 +471,10 @@ association rung",
 }
 
 /// Every claim states the conditions under which it would change.
-pub fn boundaries_declared(_graph: &Graph, node: &Node) -> GateResult {
+pub fn boundaries_declared(graph: &Graph, node: &Node) -> GateResult {
+    if !under_promotion(graph, node) {
+        return GateResult::NotApplicable;
+    }
     if node.field_list("boundaries").is_empty() {
         block(
             BOUNDARIES_MISSING,
@@ -465,6 +503,9 @@ cite each, never a bare string",
 /// A *defeated* attacker still counts — it is evidence the claim was examined for
 /// defeat, and whether it survives is the grounded extension's question, not this one.
 pub fn falsifier_declared(graph: &Graph, node: &Node) -> GateResult {
+    if !under_promotion(graph, node) {
+        return GateResult::NotApplicable;
+    }
     if !node.field_list("falsifier").is_empty() {
         return GateResult::Pass;
     }
@@ -492,6 +533,37 @@ mod tests {
 
     fn node(src: &str) -> Node {
         parse_node(src).expect("fixture parses")
+    }
+
+    /// A hypothesis carrying a claim is doing a claim's work.
+    ///
+    /// Scoping promotion gates to `Claim` fixed over-firing on candidate explanations
+    /// and opened a laundering route: put the conclusion on a hypothesis, support the
+    /// claim with it, and every promotion gate looked away. The obligation attaches to
+    /// being LOAD-BEARING, not to the node kind.
+    #[test]
+    fn a_hypothesis_that_supports_a_claim_is_held_to_a_claims_bar() {
+        let hypo = node("---\nid: h1\ntype: hypothesis\ntitle: A candidate explanation\n---\n");
+        let claim = node("---\nid: c1\ntype: claim\ntitle: t\n---\n");
+
+        let bare = graph_of(vec![hypo.clone()], vec![]);
+        assert!(
+            warrant_present(&bare, &hypo).permits_promotion(),
+            "a hypothesis nothing leans on is a candidate — thinking out loud is allowed"
+        );
+
+        let load_bearing = graph_of(
+            vec![hypo.clone(), claim],
+            vec![Edge::new(
+                NodeId::new("h1"),
+                NodeId::new("c1"),
+                EdgeKind::Supports,
+            )],
+        );
+        assert!(
+            !warrant_present(&load_bearing, &hypo).permits_promotion(),
+            "once a claim rests on it, it answers for itself"
+        );
     }
 
     /// A settled grade must declare how it was known.
