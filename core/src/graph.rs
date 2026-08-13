@@ -1,7 +1,7 @@
 //! The argumentation graph and its grounded extension.
 
 use crate::{
-    edge::Edge,
+    edge::{Edge, EdgeKind},
     node::{Node, NodeId},
 };
 use std::collections::{BTreeMap, BTreeSet};
@@ -68,8 +68,24 @@ impl Graph {
 
     /// The attack relation, as `target -> attackers`.
     fn attackers(&self) -> BTreeMap<NodeId, Vec<NodeId>> {
+        // A withdrawn claim is not a participant in the dispute. Letting it attack and
+        // then be defeated would be wrong twice over: it never had standing to argue,
+        // and in the other direction a withdrawn DEFENDER props up the claim it shields
+        // — so a live claim would survive on the strength of an argument its own author
+        // retracted. Removing it from the relation is the honest form.
+        let withdrawn: BTreeSet<NodeId> = self
+            .edges
+            .iter()
+            .filter(|e| matches!(e.kind, EdgeKind::Retracts | EdgeKind::Supersedes))
+            .map(|e| e.to.clone())
+            .collect();
+
         let mut map: BTreeMap<NodeId, Vec<NodeId>> = BTreeMap::new();
-        for edge in self.edges.iter().filter(|e| e.kind.is_attack()) {
+        for edge in self
+            .edges
+            .iter()
+            .filter(|e| e.kind.is_attack() && !withdrawn.contains(&e.from))
+        {
             map.entry(edge.to.clone())
                 .or_default()
                 .push(edge.from.clone());

@@ -246,7 +246,22 @@ claim was never examined for it — a gate that could not run has cleared nothin
     out
 }
 
+/// Node kinds that compete in the graph and can therefore be attacked.
 const ARGUMENTS: &[NodeKind] = &[NodeKind::Claim, NodeKind::Hypothesis];
+
+/// Node kinds a PROMOTION gate examines — claims only.
+///
+/// A `Hypothesis` is "a candidate explanation, competing with others": explicitly not
+/// yet asserted. Demanding that it declare boundaries, a falsifier and a causal rung
+/// before it may exist inverts what the kind is for, and a checker that blocks you for
+/// thinking out loud is a checker you switch off.
+///
+/// This was always mis-scoped; it only became visible when `Unassessed` results
+/// stopped being discarded, because three of the five findings on a bare hypothesis
+/// were no-verdict results nobody ever saw. A hypothesis is still examined by the
+/// lenses that bear on what it *is* — 立極, 體用, 四句 and the grounded extension —
+/// and by the whole lint pack.
+const CLAIMS: &[NodeKind] = &[NodeKind::Claim];
 
 /// The catalogue.
 pub static CATALOG: &[Lens] = &[
@@ -278,7 +293,7 @@ suspicious without ever stating the standard of suspicion, so the reader cannot 
 definition never licensed",
         operation: "every key term resolves to a Term node carrying as_used, not_essence and \
 stipulated",
-        applies_to: ARGUMENTS,
+        applies_to: CLAIMS,
         gates: &[Gate {
             code: gates::TERM_UNSTIPULATED,
             check: gates::key_terms_stipulated,
@@ -319,7 +334,7 @@ about what it is.",
         tradition: Tradition::Chinese,
         failure_mode: "sliding between a type and its tokens, or between intension and extension",
         operation: "a claim quantifying over a class must declare that class's extension",
-        applies_to: ARGUMENTS,
+        applies_to: CLAIMS,
         gates: &[Gate {
             code: gates::CLASS_EXTENSION_UNDECLARED,
             check: gates::class_extension_declared,
@@ -360,7 +375,7 @@ Amcache record: catalogued without execution — neither cleanly one nor the oth
         failure_mode: "the unstated warrant: grounds and claim are given, the rule connecting \
 them never is",
         operation: "`warrant` is a required field, not an optional one",
-        applies_to: ARGUMENTS,
+        applies_to: CLAIMS,
         gates: &[Gate {
             code: gates::WARRANT_MISSING,
             check: gates::warrant_present,
@@ -402,7 +417,7 @@ reaches G4.",
 data, and stating a conclusion with no boundary conditions",
         operation: "a claim above the association rung requires an executed protocol supporting \
 it; every claim declares its boundaries",
-        applies_to: ARGUMENTS,
+        applies_to: CLAIMS,
         gates: &[
             Gate {
                 code: gates::CAUSAL_RUNG_UNREACHED,
@@ -577,7 +592,7 @@ not because the reason is necessarily good, but because not knowing it is not an
         tradition: Tradition::Modern,
         failure_mode: "no recorded falsifier, so nothing could ever count as being wrong",
         operation: "promotion requires at least one stated condition that would defeat the claim",
-        applies_to: ARGUMENTS,
+        applies_to: CLAIMS,
         gates: &[Gate {
             code: gates::FALSIFIER_MISSING,
             check: gates::falsifier_declared,

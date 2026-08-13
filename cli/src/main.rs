@@ -123,13 +123,14 @@ fn report(violations: &[Violation], what: &str) -> u8 {
     exit::VIOLATIONS
 }
 
-/// Everything blocking one node, gates and lints together.
+/// Everything blocking one node — the same question `freeze` asks, asked once.
+///
+/// This filtered findings to the node's own id while court walked the evidential
+/// closure, so `peira status` reported "all enforced gates pass" over a claim
+/// `peira packet` refused. A status line that disagrees with the tool's own refusal
+/// is worse than no status line.
 fn blocking_for(graph: &Graph, id: &NodeId) -> Vec<Violation> {
-    examine_graph(graph)
-        .into_iter()
-        .chain(lints::lint(graph))
-        .filter(|v| &v.subject == id)
-        .collect()
+    peira_court::violations_for(graph, id)
 }
 
 /// The vault skeleton. Areas `00-59` belong to OGS; peira claims `60-99`.

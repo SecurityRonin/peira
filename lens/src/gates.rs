@@ -161,9 +161,19 @@ pub fn key_terms_stipulated(graph: &Graph, node: &Node) -> GateResult {
         .collect();
 
     if uses.is_empty() {
+        // "This claim turns on no term of art" is a real state, and until it could be
+        // SAID the gate made every plain claim unfreezable — silence and denial read
+        // identically, which is the failure this whole catalogue exists to name. The
+        // author declares it explicitly, exactly as `evaluative: true` overrides the
+        // 立極 word table. Declaring it is a statement someone can be held to; omitting
+        // the field still reaches no verdict.
+        if node.field("no_terms_of_art") == Some("true") {
+            return GateResult::Pass;
+        }
         return GateResult::Unassessed {
             why: format!(
-                "\"{}\" declares no key terms, so which words are load-bearing is unknown",
+                "\"{}\" declares no key terms, so which words are load-bearing is unknown \
+— add `uses_term:`, or declare `no_terms_of_art: true` if it truly turns on none",
                 node.title
             ),
         };
@@ -323,25 +333,23 @@ the part that turns out to be false",
 
 /// No edge may be graded above what its means of knowing allows.
 pub fn grades_within_pramana_ceiling(graph: &Graph, node: &Node) -> GateResult {
-    let incoming: Vec<_> = graph.edges_to(&node.id).collect();
+    // EVIDENCE edges only. A rival's `contradicts` carrying a bad grade is the rival's
+    // defect, and blocking the claim it attacks punishes the victim for someone else's
+    // frontmatter — a finding must land on the node that can fix it.
+    let incoming: Vec<_> = graph
+        .edges_to(&node.id)
+        .filter(|e| e.kind == EdgeKind::Supports)
+        .collect();
     if incoming.is_empty() {
         return GateResult::NotApplicable;
     }
+
+    // Look at EVERY edge before answering. Returning on the first non-passing one let
+    // an early no-verdict mask a later real ceiling violation, and a blocking finding
+    // outranks a no-verdict one: "this grade exceeds what its source can carry" is a
+    // verdict, "this one declares no source" is the absence of one.
+    let mut unassessed: Option<String> = None;
     for edge in incoming {
-        // A settled grade with no declared means of knowing is not within its
-        // ceiling — it has no ceiling. The comparison in `exceeds_pramana_ceiling`
-        // needs both halves, so an undeclared pramāṇa silently removed the cap: the
-        // constraint activated on a field's presence and was evaded by its absence.
-        // No verdict is the honest answer, and no verdict never permits promotion.
-        if let (Some(grade), None) = (edge.grade(), edge.pramana) {
-            return GateResult::Unassessed {
-                why: format!(
-                    "edge {} → {} is settled at {grade} but declares no means of knowing, \
-so no ceiling applies to it",
-                    edge.from, edge.to
-                ),
-            };
-        }
         if edge.exceeds_pramana_ceiling() {
             let (Some(grade), Some(pramana)) = (edge.grade(), edge.pramana) else {
                 continue;
@@ -360,8 +368,20 @@ so no ceiling applies to it",
 between tools is testimony, not perception",
             );
         }
+        if unassessed.is_none() {
+            if let (Some(grade), None) = (edge.grade(), edge.pramana) {
+                unassessed = Some(format!(
+                    "edge {} → {} is settled at {grade} but declares no means of knowing, \
+so no ceiling applies to it",
+                    edge.from, edge.to
+                ));
+            }
+        }
     }
-    GateResult::Pass
+    match unassessed {
+        Some(why) => GateResult::Unassessed { why },
+        None => GateResult::Pass,
+    }
 }
 
 // ── Pearl's ladder ───────────────────────────────────────────────────────────
