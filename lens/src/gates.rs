@@ -460,6 +460,60 @@ mod tests {
         parse_node(src).expect("fixture parses")
     }
 
+    /// A settled grade must declare how it was known.
+    ///
+    /// `exceeds_pramana_ceiling` compares grade against ceiling only when BOTH are
+    /// present, so omitting `via=` removed the cap entirely: a single edge could
+    /// settle at G4 — a grade defined as multiple materially independent convergent
+    /// lines — on one document somebody wrote. The cap bound only authors polite
+    /// enough to declare their means of knowing.
+    ///
+    /// An UNGRADED edge is a different thing and stays silent here: it asserts
+    /// nothing, and the lint pack reports it separately.
+    #[test]
+    fn a_settled_grade_without_a_declared_means_of_knowing_is_not_a_pass() {
+        let claim = node("---\nid: c1\ntype: claim\ntitle: t\n---\n");
+        let obs = node("---\nid: o1\ntype: observation\ntitle: o\n---\n");
+
+        let graded_no_pramana = graph_of(
+            vec![claim.clone(), obs.clone()],
+            vec![
+                Edge::new(NodeId::new("o1"), NodeId::new("c1"), EdgeKind::Supports)
+                    .graded_by(Grade::G4, "a-reviewer"),
+            ],
+        );
+        assert!(
+            !grades_within_pramana_ceiling(&graded_no_pramana, &claim).permits_promotion(),
+            "a G4 settled with no declared means of knowing must not permit promotion"
+        );
+
+        let graded_with_pramana = graph_of(
+            vec![claim.clone(), obs.clone()],
+            vec![
+                Edge::new(NodeId::new("o1"), NodeId::new("c1"), EdgeKind::Supports)
+                    .graded_by(Grade::G3, "a-reviewer")
+                    .via(Pramana::Perception),
+            ],
+        );
+        assert!(
+            grades_within_pramana_ceiling(&graded_with_pramana, &claim).permits_promotion(),
+            "a grade within its declared ceiling still passes"
+        );
+
+        let ungraded = graph_of(
+            vec![claim.clone(), obs],
+            vec![Edge::new(
+                NodeId::new("o1"),
+                NodeId::new("c1"),
+                EdgeKind::Supports,
+            )],
+        );
+        assert!(
+            grades_within_pramana_ceiling(&ungraded, &claim).permits_promotion(),
+            "an ungraded edge asserts nothing and is the lint pack's business, not this gate's"
+        );
+    }
+
     fn graph_of(nodes: Vec<Node>, edges: Vec<Edge>) -> Graph {
         let mut g = Graph::new();
         for n in nodes {
