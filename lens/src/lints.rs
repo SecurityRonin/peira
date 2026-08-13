@@ -31,6 +31,49 @@ pub const RETRACTED: &str = "PEIR-LINT-RETRACTED";
 /// Support nobody has weighed.
 pub const UNGRADED_SUPPORT: &str = "PEIR-LINT-UNGRADED-SUPPORT";
 
+/// Scan arbitrary rendered text for overstatement.
+///
+/// The counterpart to [`forbidden_verbs`], which walks a node's fields. This takes
+/// text that has ALREADY been rendered — a packet body — so nothing has to be
+/// enumerated in advance. A field list has to be kept in step with a renderer by
+/// hand, and the list in this file was already out of date with `freeze` on the day
+/// it was written: `warrant`, `boundaries` and `falsifier` were rendered verbatim
+/// and scanned by nothing.
+#[must_use]
+pub fn overstatements_in(text: &str, subject: &NodeId) -> Vec<Violation> {
+    let haystack = text.to_ascii_lowercase();
+    OVERSTATEMENTS
+        .iter()
+        .filter(|(word, _)| contains_phrase(&haystack, word) && !is_negated(&haystack, word))
+        .map(|(word, instead)| {
+            violation(
+                FORBIDDEN_VERB,
+                subject,
+                format!(
+                    "the rendered packet says \"{word}\" — it would be sealed into the \
+artifact exactly as written"
+                ),
+                if instead.starts_with("(delete") {
+                    "delete the intensifier and state what the evidence shows"
+                } else {
+                    "replace with consistent-with language: an observation is never a verdict"
+                },
+            )
+        })
+        .collect()
+}
+
+/// Authored fields that Court Mode renders into a packet VERBATIM.
+///
+/// The safe statement is generated so that nobody can overstate it — but these three
+/// are copied through unaltered, so an overstatement placed here reaches a tribunal
+/// having passed every check. They are scanned exactly like a title or a body.
+///
+/// If Court Mode ever renders another authored field, it belongs in this list. A
+/// rendered field the lint does not reach is a hole in the claim that the statement
+/// is generated.
+pub const RENDERED_FIELDS: &[&str] = &["as_used", "not_essence", "stipulated"];
+
 /// Overstatements, and what to say instead.
 ///
 /// Taken from the expert-witness substitution table: the left column is what gets
@@ -69,6 +112,34 @@ fn violation(
     }
 }
 
+/// Words that negate the phrase following them.
+///
+/// Kept small and literal on purpose: this decides whether to SUPPRESS a finding, so a
+/// generous list would silence real overstatements. Anything subtler than a negation
+/// immediately before the verb is left to a human.
+const NEGATORS: &[&str] = &[
+    "not", "never", "no", "nothing", "cannot", "does", "doesn't", "don't", "isn't", "wasn't",
+    "neither", "nor", "without",
+];
+
+/// Whether the occurrence of `needle` in `haystack` sits inside its own negation.
+///
+/// The 即非 moment's whole job is denial — "a catalogue entry does not PROVE
+/// execution" is the correct form, and flagging it punishes exactly the careful author
+/// the lint exists to serve. Looks back a few words only: "not" three words before
+/// "proves" negates it; "not" two sentences earlier does not.
+fn is_negated(haystack: &str, needle: &str) -> bool {
+    let Some(at) = haystack.find(needle) else {
+        return false;
+    };
+    haystack[..at]
+        .split(|c: char| !c.is_alphanumeric() && c != '\'')
+        .filter(|w| !w.is_empty())
+        .rev()
+        .take(4)
+        .any(|w| NEGATORS.contains(&w))
+}
+
 /// Whether `haystack` contains `needle` as a whole-word phrase.
 fn contains_phrase(haystack: &str, needle: &str) -> bool {
     let mut from = 0;
@@ -95,18 +166,44 @@ fn contains_phrase(haystack: &str, needle: &str) -> bool {
 
 /// Prose that asserts more than evidence carries.
 fn forbidden_verbs(node: &Node) -> Vec<Violation> {
-    let haystack = format!("{} {}", node.title, node.body).to_ascii_lowercase();
-    OVERSTATEMENTS
+    // Every place an overstatement can reach a reader: the prose, and the authored
+    // term fields Court Mode renders verbatim into the packet. Scanning title and
+    // body alone left the ONE channel that reaches a tribunal unchecked.
+    let mut haystacks = vec![("", format!("{} {}", node.title, node.body))];
+    for f in RENDERED_FIELDS {
+        if let Some(v) = node.field(f) {
+            haystacks.push((*f, v.to_owned()));
+        }
+    }
+
+    haystacks
         .iter()
-        .filter(|(word, _)| contains_phrase(&haystack, word))
-        .map(|(word, instead)| {
+        .flat_map(|(field, text)| {
+            let haystack = text.to_ascii_lowercase();
+            OVERSTATEMENTS
+                .iter()
+                .filter(move |(word, _)| {
+                    contains_phrase(&haystack, word) && !is_negated(&haystack, word)
+                })
+                .map(move |(word, instead)| (*field, *word, *instead))
+        })
+        .map(|(field, word, instead)| {
             violation(
                 FORBIDDEN_VERB,
                 &node.id,
-                format!("says \"{word}\" — {}", node.title),
+                if field.is_empty() {
+                    format!("says \"{word}\" — {}", node.title)
+                } else {
+                    // Name the field: three are rendered, and a bare "says proves"
+                    // sends the author hunting through the node.
+                    format!(
+                        "`{field}:` says \"{word}\" — and Court Mode renders that field \
+verbatim into the packet"
+                    )
+                },
                 // The remedy is a &'static str, so the substitution is carried in the
                 // detail line rather than fabricated per-call.
-                match *instead {
+                match instead {
                     s if s.starts_with("(delete") => {
                         "delete the intensifier and state what the evidence shows"
                     }
@@ -240,6 +337,22 @@ protocol; inference resting on inference is a claim standing on its own narrativ
 /// dialectical move that a counter-argument could defeat — modelling it as one would
 /// let a claim win against its own withdrawal in the grounded extension.
 fn retracted(graph: &Graph, node: &Node) -> Vec<Violation> {
+    // A retired version EXISTING is correct — "retained, never deleted" is the design.
+    // Reporting it forever trains a reader to skip the category, and a permanently red
+    // check is worse than none. The finding is raised only where the retired node is
+    // still LOAD-BEARING: something live still leans on it. Court Mode reaches this
+    // through the evidential closure, so a packet resting on withdrawn work is refused
+    // while a properly retained history stays quiet.
+    let still_cited = graph
+        .edges_to(&node.id)
+        .any(|e| e.kind == EdgeKind::Supports)
+        || graph
+            .edges_from(&node.id)
+            .any(|e| matches!(e.kind, EdgeKind::Supports | EdgeKind::Attacks));
+    if !still_cited {
+        return Vec::new();
+    }
+
     graph
         .edges_to(&node.id)
         .filter(|e| matches!(e.kind, EdgeKind::Retracts | EdgeKind::Supersedes))
@@ -503,6 +616,41 @@ mod tests {
 
     fn codes(v: &[Violation]) -> Vec<&str> {
         v.iter().map(|x| x.gate).collect()
+    }
+
+    /// The lint must reach every field the packet renders.
+    ///
+    /// `safe_statement` renders a Term's `as_used`, `not_essence` and `stipulated`
+    /// verbatim into the court artifact, and `forbidden_verbs` scanned only title and
+    /// body. So the one channel that reaches a tribunal was the one channel nobody
+    /// checked: "proves" placed in a stipulation passed clean and printed unaltered.
+    ///
+    /// "Nobody writes the sentence, so nobody can overstate it" is false while an
+    /// authored field is rendered verbatim. Either the lint reaches those fields or
+    /// the claim is not true.
+    #[test]
+    fn an_overstatement_in_a_rendered_term_field_is_caught() {
+        let term = node(
+            "---\nid: t1\ntype: term\ntitle: execution\n\
+as_used: the program ran\n\
+not_essence: the record is not the running\n\
+stipulated: the entry proves the suspect executed the binary\n---\n",
+        );
+        let g = graph_of(vec![term], vec![]);
+        let found: Vec<Violation> = lint(&g)
+            .into_iter()
+            .filter(|v| v.gate == "PEIR-LINT-FORBIDDEN-VERB")
+            .collect();
+        assert_eq!(
+            found.len(),
+            1,
+            "an overstatement in `stipulated:` reaches the packet verbatim and must be caught"
+        );
+        assert!(
+            found[0].detail.contains("stipulated"),
+            "the finding must name WHICH field carries it, since three are rendered: {}",
+            found[0].detail
+        );
     }
 
     /// A retracted claim must not pass silently.

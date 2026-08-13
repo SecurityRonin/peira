@@ -19,6 +19,7 @@
 use blazehash_core::algorithm::{hash_bytes, Algorithm};
 use peira_core::{EdgeKind, Graph, Node, NodeId, NodeKind};
 use peira_lens::{examine_graph, lints, Violation};
+use std::collections::BTreeSet;
 use std::fmt::{self, Write as _};
 
 /// Why a packet could not be frozen.
@@ -226,42 +227,13 @@ fn defeat_block(graph: &Graph, claim: &Node) -> String {
 }
 
 /// Every violation bearing on one claim.
-fn violations_for(graph: &Graph, id: &NodeId) -> Vec<Violation> {
-    examine_graph(graph)
-        .into_iter()
-        .chain(lints::lint(graph))
-        .filter(|v| &v.subject == id)
-        .collect()
-}
-
-/// Freeze a packet for `id`.
+/// Render the packet body for a claim — the exact bytes `freeze` would seal.
 ///
-/// # Errors
-/// Refuses when the claim is missing, is not a claim, is defeated in the grounded
-/// extension, or has any blocking gate. There is no override parameter, because a
-/// packet that could be forced would be worth nothing in the room it is made for.
-pub fn freeze(graph: &Graph, id: &NodeId) -> Result<Packet, PacketError> {
-    let claim = graph
-        .node(id)
-        .ok_or_else(|| PacketError::NoSuchClaim(id.clone()))?;
-    if claim.kind != NodeKind::Claim {
-        return Err(PacketError::NotAClaim {
-            id: id.clone(),
-            kind: claim.kind,
-        });
-    }
-
-    let violations = violations_for(graph, id);
-    if !violations.is_empty() {
-        return Err(PacketError::Blocked {
-            id: id.clone(),
-            violations,
-        });
-    }
-    if !graph.is_grounded(id) {
-        return Err(PacketError::Defeated(id.clone()));
-    }
-
+/// Extracted so the same text can be SCANNED before anyone commits to sealing it.
+/// While this lived inline in `freeze`, the overstatement check ran where only
+/// `freeze` could see it, and `peira status` contradicted the packet command.
+fn render_body(graph: &Graph, id: &NodeId) -> Option<String> {
+    let claim = graph.node(id)?;
     let supports = related(graph, claim, EdgeKind::Supports);
     let contradicts = related(graph, claim, EdgeKind::Contradicts);
     let limits = related(graph, claim, EdgeKind::Limits);
@@ -332,6 +304,102 @@ pub fn freeze(graph: &Graph, id: &NodeId) -> Result<Packet, PacketError> {
         limiting = bullet_list(&limits, "(none recorded)"),
     );
 
+    // Scan what will actually be SEALED, not a list of fields somebody remembered to
+    // enumerate. The lint pack's rendered-field list was already out of step with this
+    // renderer on the day it was written: `warrant`, `boundaries` and `falsifier` are
+    // rendered verbatim and were scanned by nothing. Reading the finished body makes
+    // "rendered but unscanned" impossible rather than merely enumerable.
+    Some(body)
+}
+
+/// Everything standing in the way of freezing a packet for `id`.
+///
+/// Public because the CLI must ask the SAME question rather than re-deriving a
+/// narrower one: `peira status` printed "all enforced gates pass" over claims court
+/// refused, because it filtered findings to the claim's own id while this walks the
+/// evidential closure. Two implementations of one question is how a checker and the
+/// thing it checks drift apart.
+#[must_use]
+pub fn violations_for(graph: &Graph, id: &NodeId) -> Vec<Violation> {
+    // The EVIDENTIAL CLOSURE: the claim, everything it rests on transitively, and
+    // everything it renders. Filtering to the claim's own id made every check evadable
+    // by one hop — put the overstatement, the ungraded G4 and the missing warrant on a
+    // supporting claim, and a "clean" claim froze on top of it while the vault reported
+    // seven findings nobody's packet had to answer for.
+    //
+    // A packet asserts that what it rests on was examined. That assertion is only true
+    // if the examination follows the support.
+    let mut closure: BTreeSet<NodeId> = BTreeSet::new();
+    let mut stack = vec![id.clone()];
+    while let Some(n) = stack.pop() {
+        if !closure.insert(n.clone()) {
+            continue;
+        }
+        // Backwards along support: what this rests on.
+        for e in graph.edges_to(&n).filter(|e| e.kind == EdgeKind::Supports) {
+            stack.push(e.from.clone());
+        }
+        // Forwards to what a packet renders of it: the stipulated terms.
+        for e in graph
+            .edges_from(&n)
+            .filter(|e| e.kind == EdgeKind::UsesTerm)
+        {
+            stack.push(e.to.clone());
+        }
+    }
+
+    let mut found: Vec<Violation> = examine_graph(graph)
+        .into_iter()
+        .chain(lints::lint(graph))
+        .filter(|v| closure.contains(&v.subject))
+        .collect();
+
+    // Scan what WOULD be sealed. This lived inside `freeze` and so was invisible to
+    // `peira status`, which then printed "all enforced gates pass" over a claim the
+    // packet command refused. A check only one caller can see is a check the other
+    // caller contradicts.
+    if let Some(body) = render_body(graph, id) {
+        found.extend(lints::overstatements_in(&body, id));
+    }
+    found
+}
+
+/// Freeze a packet for `id`.
+///
+/// # Errors
+/// Refuses when the claim is missing, is not a claim, is defeated in the grounded
+/// extension, or has any blocking gate. There is no override parameter, because a
+/// packet that could be forced would be worth nothing in the room it is made for.
+pub fn freeze(graph: &Graph, id: &NodeId) -> Result<Packet, PacketError> {
+    let claim = graph
+        .node(id)
+        .ok_or_else(|| PacketError::NoSuchClaim(id.clone()))?;
+    if claim.kind != NodeKind::Claim {
+        return Err(PacketError::NotAClaim {
+            id: id.clone(),
+            kind: claim.kind,
+        });
+    }
+
+    let violations = violations_for(graph, id);
+    if !violations.is_empty() {
+        return Err(PacketError::Blocked {
+            id: id.clone(),
+            violations,
+        });
+    }
+    if !graph.is_grounded(id) {
+        return Err(PacketError::Defeated(id.clone()));
+    }
+
+    let body = render_body(graph, id).ok_or_else(|| PacketError::NoSuchClaim(id.clone()))?;
+    let overstated = lints::overstatements_in(&body, id);
+    if !overstated.is_empty() {
+        return Err(PacketError::Blocked {
+            id: id.clone(),
+            violations: overstated,
+        });
+    }
     let digest = hash_bytes(Algorithm::Sha256, body.as_bytes());
     Ok(Packet {
         subject: id.clone(),
@@ -484,6 +552,29 @@ aspect: function\n---\n",
                 Verification::DigestMismatch { .. }
             ),
             "a mutated cited node must still read as a mismatch"
+        );
+    }
+
+    /// A packet answers for the prose it renders.
+    ///
+    /// The lint reaching a term's `stipulated:` was necessary and not sufficient: the
+    /// finding lands on the TERM, and `violations_for` filtered to the claim's own id,
+    /// so the overstatement was reported and frozen into the packet anyway. Detecting
+    /// is not withholding.
+    #[test]
+    fn a_packet_refuses_an_overstatement_in_the_prose_it_renders() {
+        let mut g = clean_graph();
+        g.insert_node(node(
+            "---\nid: 60.01\ntype: term\ntitle: presence\n\
+as_used: the file was on the system\n\
+not_essence: a catalogue record is not the file\n\
+stipulated: the entry proves the file was executed\n---\n",
+        ));
+        let err = freeze(&g, &NodeId::new("c1"))
+            .expect_err("a packet rendering an overstated term must be refused");
+        assert!(
+            err.to_string().contains("proves"),
+            "the refusal must quote the offending word: {err}"
         );
     }
 
