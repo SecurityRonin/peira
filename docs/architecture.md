@@ -9,9 +9,16 @@ This document describes the system as built, and records — in the same place �
 audit established about it on 2026-08-13. Documenting the design without the audit would be the
 overstatement peira exists to prevent.
 
-**Status of the central claim: falsified.** See the [defect register](#defect-register). The
-mechanism described in [Promotion](#promotion) is correct up to the point marked, and broken after
-it.
+**Status of the central claim: repaired, and re-audited.** An audit on 2026-08-13 falsified it —
+five criticals, reproduced against the binary. All five are fixed. A second audit against the
+repaired system, with a **seeded false finding as a negative control** (rejected 0-5, every judge
+refuting it by execution), found eighteen further defects; eleven are fixed, and what remains is
+recorded below rather than described away.
+
+The defects that mattered most were not wrong rules. They were correct rules losing force at a
+join — a verdict discarded before the decision point, a check one caller could see and another
+could not, a filter that made every gate evadable by moving the content one hop up the support
+chain. **Read the register as the shape of how a checker fails, not as a list of bugs.**
 
 ## What you can rely on today
 
@@ -365,11 +372,11 @@ re-attack, so **no fix set is ready to implement**. The five that matter most:
 
 | # | Defect | Status |
 |---|---|---|
-| 1 | `Unassessed` is discarded at aggregation; a packet freezes over gates that reached no verdict, asserting "All enforced gates pass" — and `peira status` prints the same sentence over an empty blocking list. `permits_promotion()` has no production caller | **reproduced** |
-| 2 | The pramāṇa ceiling binds only edges that declare `via=`; omit it and one settled edge sits at G4 | **reproduced** |
-| 3 | `supersedes:` and `retracts:` edges are accepted, recorded and read by nothing — the structural synonym for the refused `status: withdrawn`. A withdrawn claim still freezes | **reproduced** |
-| 4 | Settled grades are operationally vacuous: an ungraded, unattributed edge supports promotion as well as reviewed perception. The `UNREVIEWED-GRADE` lint fires only on a *proposed* grade; a wholly ungraded edge trips nothing | **reproduced** |
-| 5 | The generated safe statement renders author-written `as_used`/`not_essence`/`stipulated` prose verbatim, and the forbidden-verb lint scans only a node's title and body — never those fields | **confirmed by reading the source; not yet reproduced against the built binary** |
+| 1 | `Unassessed` is discarded at aggregation; a packet freezes over gates that reached no verdict, asserting "All enforced gates pass" — and `peira status` prints the same sentence over an empty blocking list. `permits_promotion()` has no production caller | **reproduced, FIXED** |
+| 2 | The pramāṇa ceiling binds only edges that declare `via=`; omit it and one settled edge sits at G4 | **reproduced, FIXED** |
+| 3 | `supersedes:` and `retracts:` edges are accepted, recorded and read by nothing — the structural synonym for the refused `status: withdrawn`. A withdrawn claim still freezes | **reproduced, FIXED** |
+| 4 | Settled grades are operationally vacuous: an ungraded, unattributed edge supports promotion as well as reviewed perception. The `UNREVIEWED-GRADE` lint fires only on a *proposed* grade; a wholly ungraded edge trips nothing | **reproduced, FIXED** |
+| 5 | The generated safe statement renders author-written `as_used`/`not_essence`/`stipulated` prose verbatim, and the forbidden-verb lint scans only a node's title and body — never those fields | **reproduced, FIXED** — the scan now reads the rendered body before sealing, so "rendered but unscanned" is impossible rather than enumerable |
 
 Four smaller findings worth naming because of their shape:
 
@@ -398,6 +405,28 @@ panel, established four more — each checked against the code it cites before b
 | 7 | `freeze` blocks only on violations whose subject is the claim being frozen. A defect on a supporting node — a privilege leak, forbidden prose, a dangling edge — stops nothing unless a claim-scoped gate re-attributes it to the claim | **confirmed in source** |
 | 8 | The digest covers only the rendered projection. Grades, graders, pramāṇas and `measured_by:` links are not rendered, so they change in the vault without disturbing a frozen packet; the change surfaces only if it now trips a gate, as `NoLongerFreezable` — otherwise `Verified` | **confirmed in source** |
 | 9 | The loader silently degrades malformed edge metadata: an unknown attribute key, an invalid `grade=` and a misspelt `via=` are dropped without a diagnostic. `via=percpetion` removes the pramāṇa ceiling; a mangled `grade=` removes review semantics and trips no lint — the same shape as the `quantifier: all` finding above, one layer down | **confirmed in source** |
+
+### The second audit, and what it changed about method
+
+The first audit's panel **sustained 25 of 25 findings** — the 3-of-5 threshold never bound, so
+nothing established that a bad finding would have been rejected. The second seeded a plausible
+falsehood into the docket and told the judges one was fabricated. It was rejected **0-5**, every
+judge refuting it by running the binary. That number is why the second round's findings carry
+weight the first round's counts did not.
+
+**Still open**, from eighteen sustained:
+
+| | |
+|---|---|
+| A support hop through a `hypothesis` | the closure walks `Supports` edges; a hypothesis in the chain is examined by fewer gates |
+| `verify` on a stale packet | a packet frozen before a retraction cannot know about it; withdrawing a claim still means retrieving the artifacts that cite it |
+| The forbidden-verb list is finite | rejected 1-4 by the panel as "a denylist is a denylist", and they were right that it is not a *defect* — but a bald conclusion in unlisted words still passes |
+
+**Only one lineage ran the second round.** The outside critic was blocked by its provider's safety
+classifier — the session shape (an agent building a tool, then constructing inputs to defeat its
+checks) reads as offensive tooling regardless of wording. Its transcript shows it started and was
+killed mid-run, so that is a refusal, not a null result, and these findings lack the cross-lineage
+convergence the first round's had.
 
 ### What this does not overturn
 
