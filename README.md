@@ -95,6 +95,11 @@ Full transcript in [`docs/validation.md`](docs/validation.md).
 
 ## Documentation
 
+- **[The method](docs/method/)** — the discipline peira mechanises, written out so the tool stands
+  alone: the [six structures of investigative error and the coverage map](docs/method/README.md),
+  the [claim-grading standard](docs/method/claim-grading.md), and
+  [reporting to a tribunal](docs/method/expert-witness.md)
+- [How it works, and where it currently does not](docs/architecture.md)
 - [Purpose and scope](docs/PRD.md)
 - [Validation](docs/validation.md)
 - [Architecture decisions](docs/decisions/)

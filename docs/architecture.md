@@ -1,5 +1,9 @@
 # How peira works, and where it currently does not
 
+> The reasoning this checker enforces is written out in **[`method/`](method/)** — the
+> six structures of investigative error, the claim-grading standard, and the tribunal-reporting
+> discipline. peira is usable without any of the author's private configuration.
+
 This document describes the system as built, and records — in the same place — what an adversarial
 audit established about it on 2026-08-13. Documenting the design without the audit would be the
 overstatement peira exists to prevent.
