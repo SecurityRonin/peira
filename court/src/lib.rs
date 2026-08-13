@@ -387,7 +387,7 @@ fn declared_format(body: &str) -> u32 {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use peira_core::{parse_node, Edge};
+    use peira_core::{parse_node, Edge, Grade, Pramana};
 
     fn node(src: &str) -> Node {
         parse_node(src).expect("fixture parses")
@@ -482,6 +482,40 @@ aspect: function\n---\n",
                 Verification::DigestMismatch { .. }
             ),
             "a mutated cited node must still read as a mismatch"
+        );
+    }
+
+    /// A packet must not rest on ungraded evidence.
+    ///
+    /// `Grade` and `Pramana` are stored inseparably from the grader, and the ceiling
+    /// gate caps what a means of knowing can carry — but nothing required a support
+    /// edge to be graded at all. An ungraded, unattributed edge supported promotion
+    /// exactly as well as reviewed direct perception, so the whole grading apparatus
+    /// was inert unless an author volunteered into it.
+    ///
+    /// Scoped to freezing on purpose. Ordinary vault work stays ungraded; the demand
+    /// arrives when a claim is about to become a court artifact.
+    #[test]
+    fn a_packet_refuses_evidence_that_was_never_graded() {
+        let mut g = clean_graph();
+        // clean_graph's supporting edge carries no grade at all.
+        let err = freeze(&g, &NodeId::new("c1"))
+            .expect_err("a packet resting on an ungraded support edge must be refused");
+        let rendered = err.to_string();
+        assert!(
+            rendered.contains("o1") && rendered.to_lowercase().contains("grade"),
+            "the refusal must name the ungraded edge and say what is missing: {rendered}"
+        );
+
+        // Graded and attributed, within its ceiling: freezes.
+        g.insert_edge(
+            Edge::new(NodeId::new("o1"), NodeId::new("c1"), EdgeKind::Supports)
+                .graded_by(Grade::G2, "a-reviewer")
+                .via(Pramana::Perception),
+        );
+        assert!(
+            freeze(&g, &NodeId::new("c1")).is_ok(),
+            "a graded, attributed support edge within its ceiling must freeze"
         );
     }
 
