@@ -771,6 +771,52 @@ falsifiable, not merely plausible",
         }
     }
 
+    /// A gate that reached no verdict must reach the decision point.
+    ///
+    /// `permits_promotion()` correctly returns false for `Unassessed`, and until this
+    /// test existed it had no production caller: `examine_graph` kept only results
+    /// carrying a `Violation`, so a no-verdict result vanished before `freeze`,
+    /// `status` or `gates` could act on it. A packet then froze over three silent
+    /// gates while asserting "All enforced gates pass".
+    ///
+    /// Asserted through the public aggregation, not the predicate, because the
+    /// predicate was already right — it was the join that discarded it.
+    #[test]
+    fn a_gate_that_reached_no_verdict_is_not_silently_dropped() {
+        use peira_core::{parse_node, Graph};
+
+        // Declares warrant, boundaries and falsifier — but no `uses_term`, no
+        // `quantifier`, no `causal_rung`. Those three gates cannot reach a verdict,
+        // which is precisely the cheapest evasion: write less.
+        let mut g = Graph::new();
+        g.insert_node(
+            parse_node(
+                "---\nid: c1\ntype: claim\ntitle: The suspect executed the payload\n\
+warrant: The record establishes execution.\n\
+boundaries:\n  - everywhere\nfalsifier:\n  - nothing known\n---\n",
+            )
+            .expect("fixture parses"),
+        );
+
+        let found = examine_graph(&g);
+        let unassessed: Vec<&Violation> = found
+            .iter()
+            .filter(|v| v.gate == "PEIR-GATE-UNASSESSED")
+            .collect();
+
+        assert!(
+            unassessed.len() >= 3,
+            "ZHENGMING, BAIMA and RUNG each reach no verdict here; \
+examine_graph reported {} no-verdict result(s) out of {} findings",
+            unassessed.len(),
+            found.len()
+        );
+        assert!(
+            unassessed.iter().all(|v| !v.detail.is_empty()),
+            "a no-verdict finding must carry the reason the gate could not run"
+        );
+    }
+
     #[test]
     fn examine_graph_returns_nothing_for_an_empty_graph() {
         // Vacuously clean, and it must not be confusable with "checked and passed" —
