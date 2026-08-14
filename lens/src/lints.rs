@@ -135,15 +135,6 @@ const OVERSTATEMENTS: &[(&str, &str)] = &[
 
 /// Words that decide the ultimate issue rather than describe evidence.
 ///
-/// Unlike [`OVERSTATEMENTS`], this list can be COMPLETE for its purpose. Overstatement
-/// is open-ended — there is always another way to assert too much — but the ultimate
-/// issues a tribunal decides are a closed set, and naming them is the whole of the
-/// layer-3 boundary: *"the Court may draw its own conclusions"*.
-///
-/// This is our own table rather than a decode of anyone's spec, so it is a T3
-/// instrument and says so. It catches the sentence a technical author writes without
-/// noticing they have crossed from evidence into verdict — the case that survives
-/// every verb check because it contains no overstated verb at all.
 /// Words that only decide the ultimate issue when a PARTY is their subject.
 ///
 /// "An innocent explanation remains consistent with the record" preserves an
@@ -171,7 +162,30 @@ const PARTIES: &[&str] = &[
     "user",
 ];
 
+/// **A heuristic backstop, and NOT complete.** An earlier version of this comment said
+/// this list "can be COMPLETE for its purpose, unlike overstatement" — that was false,
+/// and an outside review falsified it in one line: *"The defendant murdered the
+/// victim"* is as pure an ultimate-issue verdict as exists and contains no word below.
+/// Criminal and civil verdict verbs are an open class, exactly like overstatement.
+///
+/// The list catches the phrasings a technical author reaches for without noticing they
+/// have crossed from evidence into verdict. Layer-3 detection remains a HUMAN
+/// obligation — `docs/method/expert-witness.md` says so, and this lint does not change
+/// that.
+///
+/// T3 instrument: our own table, not a decode of anyone's spec.
 const ULTIMATE_ISSUES: &[&str] = &[
+    // Verdict verbs — the act, stated as found rather than as evidenced.
+    "murdered",
+    "defrauded",
+    "embezzled",
+    "assaulted",
+    "forged",
+    "laundered",
+    "trafficked",
+    "misappropriated",
+    "conspired",
+    "perjured",
     "guilty",
     "innocent",
     "liable",
@@ -297,7 +311,13 @@ fn predicated_of_a_party(haystack: &str, word: &str) -> bool {
 /// but a contradiction between two things the author supplied is a fact about the
 /// document, not an inference about the world.
 fn declaration_contradicted(node: &Node) -> Vec<Violation> {
-    const UNIVERSAL: &[&str] = &["every", "all", "always", "any", "never", "none", "each"];
+    // STRONG universals are attributions wherever they appear — "every host was
+    // compromised by the account holder" is a universal claim in a body as much as in a
+    // title. WEAK ones are scanned in the title only: "this node holds the pointer,
+    // never the bytes" is method description, and firing on it broke this repository's
+    // own clean fixture.
+    const STRONG: &[&str] = &["every", "all", "always", "each"];
+    const WEAK: &[&str] = &["any", "never", "none"];
     // Strong causal markers only. "produced" and "made" were tried and removed: both
     // are routine descriptive verbs in forensic writing — "the tool produced output",
     // "installation produced the record" — and flagging them punished a legitimate
@@ -313,11 +333,9 @@ fn declaration_contradicted(node: &Node) -> Vec<Violation> {
         "triggered",
     ];
 
-    // The TITLE only. A claim's scope is what it asserts, and the body is where an
-    // author explains method — "this node holds the pointer, never the bytes" is
-    // description, not a universal quantifier, and flagging it fired on this
-    // repository's own clean fixture.
-    let haystack = node.title.to_ascii_lowercase();
+    let title = node.title.to_ascii_lowercase();
+    let full = format!("{} {}", node.title, node.body).to_ascii_lowercase();
+    let haystack = title.clone();
     let mut out = Vec::new();
 
     // Fires on ABSENCE as well as on a false declaration. Declaring `singular` on a
@@ -326,7 +344,11 @@ fn declaration_contradicted(node: &Node) -> Vec<Violation> {
     // absence. Silence where an assertion was made is not neutral.
     let quantifier = node.field("quantifier");
     if quantifier != Some("universal") && quantifier != Some("class") {
-        if let Some(w) = UNIVERSAL.iter().find(|w| contains_phrase(&haystack, w)) {
+        let found = STRONG
+            .iter()
+            .find(|w| contains_phrase(&full, w))
+            .or_else(|| WEAK.iter().find(|w| contains_phrase(&title, w)));
+        if let Some(w) = found {
             out.push(violation(
                 DECLARATION_CONTRADICTED,
                 &node.id,
@@ -373,6 +395,12 @@ association without the causal verb",
 /// packet, which `freeze` asks about directly.
 #[must_use]
 pub fn subject_withdrawn(graph: &Graph, id: &NodeId) -> Option<Violation> {
+    // The FIXED POINT, not a direct-edge test. A retraction that has itself been
+    // retracted no longer binds — `attackers` already knew that and this did not, so a
+    // corrected lifecycle record was `review_ready` and impossible to freeze at once.
+    if !graph.withdrawn().contains(id) {
+        return None;
+    }
     graph
         .edges_to(id)
         .find(|e| matches!(e.kind, EdgeKind::Retracts | EdgeKind::Supersedes))

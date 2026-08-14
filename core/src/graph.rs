@@ -67,13 +67,19 @@ impl Graph {
     }
 
     /// The attack relation, as `target -> attackers`.
-    fn attackers(&self) -> BTreeMap<NodeId, Vec<NodeId>> {
-        // A withdrawn claim is not a participant in the dispute. Letting it attack and
-        // then be defeated would be wrong twice over: it never had standing to argue,
-        // and in the other direction a withdrawn DEFENDER props up the claim it shields
-        // — so a live claim would survive on the strength of an argument its own author
-        // retracted. Removing it from the relation is the honest form.
-        // A retraction is an AUTHORED ASSERTION, not a fact about the world, and it
+    /// Every node the record withdraws, resolved to a fixed point.
+    ///
+    /// A retraction is an AUTHORED ASSERTION, not a fact about the world, and it binds
+    /// only while it itself stands: a retraction whose author has been retracted stops
+    /// binding, and what it withdrew comes back. Otherwise the last writer wins.
+    ///
+    /// Public because two callers need the SAME answer. `attackers` uses it to decide
+    /// who may argue, and the lint pack uses it to decide whether a packet's subject is
+    /// withdrawn — and when those disagreed, `peira status` reported `review_ready` over
+    /// a claim `peira packet` refused. One question, asked once.
+    #[must_use]
+    pub fn withdrawn(&self) -> BTreeSet<NodeId> {
+        // , not a fact about the world, and it
         // binds only while it itself stands. Asking merely "is this withdrawn" let an
         // idle note by anyone at all suppress a legitimate attack — the last writer
         // won, and the graph got quietly smaller with every note.
@@ -100,6 +106,16 @@ impl Graph {
             }
             withdrawn = next;
         }
+        withdrawn
+    }
+
+    fn attackers(&self) -> BTreeMap<NodeId, Vec<NodeId>> {
+        // A withdrawn claim is not a participant in the dispute. Letting it attack and
+        // then be defeated would be wrong twice over: it never had standing to argue,
+        // and in the other direction a withdrawn DEFENDER props up the claim it shields
+        // — so a live claim would survive on the strength of an argument its own author
+        // retracted. Removing it from the relation is the honest form.
+        let withdrawn = self.withdrawn();
 
         let mut map: BTreeMap<NodeId, Vec<NodeId>> = BTreeMap::new();
         for edge in self

@@ -176,9 +176,9 @@ fn safe_statement(graph: &Graph, claim: &Node) -> String {
 
     let mut out = String::new();
     for term in terms {
-        let as_used = term.field("as_used").unwrap_or("(not stated)");
-        let not_essence = term.field("not_essence").unwrap_or("(not stated)");
-        let stipulated = term.field("stipulated").unwrap_or("(not stated)");
+        let as_used = quote_authored(term.field("as_used").unwrap_or("(not stated)"));
+        let not_essence = quote_authored(term.field("not_essence").unwrap_or("(not stated)"));
+        let stipulated = quote_authored(term.field("stipulated").unwrap_or("(not stated)"));
         let _ = write!(
             out,
             "所謂「{name}」— what is called \"{name}\": {as_used}\n\
@@ -204,7 +204,7 @@ fn bullet_list(nodes: &[&Node], empty: &str) -> String {
         return format!("  {empty}\n");
     }
     nodes.iter().fold(String::new(), |mut acc, n| {
-        let _ = writeln!(acc, "  - [{}] {}", n.id, n.title);
+        let _ = writeln!(acc, "  - [{}] {}", n.id, quote_authored(&n.title));
         acc
     })
 }
@@ -218,11 +218,16 @@ fn bullet_list(nodes: &[&Node], empty: &str) -> String {
 fn defeat_block(graph: &Graph, claim: &Node) -> String {
     let mut out = String::new();
     for f in claim.field_list("falsifier") {
-        let _ = writeln!(out, "  - {f}");
+        let _ = writeln!(out, "  - {}", quote_authored(f));
     }
     for e in graph.edges_to(&claim.id).filter(|e| e.kind.is_attack()) {
         if let Some(n) = graph.node(&e.from) {
-            let _ = writeln!(out, "  - [{}] {} — on record as an attack", n.id, n.title);
+            let _ = writeln!(
+                out,
+                "  - [{}] {} — on record as an attack",
+                n.id,
+                quote_authored(&n.title)
+            );
         }
     }
     if out.is_empty() {
@@ -241,6 +246,29 @@ fn defeat_block(graph: &Graph, claim: &Node) -> String {
 /// Extracted so the same text can be SCANNED before anyone commits to sealing it.
 /// While this lived inline in `freeze`, the overstatement check ran where only
 /// `freeze` could see it, and `peira status` contradicted the packet command.
+/// Authored text, prevented from impersonating packet structure.
+///
+/// The packet's sections are its own; an authored field that begins a line with `#`
+/// manufactures one. That was not cosmetic: the body scan skips the falsifier section
+/// by heading text, so injecting `## What would defeat this` into a `warrant:` moved a
+/// legal conclusion into a region nothing reads, and it sealed.
+///
+/// Escaping the delimiter fixes the CLASS. Subtracting a section from rendered text
+/// asks "which part of this is not an assertion", and the answer was authored by the
+/// same person the check exists to constrain.
+fn quote_authored(s: &str) -> String {
+    s.lines()
+        .map(|l| {
+            if l.trim_start().starts_with('#') {
+                format!("> {l}")
+            } else {
+                l.to_owned()
+            }
+        })
+        .collect::<Vec<_>>()
+        .join("\n")
+}
+
 fn render_body(graph: &Graph, id: &NodeId) -> Option<String> {
     let claim = graph.node(id)?;
 
@@ -285,7 +313,7 @@ merits: {names}. Read the retraction before relying on this.",
         "  (none declared)\n".to_owned()
     } else {
         boundaries.iter().fold(String::new(), |mut acc, b| {
-            let _ = writeln!(acc, "  - {b}");
+            let _ = writeln!(acc, "  - {}", quote_authored(b));
             acc
         })
     };
@@ -338,7 +366,7 @@ merits: {names}. Read the retraction before relying on this.",
             format!("{}\n", safe_statement(graph, claim).trim_end())
         },
         title = claim.title,
-        warrant = claim.field("warrant").unwrap_or("(none stated)"),
+        warrant = quote_authored(claim.field("warrant").unwrap_or("(none stated)")),
         supporting = bullet_list(&supports, "(nothing)"),
         contradicting = bullet_list(&contradicts, "(nothing on record)"),
         limiting = bullet_list(&limits, "(none recorded)"),
@@ -405,10 +433,18 @@ pub fn violations_for(graph: &Graph, id: &NodeId) -> Vec<Violation> {
         }
     }
 
-    let mut found: Vec<Violation> = examine_graph(graph)
+    // The SUBJECT's own withdrawal belongs HERE, not in `freeze`. While it sat there,
+    // `peira status` — which calls this — reported `review_ready` over a claim the
+    // packet command refused, which is precisely the drift this function was made
+    // public to delete.
+    let mut found: Vec<Violation> = lints::subject_withdrawn(graph, id)
         .into_iter()
-        .chain(lints::lint(graph))
-        .filter(|v| closure.contains(&v.subject))
+        .chain(
+            examine_graph(graph)
+                .into_iter()
+                .chain(lints::lint(graph))
+                .filter(|v| closure.contains(&v.subject)),
+        )
         .collect();
 
     // Scan what WOULD be sealed. This lived inside `freeze` and so was invisible to
@@ -441,16 +477,6 @@ pub fn freeze(graph: &Graph, id: &NodeId) -> Result<Packet, PacketError> {
         return Err(PacketError::NotAClaim {
             id: id.clone(),
             kind: claim.kind,
-        });
-    }
-
-    // The SUBJECT's own withdrawal. `retracted` reports only where a withdrawn node
-    // holds something else up, so retained history stays quiet — which leaves the case
-    // where the retired claim IS the packet.
-    if let Some(v) = lints::subject_withdrawn(graph, id) {
-        return Err(PacketError::Blocked {
-            id: id.clone(),
-            violations: vec![v],
         });
     }
 
