@@ -32,6 +32,8 @@ pub const RETRACTED: &str = "PEIR-LINT-RETRACTED";
 pub const UNGRADED_SUPPORT: &str = "PEIR-LINT-UNGRADED-SUPPORT";
 /// A finding that decides the ultimate issue — the tribunal's question, not the expert's.
 pub const LEGAL_CONCLUSION: &str = "PEIR-LINT-LEGAL-CONCLUSION";
+/// A declared field the claim's own language contradicts.
+pub const DECLARATION_CONTRADICTED: &str = "PEIR-LINT-DECLARATION-CONTRADICTED";
 
 /// Scan arbitrary rendered text for overstatement.
 ///
@@ -55,6 +57,7 @@ pub fn prose_findings_in(text: &str, subject: &NodeId) -> Vec<Violation> {
         ULTIMATE_ISSUES
             .iter()
             .filter(|w| contains_phrase(&haystack, w) && !clause_negated(&haystack, w))
+            .filter(|w| predicated_of_a_party(&haystack, w))
             .map(|w| {
                 violation(
                     LEGAL_CONCLUSION,
@@ -136,6 +139,33 @@ const OVERSTATEMENTS: &[(&str, &str)] = &[
 /// instrument and says so. It catches the sentence a technical author writes without
 /// noticing they have crossed from evidence into verdict — the case that survives
 /// every verb check because it contains no overstated verb at all.
+/// Words that only decide the ultimate issue when a PARTY is their subject.
+///
+/// "An innocent explanation remains consistent with the record" preserves an
+/// alternative — the discipline this tool teaches — and blocking it punishes exactly
+/// the careful author it exists to serve. The word decides nothing unless someone is
+/// the one being called it.
+const NEEDS_A_PERSON: &[&str] = &["innocent", "guilty", "liable", "negligent"];
+
+/// Subjects that make those words a verdict about somebody.
+const PARTIES: &[&str] = &[
+    "suspect",
+    "defendant",
+    "accused",
+    "respondent",
+    "claimant",
+    "he",
+    "she",
+    "they",
+    "party",
+    "holder",
+    "account",
+    "employee",
+    "director",
+    "company",
+    "user",
+];
+
 const ULTIMATE_ISSUES: &[&str] = &[
     "guilty",
     "innocent",
@@ -196,6 +226,102 @@ fn clause_negated(haystack: &str, needle: &str) -> bool {
         .any(|w| NEGATORS.contains(&w))
 }
 
+/// Whether an ultimate-issue word is said OF SOMEBODY.
+///
+/// `innocent`, `guilty`, `liable`, `negligent` decide nothing when their subject is a
+/// thing: "an innocent explanation", "a guilty plea was not entered", "the liable
+/// portion of the balance". They decide everything when their subject is a party.
+/// Words like `unlawful` or `infringed` need no such test — they are verdicts about
+/// conduct however they are phrased.
+///
+/// A heuristic, and a deliberately conservative one: it looks for a party word in the
+/// same clause. Missing a real conclusion costs less here than blocking the careful
+/// sentence an expert is obliged to write.
+fn predicated_of_a_party(haystack: &str, word: &str) -> bool {
+    if !NEEDS_A_PERSON.contains(&word) {
+        return true;
+    }
+    let Some(at) = haystack.find(word) else {
+        return false;
+    };
+    let start = ["\n", ",", ";", ":", " and ", " but "]
+        .iter()
+        .filter_map(|b| haystack[..at].rfind(b).map(|i| i + b.len()))
+        .max()
+        .unwrap_or(0);
+    haystack[start..at]
+        .split(|c: char| !c.is_alphanumeric() && c != '\'')
+        .any(|w| PARTIES.contains(&w))
+}
+
+/// A declaration the claim's own words contradict.
+///
+/// The gates trust `quantifier:` and `causal_rung:` because an author is better placed
+/// than a word list to say what a claim asserts. But trust is not the same as
+/// unexamined: "deleting the file caused the loss of evidence on EVERY host" declared
+/// `quantifier: singular` and `causal_rung: association`, and both gates switched
+/// themselves off. That is not omission — it is an affirmative false declaration, and
+/// the cheapest one available, because writing the field looks like diligence.
+///
+/// This does NOT decide what the claim really is; it reports the DISAGREEMENT between
+/// what the author declared and how the author wrote. A heuristic, and it says so —
+/// but a contradiction between two things the author supplied is a fact about the
+/// document, not an inference about the world.
+fn declaration_contradicted(node: &Node) -> Vec<Violation> {
+    const UNIVERSAL: &[&str] = &["every", "all", "always", "any", "never", "none", "each"];
+    // Strong causal markers only. "produced" and "made" were tried and removed: both
+    // are routine descriptive verbs in forensic writing — "the tool produced output",
+    // "installation produced the record" — and flagging them punished a legitimate
+    // rival hypothesis in this repository's own fixture. A heuristic that fires on
+    // ordinary professional prose is one people switch off.
+    const INTERVENTIONAL: &[&str] = &[
+        "caused",
+        "causes",
+        "causing",
+        "resulted in",
+        "led to",
+        "because of",
+        "triggered",
+    ];
+
+    let haystack = format!("{} {}", node.title, node.body).to_ascii_lowercase();
+    let mut out = Vec::new();
+
+    if node.field("quantifier") == Some("singular") {
+        if let Some(w) = UNIVERSAL.iter().find(|w| contains_phrase(&haystack, w)) {
+            out.push(violation(
+                DECLARATION_CONTRADICTED,
+                &node.id,
+                format!(
+                    "declares `quantifier: singular` but says \"{w}\" — 白馬非馬 was \
+switched off by the declaration, not by the claim"
+                ),
+                "declare the quantifier the sentence actually uses, or rewrite the \
+sentence to the scope you can support",
+            ));
+        }
+    }
+
+    if node.field("causal_rung") == Some("association") {
+        if let Some(w) = INTERVENTIONAL
+            .iter()
+            .find(|w| contains_phrase(&haystack, w))
+        {
+            out.push(violation(
+                DECLARATION_CONTRADICTED,
+                &node.id,
+                format!(
+                    "declares `causal_rung: association` but says \"{w}\" — that is a \
+claim about doing, not about seeing"
+                ),
+                "raise the rung and satisfy it with an executed protocol, or state the \
+association without the causal verb",
+            ));
+        }
+    }
+    out
+}
+
 /// A claim that decides the tribunal's question instead of describing evidence.
 ///
 /// Layer 3 is never the expert's — see `docs/method/expert-witness.md`. The
@@ -223,6 +349,7 @@ fn legal_conclusions(node: &Node) -> Vec<Violation> {
     ULTIMATE_ISSUES
         .iter()
         .filter(|w| contains_phrase(&haystack, w) && !clause_negated(&haystack, w))
+        .filter(|w| predicated_of_a_party(&haystack, w))
         .map(|w| {
             violation(
                 LEGAL_CONCLUSION,
@@ -749,6 +876,7 @@ pub fn lint(graph: &Graph) -> Vec<Violation> {
         out.extend(retracted(graph, node));
         out.extend(ungraded_support(graph, node));
         out.extend(legal_conclusions(node));
+        out.extend(declaration_contradicted(node));
     }
     out
 }
@@ -853,6 +981,75 @@ stipulated: the entry proves the suspect executed the binary\n---\n",
             fired("The defendant is liable; nothing further was examined"),
             1,
             "a semicolon is a clause boundary too"
+        );
+    }
+
+    /// An ultimate-issue word is a verdict only when a PARTY is its subject.
+    ///
+    /// "An innocent explanation remains consistent with the record" preserves an
+    /// alternative — the discipline this tool teaches — and it was blocked. That is the
+    /// class of careful-author punishment that gets a checker disabled.
+    #[test]
+    fn an_ultimate_issue_word_said_of_a_thing_is_not_a_verdict() {
+        let fired = |title: &str| {
+            let g = graph_of(
+                vec![node(&format!(
+                    "---\nid: c1\ntype: claim\ntitle: {title}\n---\n"
+                ))],
+                vec![],
+            );
+            lint(&g)
+                .into_iter()
+                .filter(|v| v.gate == "PEIR-LINT-LEGAL-CONCLUSION")
+                .count()
+        };
+        assert_eq!(
+            fired("An innocent explanation remains consistent with the Amcache record"),
+            0,
+            "preserving an alternative is the discipline, not a verdict"
+        );
+        assert_eq!(
+            fired("The suspect is guilty of unauthorised access"),
+            1,
+            "said of a party, it decides the tribunal's question"
+        );
+    }
+
+    /// A declared field the claim's own language contradicts.
+    ///
+    /// Writing `quantifier: singular` on a sentence saying "every host" switched 白馬非馬
+    /// off by declaration. Not omission — an affirmative false declaration, and the
+    /// cheapest one available, because writing the field looks like diligence.
+    #[test]
+    fn a_declaration_its_own_sentence_contradicts_is_reported() {
+        let fired = |front: &str, title: &str| {
+            let g = graph_of(
+                vec![node(&format!(
+                    "---\nid: c1\ntype: claim\ntitle: {title}\n{front}\n---\n"
+                ))],
+                vec![],
+            );
+            lint(&g)
+                .into_iter()
+                .filter(|v| v.gate == "PEIR-LINT-DECLARATION-CONTRADICTED")
+                .count()
+        };
+        assert_eq!(
+            fired(
+                "quantifier: singular\ncausal_rung: association",
+                "Deleting the file caused the loss of evidence on every host"
+            ),
+            2,
+            "both declarations are contradicted by the sentence that carries them"
+        );
+        assert_eq!(
+            fired(
+                "quantifier: singular\ncausal_rung: association",
+                "Installation or inventory produced the record without user execution"
+            ),
+            0,
+            "\"produced\" is ordinary forensic description — a heuristic that fires on \
+professional prose is one people switch off"
         );
     }
 

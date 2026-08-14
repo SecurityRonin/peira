@@ -135,6 +135,7 @@ to prevent.
 | A window's edge is not the start of a behaviour | `PEIR-LINT-WINDOW-EDGE-AS-ONSET` | **enforced** |
 | A reference that goes nowhere is a defect | `PEIR-LINT-DANGLING-EDGE` | **enforced** |
 | A finding does not decide the tribunal's question | `PEIR-LINT-LEGAL-CONCLUSION` | **enforced, heuristic** ¹⁰ |
+| A declaration the claim's own words contradict | `PEIR-LINT-DECLARATION-CONTRADICTED` | **enforced, heuristic** ¹¹ |
 | Privileged material stays out of the open tier | `PEIR-LINT-PRIVILEGE-LEAK` | **flagged, not withheld** ⁹ |
 | **A deliverable is compiled from the record and re-derivable** | `peira packet` / `peira verify` — digest re-derivation | **enforced for the rendered projection** ⁷ |
 | A withdrawn or replaced claim is not citable | `PEIR-LINT-RETRACTED` | **enforced** |
@@ -149,6 +150,12 @@ to prevent.
 ⁹ The lint reports a leak on the node that carries it. `freeze` filters violations to the claim's
 own id, so a privilege leak on a *supporting* node does not stop a packet — and the packet renders
 that supporter's id and title. Flagging is not exclusion; read the lint output before exporting.
+
+¹¹ The gates trust `quantifier:` and `causal_rung:` because an author knows what a claim asserts —
+but a claim saying "on every host" while declaring `quantifier: singular` switches 白馬非馬 off by
+declaration rather than by argument. This reports the DISAGREEMENT between two things the author
+supplied; it does not decide which is right. Strong causal markers only: "produced" was tried and
+removed as ordinary forensic description.
 
 ¹⁰ A closed list of ultimate issues — unlike overstatement, the questions a tribunal decides are
 finite. Skipped entirely when the sentence contains any negator, so a careful negative finding
