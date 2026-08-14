@@ -375,6 +375,18 @@ pub fn violations_for(graph: &Graph, id: &NodeId) -> Vec<Violation> {
         for e in graph.edges_to(&n).filter(|e| e.kind == EdgeKind::Supports) {
             stack.push(e.from.clone());
         }
+        // And FORWARDS along `depends_on`, which is documented as "the target must hold
+        // for the source to" — a stronger relation than support, and one that had no
+        // consumer outside `core`. Every walk here followed `Supports`, so a claim whose
+        // own frontmatter said it could not hold without another froze cleanly while the
+        // vault recorded that other as withdrawn. A declared prerequisite is
+        // load-bearing by definition; nothing else in the file needed to change.
+        for e in graph
+            .edges_from(&n)
+            .filter(|e| e.kind == EdgeKind::DependsOn)
+        {
+            stack.push(e.to.clone());
+        }
         // Forwards to what a packet renders of it: the stipulated terms.
         for e in graph
             .edges_from(&n)
@@ -588,6 +600,37 @@ aspect: function\n---\n",
                 Verification::DigestMismatch { .. }
             ),
             "a mutated cited node must still read as a mismatch"
+        );
+    }
+
+    /// A declared prerequisite is load-bearing by definition.
+    ///
+    /// `DependsOn` is documented as "the target must hold for the source to" — a
+    /// STRONGER relation than `Supports` — and had no consumer outside `core`. Every
+    /// walk in this file followed `Supports`, so a claim whose own frontmatter says it
+    /// cannot hold without c2 froze cleanly while the vault recorded c2 as withdrawn.
+    #[test]
+    fn a_packet_answers_for_the_prerequisites_it_declares() {
+        let mut g = clean_graph();
+        g.insert_node(node(
+            "---\nid: c2\ntype: claim\ntitle: The prerequisite finding\n---\n",
+        ));
+        g.insert_node(node("---\nid: d1\ntype: dissent\ntitle: withdrawn\n---\n"));
+        g.insert_edge(Edge::new(
+            NodeId::new("c1"),
+            NodeId::new("c2"),
+            EdgeKind::DependsOn,
+        ));
+        g.insert_edge(Edge::new(
+            NodeId::new("d1"),
+            NodeId::new("c2"),
+            EdgeKind::Retracts,
+        ));
+        let err = freeze(&g, &NodeId::new("c1"))
+            .expect_err("a claim may not freeze over a prerequisite the record withdraws");
+        assert!(
+            err.to_string().contains("c2"),
+            "the refusal must name the prerequisite: {err}"
         );
     }
 

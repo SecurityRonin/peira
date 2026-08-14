@@ -202,9 +202,32 @@ const ULTIMATE_ISSUES: &[&str] = &[
 /// guards blocks a packet and the alternative is an unhedged verdict reaching a
 /// tribunal.
 fn clause_negated(haystack: &str, needle: &str) -> bool {
-    let Some(at) = haystack.find(needle) else {
-        return false;
-    };
+    // EVERY occurrence, not the first. Checking `find()` alone asked about whichever
+    // instance happened to come first, so "the suspect is NOT guilty of tampering; the
+    // suspect IS guilty of unauthorised access" was excused by its own opening clause.
+    // One unhedged occurrence is a verdict however many hedged ones precede it.
+    occurrences(haystack, needle).all(|at| clause_at_is_negated(haystack, at))
+}
+
+/// Byte offsets of every whole-word occurrence of `needle`.
+fn occurrences<'a>(haystack: &'a str, needle: &'a str) -> impl Iterator<Item = usize> + 'a {
+    haystack.match_indices(needle).filter_map(move |(at, _)| {
+        let end = at + needle.len();
+        let before_ok = at == 0
+            || !haystack[..at]
+                .chars()
+                .next_back()
+                .is_some_and(char::is_alphanumeric);
+        let after_ok = end == haystack.len()
+            || !haystack[end..]
+                .chars()
+                .next()
+                .is_some_and(char::is_alphanumeric);
+        (before_ok && after_ok).then_some(at)
+    })
+}
+
+fn clause_at_is_negated(haystack: &str, at: usize) -> bool {
     let head = &haystack[..at];
     // A NEWLINE is a clause boundary, and the strongest one. Without it this reads a
     // whole rendered packet as ONE clause, so a negator lines away suppresses a verdict
@@ -246,17 +269,18 @@ fn predicated_of_a_party(haystack: &str, word: &str) -> bool {
     if !NEEDS_A_PERSON.contains(&word) {
         return true;
     }
-    let Some(at) = haystack.find(word) else {
-        return false;
-    };
-    let start = ["\n", ",", ";", ":", " and ", " but "]
-        .iter()
-        .filter_map(|b| haystack[..at].rfind(b).map(|i| i + b.len()))
-        .max()
-        .unwrap_or(0);
-    haystack[start..at]
-        .split(|c: char| !c.is_alphanumeric() && c != '\'')
-        .any(|w| PARTIES.contains(&w))
+    // ANY occurrence said of a party makes it a verdict — the same reason
+    // `clause_negated` looks at all of them rather than the first.
+    occurrences(haystack, word).any(|at| {
+        let start = ["\n", ",", ";", ":", " and ", " but "]
+            .iter()
+            .filter_map(|b| haystack[..at].rfind(b).map(|i| i + b.len()))
+            .max()
+            .unwrap_or(0);
+        haystack[start..at]
+            .split(|c: char| !c.is_alphanumeric() && c != '\'')
+            .any(|w| PARTIES.contains(&w))
+    })
 }
 
 /// A declaration the claim's own words contradict.
@@ -289,18 +313,33 @@ fn declaration_contradicted(node: &Node) -> Vec<Violation> {
         "triggered",
     ];
 
-    let haystack = format!("{} {}", node.title, node.body).to_ascii_lowercase();
+    // The TITLE only. A claim's scope is what it asserts, and the body is where an
+    // author explains method — "this node holds the pointer, never the bytes" is
+    // description, not a universal quantifier, and flagging it fired on this
+    // repository's own clean fixture.
+    let haystack = node.title.to_ascii_lowercase();
     let mut out = Vec::new();
 
-    if node.field("quantifier") == Some("singular") {
+    // Fires on ABSENCE as well as on a false declaration. Declaring `singular` on a
+    // universal sentence was caught; declaring nothing at all was not, and that is the
+    // cheaper move — a constraint that activates on a field's presence is evaded by its
+    // absence. Silence where an assertion was made is not neutral.
+    let quantifier = node.field("quantifier");
+    if quantifier != Some("universal") && quantifier != Some("class") {
         if let Some(w) = UNIVERSAL.iter().find(|w| contains_phrase(&haystack, w)) {
             out.push(violation(
                 DECLARATION_CONTRADICTED,
                 &node.id,
-                format!(
-                    "declares `quantifier: singular` but says \"{w}\" — 白馬非馬 was \
+                match quantifier {
+                    Some(q) => format!(
+                        "declares `quantifier: {q}` but says \"{w}\" — 白馬非馬 was \
 switched off by the declaration, not by the claim"
-                ),
+                    ),
+                    None => format!(
+                        "says \"{w}\" and declares no `quantifier:` — the extension gate \
+never runs, so the widest word in the sentence is the one nothing examined"
+                    ),
+                },
                 "declare the quantifier the sentence actually uses, or rewrite the \
 sentence to the scope you can support",
             ));

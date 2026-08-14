@@ -94,12 +94,42 @@ impl CausalRung {
 /// Same rule as `PEIR-LINT-RETRACTED`: the obligation attaches to being load-bearing,
 /// not to the node kind.
 fn under_promotion(graph: &Graph, node: &Node) -> bool {
-    match node.kind {
-        NodeKind::Claim => true,
-        NodeKind::Hypothesis => graph
+    // A node kind is a SELF-DECLARED STRING, so it cannot be the exemption. The `_ =>
+    // false` arm here was a static scope hiding inside the load-bearing test that
+    // replaced one: relabelling a universal over-claim `type: observation` stripped all
+    // seven promotion obligations while it went on supporting a claim.
+    //
+    // An observation that RECORDS declares none of these fields and is examined by
+    // nothing — the gates return NotApplicable of their own accord. One that ASSERTS,
+    // in the shape of a claim, and is leaned on, answers like one.
+    let leaned_on = || {
+        graph
             .edges_from(&node.id)
-            .any(|e| e.kind == EdgeKind::Supports),
-        _ => false,
+            .any(|e| matches!(e.kind, EdgeKind::Supports | EdgeKind::DependsOn))
+            || graph
+                .edges_to(&node.id)
+                .any(|e| e.kind == EdgeKind::DependsOn)
+    };
+    // Leaned on AND asserting. Leaned-on alone would demand a quantifier and a causal
+    // rung from every observation that supports anything, which is ceremony, and
+    // ceremony is routed around. A node that declares one of these fields has taken a
+    // position in the shape of a claim; one that records has not.
+    let asserts = || {
+        ["quantifier", "causal_rung", "aspect", "warrant"]
+            .iter()
+            .any(|f| node.field(f).is_some())
+    };
+    match node.kind {
+        // A claim asserts by existing.
+        NodeKind::Claim => true,
+        // A hypothesis is an ARGUMENT — it competes in the extension — so being leaned
+        // on is enough. This is what stops an unexamined hypothesis laundering a
+        // conclusion into a packet.
+        NodeKind::Hypothesis => leaned_on(),
+        // Everything else is evidence or reference. Being leaned on is not enough:
+        // demanding a quantifier and a causal rung from every supporting observation is
+        // ceremony, and ceremony is routed around. It must also have taken a position.
+        _ => leaned_on() && asserts(),
     }
 }
 
@@ -247,6 +277,27 @@ pub fn substance_not_from_function_alone(graph: &Graph, node: &Node) -> GateResu
             why: format!("\"{}\" has no supporting evidence to classify", node.title),
         };
     }
+    // Three states, not a boolean. `all(== function)` was false for "some supporter
+    // says something else" AND for "some supporter says nothing", and Pass was reported
+    // for both — so annotating evidence honestly blocked the claim while deleting the
+    // line froze it. A predicate whose `false` means two different things is a rule
+    // lost at a join.
+    let silent: Vec<&str> = support
+        .iter()
+        .filter(|s| s.field("aspect").is_none())
+        .map(|s| s.id.as_str())
+        .collect();
+    if !silent.is_empty() {
+        return GateResult::Unassessed {
+            why: format!(
+                "\"{}\" claims what the thing IS, and {} declares no `aspect:` — whether \
+its evidence bears on substance or only on function is unknown",
+                node.title,
+                silent.join(", ")
+            ),
+        };
+    }
+
     let function_only = support
         .iter()
         .all(|s| s.field("aspect") == Some("function"));
@@ -533,6 +584,95 @@ mod tests {
 
     fn node(src: &str) -> Node {
         parse_node(src).expect("fixture parses")
+    }
+
+    /// A node kind is a self-declared string, not an exemption.
+    ///
+    /// `under_promotion` replaced a static node-kind scope with a load-bearing test and
+    /// kept a static scope inside it: the `_ => false` arm exempted every kind but
+    /// Claim and Hypothesis. So relabelling a universal over-claim `type: observation`
+    /// stripped all seven promotion obligations while it went on supporting a claim.
+    ///
+    /// An observation that merely records what was seen still declares nothing and is
+    /// examined by nothing — that is correct. One that ASSERTS, in the shape of a
+    /// claim, and is leaned on, answers like one.
+    #[test]
+    fn a_load_bearing_observation_that_asserts_is_held_to_the_bar() {
+        let claim = node("---\nid: c1\ntype: claim\ntitle: t\n---\n");
+        let overclaim = node(
+            "---\nid: o9\ntype: observation\n\
+title: Every Amcache entry on every Windows version is written only at execution time\n\
+quantifier: universal\n---\n",
+        );
+        let plain = node("---\nid: o1\ntype: observation\ntitle: the hive holds a record\n---\n");
+        let g = |obs: Node| {
+            let id = obs.id.clone();
+            graph_of(
+                vec![claim.clone(), obs],
+                vec![Edge::new(id, NodeId::new("c1"), EdgeKind::Supports)],
+            )
+        };
+
+        let asserting = g(overclaim.clone());
+        assert!(
+            !class_extension_declared(&asserting, &overclaim).permits_promotion(),
+            "a universal quantifier in a load-bearing observation must still declare its \
+extension — the node kind is a self-declared string"
+        );
+
+        let recording = g(plain.clone());
+        assert!(
+            class_extension_declared(&recording, &plain).permits_promotion(),
+            "an observation that records rather than asserts stays exempt"
+        );
+    }
+
+    /// Unannotated evidence is not evidence of substance.
+    ///
+    /// `all(aspect == function)` is false on MISSING data as readily as on contrary
+    /// data, and the gate returned `Pass` for both — so the author who annotated an
+    /// observation honestly was blocked while the author who deleted the line froze a
+    /// packet. That inverts the incentive the whole catalogue runs on.
+    ///
+    /// It also contradicts this module's own header, three lines from the top: a gate
+    /// that cannot reach a verdict returns `Unassessed`, and never `Pass`.
+    #[test]
+    fn a_supporter_that_declares_no_aspect_yields_no_verdict() {
+        let claim = node(
+            "---\nid: c1\ntype: claim\ntitle: Amcache is an execution artifact\n\
+aspect: substance\n---\n",
+        );
+        let mk = |id: &str, aspect: &str| {
+            node(&format!(
+                "---\nid: {id}\ntype: observation\ntitle: a record\n{aspect}---\n"
+            ))
+        };
+        let g = |obs: Node| {
+            let id = obs.id.clone();
+            graph_of(
+                vec![claim.clone(), obs],
+                vec![Edge::new(id, NodeId::new("c1"), EdgeKind::Supports)],
+            )
+        };
+
+        let silent = g(mk("o1", ""));
+        assert!(
+            !substance_not_from_function_alone(&silent, &claim).permits_promotion(),
+            "a supporter declaring no aspect cannot clear a substance claim — the gate \
+reached no verdict and must not report one"
+        );
+
+        let honest = g(mk("o2", "aspect: function\n"));
+        assert!(
+            !substance_not_from_function_alone(&honest, &claim).permits_promotion(),
+            "function-only evidence still blocks a substance claim"
+        );
+
+        let bearing = g(mk("o3", "aspect: substance\n"));
+        assert!(
+            substance_not_from_function_alone(&bearing, &claim).permits_promotion(),
+            "evidence bearing on what the thing IS clears it"
+        );
     }
 
     /// A hypothesis carrying a claim is doing a claim's work.
