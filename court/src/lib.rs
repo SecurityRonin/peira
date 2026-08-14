@@ -329,6 +329,11 @@ pub fn violations_for(graph: &Graph, id: &NodeId) -> Vec<Violation> {
     //
     // A packet asserts that what it rests on was examined. That assertion is only true
     // if the examination follows the support.
+    // Deliberately does NOT include rivals and limiters. Their TITLES are printed, and
+    // the body scan answers for that text — but their own gate profile is their
+    // author's business. Pulling them in blocks the victim of someone else's
+    // frontmatter, which is the defect this project already fixed once in the pramāṇa
+    // gate. What is rendered is scanned; what is rested on is examined.
     let mut closure: BTreeSet<NodeId> = BTreeSet::new();
     let mut stack = vec![id.clone()];
     while let Some(n) = stack.pop() {
@@ -359,7 +364,7 @@ pub fn violations_for(graph: &Graph, id: &NodeId) -> Vec<Violation> {
     // packet command refused. A check only one caller can see is a check the other
     // caller contradicts.
     if let Some(body) = render_body(graph, id) {
-        found.extend(lints::overstatements_in(&body, id));
+        found.extend(lints::prose_findings_in(&body, id));
     }
     found
 }
@@ -393,7 +398,7 @@ pub fn freeze(graph: &Graph, id: &NodeId) -> Result<Packet, PacketError> {
     }
 
     let body = render_body(graph, id).ok_or_else(|| PacketError::NoSuchClaim(id.clone()))?;
-    let overstated = lints::overstatements_in(&body, id);
+    let overstated = lints::prose_findings_in(&body, id);
     if !overstated.is_empty() {
         return Err(PacketError::Blocked {
             id: id.clone(),
@@ -552,6 +557,31 @@ aspect: function\n---\n",
                 Verification::DigestMismatch { .. }
             ),
             "a mutated cited node must still read as a mismatch"
+        );
+    }
+
+    /// The closure covers everything the packet RENDERS, not only what it rests on.
+    ///
+    /// `freeze` renders nodes reached by `Contradicts` and `Limits` under their own
+    /// headings, and the closure followed only `Supports` and `UsesTerm` — so a legal
+    /// conclusion on a limiter printed verbatim into a court artifact while `peira lint`
+    /// reported it happily elsewhere.
+    #[test]
+    fn a_packet_answers_for_the_limiters_and_rivals_it_prints() {
+        let mut g = clean_graph();
+        g.insert_node(node(
+            "---\nid: lim\ntype: claim\ntitle: The suspect is guilty of unauthorised access\n---\n",
+        ));
+        g.insert_edge(Edge::new(
+            NodeId::new("lim"),
+            NodeId::new("c1"),
+            EdgeKind::Limits,
+        ));
+        let err = freeze(&g, &NodeId::new("c1"))
+            .expect_err("a packet rendering a limiter that decides the ultimate issue must refuse");
+        assert!(
+            err.to_string().contains("guilty"),
+            "the refusal must quote what would have been printed: {err}"
         );
     }
 

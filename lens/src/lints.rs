@@ -41,6 +41,35 @@ pub const LEGAL_CONCLUSION: &str = "PEIR-LINT-LEGAL-CONCLUSION";
 /// hand, and the list in this file was already out of date with `freeze` on the day
 /// it was written: `warrant`, `boundaries` and `falsifier` were rendered verbatim
 /// and scanned by nothing.
+/// Every prose check, run over already-rendered text.
+///
+/// Runs ALL of them. The first version ran only the forbidden-verb list, so a legal
+/// conclusion sailed through the body scan that was supposed to be the structural
+/// backstop — the same defect as the field list it replaced, one layer up: enumerating
+/// one check where every check was needed.
+#[must_use]
+pub fn prose_findings_in(text: &str, subject: &NodeId) -> Vec<Violation> {
+    let mut out = overstatements_in(text, subject);
+    let haystack = text.to_ascii_lowercase();
+    out.extend(
+        ULTIMATE_ISSUES
+            .iter()
+            .filter(|w| contains_phrase(&haystack, w) && !clause_negated(&haystack, w))
+            .map(|w| {
+                violation(
+                    LEGAL_CONCLUSION,
+                    subject,
+                    format!(
+                        "the rendered packet says \"{w}\" — that is the tribunal's question, \
+and it would be sealed into the artifact"
+                    ),
+                    "state what the evidence shows and hand the conclusion back",
+                )
+            }),
+    );
+    out
+}
+
 #[must_use]
 pub fn overstatements_in(text: &str, subject: &NodeId) -> Vec<Violation> {
     let haystack = text.to_ascii_lowercase();
@@ -142,7 +171,12 @@ fn clause_negated(haystack: &str, needle: &str) -> bool {
         return false;
     };
     let head = &haystack[..at];
+    // A NEWLINE is a clause boundary, and the strongest one. Without it this reads a
+    // whole rendered packet as ONE clause, so a negator lines away suppresses a verdict
+    // printed under its own heading — which is exactly how a legal conclusion on a
+    // limiter survived the body scan.
     let start = [
+        "\n",
         ",",
         ";",
         ":",
