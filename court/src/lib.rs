@@ -407,7 +407,13 @@ pub fn violations_for(graph: &Graph, id: &NodeId) -> Vec<Violation> {
     // packet command refused. A check only one caller can see is a check the other
     // caller contradicts.
     if let Some(body) = render_body(graph, id) {
-        found.extend(lints::prose_findings_in(&body, id));
+        // Same exclusion as in `freeze`: the falsifier section discloses, it does not assert.
+        let asserted: String = body
+            .split("\n## ")
+            .filter(|s| !s.starts_with("What would defeat this"))
+            .collect::<Vec<_>>()
+            .join("\n## ");
+        found.extend(lints::prose_findings_in(&asserted, id));
     }
     found
 }
@@ -429,6 +435,16 @@ pub fn freeze(graph: &Graph, id: &NodeId) -> Result<Packet, PacketError> {
         });
     }
 
+    // The SUBJECT's own withdrawal. `retracted` reports only where a withdrawn node
+    // holds something else up, so retained history stays quiet — which leaves the case
+    // where the retired claim IS the packet.
+    if let Some(v) = lints::subject_withdrawn(graph, id) {
+        return Err(PacketError::Blocked {
+            id: id.clone(),
+            violations: vec![v],
+        });
+    }
+
     let violations = violations_for(graph, id);
     if !violations.is_empty() {
         return Err(PacketError::Blocked {
@@ -441,7 +457,16 @@ pub fn freeze(graph: &Graph, id: &NodeId) -> Result<Packet, PacketError> {
     }
 
     let body = render_body(graph, id).ok_or_else(|| PacketError::NoSuchClaim(id.clone()))?;
-    let overstated = lints::prose_findings_in(&body, id);
+    // Scan what the packet ASSERTS, not what it discloses. The falsifier section exists
+    // to name what would defeat the claim, so scanning it refuses a packet for making
+    // the disclosure the tool demands — see `legal_conclusions`. Overstatement in a
+    // falsifier is still caught by the node-level lint on title and body.
+    let asserted: String = body
+        .split("\n## ")
+        .filter(|s| !s.starts_with("What would defeat this"))
+        .collect::<Vec<_>>()
+        .join("\n## ");
+    let overstated = lints::prose_findings_in(&asserted, id);
     if !overstated.is_empty() {
         return Err(PacketError::Blocked {
             id: id.clone(),

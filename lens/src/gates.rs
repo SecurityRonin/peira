@@ -8,7 +8,7 @@
 //! was missing. It never returns `Pass`. Silence is not consent.
 
 use crate::{GateResult, Violation};
-use peira_core::{EdgeKind, Graph, Node, NodeKind};
+use peira_core::{EdgeKind, Graph, Node, NodeId, NodeKind};
 
 // ── Stable published gate codes ──────────────────────────────────────────────
 // These appear in Court Mode packets. A shipped code never changes meaning.
@@ -102,13 +102,31 @@ fn under_promotion(graph: &Graph, node: &Node) -> bool {
     // An observation that RECORDS declares none of these fields and is examined by
     // nothing — the gates return NotApplicable of their own accord. One that ASSERTS,
     // in the shape of a claim, and is leaned on, answers like one.
+    // Weight must REACH A CLAIM, not merely leave the node. Any outgoing support edge
+    // counted, so a hypothesis supporting a bare sketch hypothesis — nothing anywhere
+    // near a claim — was held to the full promotion bar while its own parent stayed
+    // exempt. The exemption is for thinking out loud, and thinking out loud in two
+    // steps is still thinking out loud.
     let leaned_on = || {
+        let mut seen: std::collections::BTreeSet<&NodeId> = std::collections::BTreeSet::new();
+        let mut stack = vec![&node.id];
+        while let Some(n) = stack.pop() {
+            if !seen.insert(n) {
+                continue;
+            }
+            for e in graph
+                .edges_from(n)
+                .filter(|e| matches!(e.kind, EdgeKind::Supports | EdgeKind::DependsOn))
+            {
+                if graph.node(&e.to).is_some_and(|d| d.kind == NodeKind::Claim) {
+                    return true;
+                }
+                stack.push(&e.to);
+            }
+        }
         graph
-            .edges_from(&node.id)
-            .any(|e| matches!(e.kind, EdgeKind::Supports | EdgeKind::DependsOn))
-            || graph
-                .edges_to(&node.id)
-                .any(|e| e.kind == EdgeKind::DependsOn)
+            .edges_to(&node.id)
+            .any(|e| e.kind == EdgeKind::DependsOn)
     };
     // Leaned on AND asserting. Leaned-on alone would demand a quantifier and a causal
     // rung from every observation that supports anything, which is ceremony, and
@@ -176,6 +194,9 @@ fn is_evaluative(node: &Node) -> bool {
 
 /// An evaluative claim must name the standard it is judged against.
 pub fn criterion_declared(graph: &Graph, node: &Node) -> GateResult {
+    if !under_promotion(graph, node) {
+        return GateResult::NotApplicable;
+    }
     if !is_evaluative(node) {
         return GateResult::NotApplicable;
     }
@@ -363,6 +384,9 @@ case actually examined",
 
 /// A contested claim must address all four corners.
 pub fn four_corners_addressed(graph: &Graph, node: &Node) -> GateResult {
+    if !under_promotion(graph, node) {
+        return GateResult::NotApplicable;
+    }
     let attacked = graph.edges_to(&node.id).any(|e| e.kind.is_attack());
     let contested = attacked || node.field("contested") == Some("true");
     if !contested {

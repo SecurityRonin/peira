@@ -366,6 +366,29 @@ association without the causal verb",
     out
 }
 
+/// The subject of a packet, withdrawn by its own record.
+///
+/// [`retracted`] reports only where a withdrawn node holds something ELSE up, so that
+/// retained history stays quiet. That leaves the case where the retired claim IS the
+/// packet, which `freeze` asks about directly.
+#[must_use]
+pub fn subject_withdrawn(graph: &Graph, id: &NodeId) -> Option<Violation> {
+    graph
+        .edges_to(id)
+        .find(|e| matches!(e.kind, EdgeKind::Retracts | EdgeKind::Supersedes))
+        .map(|e| {
+            violation(
+                RETRACTED,
+                id,
+                format!(
+                    "`{id}` is withdrawn by `{}`, in the record it is drawn from",
+                    e.from
+                ),
+                "cite the superseding version, or the retraction itself",
+            )
+        })
+}
+
 /// A claim that decides the tribunal's question instead of describing evidence.
 ///
 /// Layer 3 is never the expert's — see `docs/method/expert-witness.md`. The
@@ -377,6 +400,13 @@ association without the causal verb",
 /// packet is the artifact that reaches a tribunal, and this is the one sentence that
 /// must never reach one.
 fn legal_conclusions(node: &Node) -> Vec<Violation> {
+    // MENTION IS NOT USE. A falsifier names a possibility to be tested — "evidence that
+    // the transfer was fraudulent" is exactly what PEIR-FALSIFIER-MISSING demands — and
+    // scanning it refused the packet for containing the word the tool required. Two of
+    // its own rules in direct contradiction, and the one that lost was the discipline.
+    //
+    // Only the title and body are scanned: those assert. `falsifier:`, `boundaries:`
+    // and the term moments describe, quote or delimit.
     let haystack = format!("{} {}", node.title, node.body).to_ascii_lowercase();
     // Negation is scoped to the CLAUSE the word sits in, not the whole sentence.
     //
@@ -662,12 +692,13 @@ fn retracted(graph: &Graph, node: &Node) -> Vec<Violation> {
     // or NEGATES something is doing exactly as much work as one that attacks it, and
     // naming one of three grammars let the other two pass unreported. When you forbid a
     // thing, sweep for the other spellings of it.
-    let still_cited = graph
-        .edges_to(&node.id)
-        .any(|e| e.kind == EdgeKind::Supports)
-        || graph
-            .edges_from(&node.id)
-            .any(|e| e.kind == EdgeKind::Supports || e.kind.is_attack());
+    // OUTGOING only. A retired node keeps the evidence it once rested on — that is the
+    // retention the design requires — and counting its own incoming support as "still
+    // cited" made the comment below false: every properly retained history fired
+    // forever. What matters is whether the withdrawn node is holding something ELSE up.
+    let still_cited = graph.edges_from(&node.id).any(|e| {
+        e.kind == EdgeKind::Supports || e.kind == EdgeKind::DependsOn || e.kind.is_attack()
+    });
     if !still_cited {
         return Vec::new();
     }
@@ -1161,30 +1192,55 @@ would punish the discipline this lint teaches"
         let supports =
             |f: &str, t: &str| Edge::new(NodeId::new(f), NodeId::new(t), EdgeKind::Supports);
 
+        // LOAD-BEARING: c1 still holds c2 up, so withdrawing it is a live problem.
         let withdrawn = graph_of(
-            vec![claim("c1"), obs.clone(), node("---\nid: d1\ntype: dissent\ntitle: withdrawn after the parser was found wrong\n---\n")],
+            vec![claim("c1"), claim("c2"), obs.clone(), node("---\nid: d1\ntype: dissent\ntitle: withdrawn after the parser was found wrong\n---\n")],
             vec![
                 supports("o1", "c1"),
+                supports("c1", "c2"),
                 Edge::new(NodeId::new("d1"), NodeId::new("c1"), EdgeKind::Retracts),
             ],
         );
         assert_eq!(
             retracted(&withdrawn, "c1"),
             1,
-            "a claim the vault records as retracted must be flagged"
+            "a withdrawn claim that still holds something up must be flagged"
         );
 
-        let superseded = graph_of(
-            vec![claim("c1"), claim("c2"), obs.clone()],
+        // RETIRED: nothing leans on it. The evidence it once rested on is retention,
+        // not citation, and reporting it forever trains a reader to skip the category.
+        // `freeze` still refuses a packet whose SUBJECT is withdrawn.
+        let retired = graph_of(
+            vec![
+                claim("c1"),
+                obs.clone(),
+                node("---\nid: d2\ntype: dissent\ntitle: retired\n---\n"),
+            ],
             vec![
                 supports("o1", "c1"),
+                Edge::new(NodeId::new("d2"), NodeId::new("c1"), EdgeKind::Retracts),
+            ],
+        );
+        assert_eq!(
+            retracted(&retired, "c1"),
+            0,
+            "properly retained history stays quiet"
+        );
+
+        // Supersession is the same shape, and load-bearing the same way: c1 still holds
+        // c3 up while the record says a newer version replaces c1.
+        let superseded = graph_of(
+            vec![claim("c1"), claim("c2"), claim("c3"), obs.clone()],
+            vec![
+                supports("o1", "c1"),
+                supports("c1", "c3"),
                 Edge::new(NodeId::new("c2"), NodeId::new("c1"), EdgeKind::Supersedes),
             ],
         );
         assert_eq!(
             retracted(&superseded, "c1"),
             1,
-            "a superseded claim is the same shape: the record says a newer version replaces it"
+            "a superseded claim still holding something up is the same shape"
         );
 
         let live = graph_of(vec![claim("c1"), obs], vec![supports("o1", "c1")]);
