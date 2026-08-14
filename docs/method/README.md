@@ -163,18 +163,19 @@ finite. Skipped entirely when the sentence contains any negator, so a careful ne
 is missed. T3 instrument: our own table, not a decode of anyone's spec.
 
 ¹ The ceiling binds only edges that declare a means of knowing; omitting the declaration evades it.
-² The lint reports; it rewrites nothing — the safe form travels in the violation's detail line.
-And it scans a node's title and body only: not the warrant, not boundaries or falsifiers, and not
-the term fields the court packet renders from.
+² The lint reports; it rewrites nothing — the safe form travels in the violation's detail line. It
+scans a node's title, body and the three term moments; the warrant, boundaries and falsifiers are
+covered instead by the scan `freeze` runs over the FINISHED packet body, which is what makes
+"rendered but unscanned" structurally impossible rather than a list to keep in step by hand.
 ³ Fires only where one supporter is explicitly marked as duplicating another; it does not detect
 two supporters that share an instrument or a source.
 ⁴ Reaches a verdict only when the claim declares the triggering field (`uses_term`, `quantifier`,
-`causal_rung`, `aspect`, an evaluative word or `evaluative: true`). With the field absent, the gate
-returns `Unassessed` or `NotApplicable` — and defect 1 in the
-[architecture defect register](../architecture.md#defect-register) means `Unassessed` currently
-vanishes before anything acts on it, so silence passes.
-⁵ Fires only on a *proposed* grade with no reviewer; an edge carrying no grade at all trips
-nothing (architecture defect 4).
+`causal_rung`, `aspect`, an evaluative word or `evaluative: true`). With the field absent the gate
+returns `Unassessed`, which now BLOCKS as `PEIR-GATE-UNASSESSED` — silence no longer passes. A
+field declared *falsely* is a different matter and is reported by
+`PEIR-LINT-DECLARATION-CONTRADICTED`, which compares the declaration against the claim's own words.
+⁵ Fires only on a *proposed* grade with no reviewer. An edge carrying no grade at all is caught
+separately by `PEIR-LINT-UNGRADED-SUPPORT`, on claims and on any hypothesis something leans on.
 ⁶ Compares the grader against `author:` only when the claim declares one; with `author:` absent
 there is nothing to compare and the lint reports nothing.
 ⁷ The digest covers the packet's rendered body only. Grades, graders, pramāṇas and `measured_by:`

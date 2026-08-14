@@ -42,10 +42,10 @@ describes what each check *does* and this describes what its output *supports*.
 | "All enforced gates pass" | gates that reached no verdict are discarded before this is printed |
 | `review_ready` | computed from an empty blocking list and grounded membership; nothing reads whether a reviewer signed |
 | grounded membership | attack edges are author-declared; standing can be manufactured |
-| a verified packet | `verify` compares the rendered projection only, and a format-line edit demotes tampering to "no verdict" |
-| a settled grade | the ceiling binds only edges that declare a means of knowing; nothing requires one |
-| absence of a retraction warning | `retracts:` is parsed and read by nothing |
-| absence of a privilege warning on a packet | the lint fires on the node that carries the material, and `freeze` filters to the claim's own id |
+| a verified packet | `verify` compares the rendered projection only, and a format-line edit demotes tampering to "no verdict" — unchanged, and still the sharpest open defect |
+| a settled grade | the ceiling binds only edges that declare a means of knowing — an undeclared one now reaches no verdict rather than passing, but a *contradicted* declaration is only reported, never corrected |
+| a claim standing because a rival was withdrawn | the packet and `peira status` now DISCLOSE this — read the line; it names the withdrawn attacks rather than claiming they were defeated |
+| absence of a privilege warning on a packet | the lint fires on the node carrying the material; `freeze` examines the claim's evidential closure, so a leak on a *rendered rival* is scanned as text but its own gate profile is not examined |
 | the generated safe statement | it quotes author-written term fields verbatim |
 
 **The honest summary:** peira today is a **structured examination aid that catches specific named
@@ -90,7 +90,7 @@ How each half of the discipline maps onto the machinery, honestly:
 |---|---|---|
 | Record before you report | There is no prose write path into a packet: `freeze` renders it from the graph, and the parser refuses `status:` and `confidence:` outright | **enforced** |
 | Correct at the source, then rebuild | `verify` re-derives from the vault and compares digests. An edit that reaches the rendered body surfaces as `DigestMismatch`; one confined to unrendered fields — a grade, a grader, a `via=`, a `measured_by:` — changes no digest, and a packet edit that touches the `Packet format:` line surfaces as `FormatSuperseded`, which is no verdict at all | **enforced, narrow — defects 6 and 8** |
-| Mark supersession, never silently overwrite | `supersedes:` and `retracts:` edges are parsed and recorded — and then read by nothing | **recorded, unenforced — defect 3** |
+| Mark supersession, never silently overwrite | `supersedes:` and `retracts:` edges are read by `PEIR-LINT-RETRACTED`, by the grounded extension, and by the packet's standing line | **enforced** |
 | The deliverable is a projection, never the whole | A packet renders a fixed projection: the claim's title and warrant, the ids and titles of its direct supporters, contradictors and limiters, boundaries, falsifiers, and the term moments. Grades, graders, pramāṇas and instrument links are not in it — so they are not under the digest either | by construction — **and the digest inherits the narrowness (defect 8)** |
 | If it cannot be regenerated, it is not compiled — it is a fork | `Verified` means exactly: the rendered body re-derived byte-identically from the source | **enforced** |
 
@@ -103,18 +103,24 @@ second source of truth nobody reviewed.
 
 The third row is the honest hole in this section. The vault can *say* that a claim is withdrawn —
 `retracts:` is an edge kind, the loader builds it, and `is_attack()` deliberately excludes it so a
-retraction cannot be "defended against" by a third claim. But no gate, no lint, no freeze check and
-no derived state ever reads a `Retracts` or `Supersedes` edge. The record is kept and its meaning
-is dropped:
+retraction cannot be "defended against" by a third claim. For a long time nothing else read it: the
+record was kept and its meaning dropped, which is the **structural synonym** for the `status:
+withdrawn` the parser refuses. Three things read it now, and the third is the one that matters —
+a retraction is an *authored assertion*, so removing an attack silently would let the last writer
+win. It is disclosed instead:
 
 ```mermaid
 flowchart LR
     W["retracts: c1<br/>written in a note"] -->|"parsed by the loader"| E["Retracts edge<br/>in the graph"]
     E -->|"is_attack is false,<br/>by design"| A["not an attack —<br/>correct"]
-    E -.->|"read by no gate, no lint,<br/>no freeze check"| D["DISCARDED —<br/>c1 still freezes"]
+    E -->|"PEIR-LINT-RETRACTED,<br/>while load-bearing"| L["reported —<br/>c1 will not freeze"]
+    E -->|"leaves the attack relation"| G2["a withdrawn rival<br/>no longer defeats"]
+    E -->|"named in the packet"| S["standing line says WITHDRAWN,<br/>never 'defeated'"]
 
-    D:::broken
-    classDef broken fill:#5a1a1a,stroke:#d33,color:#fff,stroke-width:2px
+    L:::mended
+    G2:::mended
+    S:::mended
+    classDef mended fill:#1a3a2a,stroke:#3a7,color:#fff
 ```
 
 A packet therefore freezes for a claim the vault records as withdrawn. This is the structural
@@ -238,25 +244,31 @@ flowchart TB
     R -->|"Unassessed"| UN["no verdict reached<br/>MUST NOT permit promotion"]
 
     BL --> AGG["collected as violations"]
-    UN -.->|"DISCARDED HERE"| X["dropped: carries no Violation"]
+    UN -->|"PEIR-GATE-UNASSESSED"| AGG
 
     AGG --> LN["lint pack"]
-    LN --> GE["grounded extension —<br/>what survives attack"]
+    LN --> GE["grounded extension —<br/>withdrawn claims do not argue"]
     GE --> DS["derived state —<br/>reads gates and<br/>extension only"]
-    DS --> FR["freeze a packet"]
+    DS --> FR["freeze a packet<br/>scans the rendered body"]
 
-    X:::broken
-    UN:::broken
-    classDef broken fill:#5a1a1a,stroke:#d33,color:#fff,stroke-width:2px
+    X["was: dropped, carried no Violation<br/>the filter is now permits_promotion()"]
+    UN -.-> X
+    X:::mended
+    classDef mended fill:#1a3a2a,stroke:#3a7,color:#fff,stroke-dasharray: 4 3
 ```
 
-The dashed edge is the central defect. `examine_graph` keeps only `result.violation()`;
-`Unassessed` produces no violation, so it never reaches `freeze`, `status` or `gates`. The method
-that encodes the rule — `GateResult::permits_promotion()` — has **no production caller**: every
-call site is a test. A claim that declares no `uses_term`, no `quantifier` and no `causal_rung`
-collects three `Unassessed` results, all of which vanish, and the packet it freezes into states
-"All enforced gates pass" — the same sentence `peira status` prints whenever the blocking list is
-empty.
+The dashed edge **was** the central defect, and it is the shape worth remembering rather than the
+bug. `examine_graph` kept only `result.violation()`; `Unassessed` produces no violation, so it never
+reached `freeze`, `status` or `gates`. The method encoding the rule — `GateResult::permits_promotion()`
+— had **no production caller**: every call site was a test. A claim declaring no `uses_term`, no
+`quantifier` and no `causal_rung` collected three `Unassessed` results, all of which vanished, and
+the packet froze stating "All enforced gates pass".
+
+**It is now the filter.** `examine_graph` emits a `PEIR-GATE-UNASSESSED` violation for every result
+where `permits_promotion()` is false, so the rule reaches the decision point and every consumer
+inherits it unchanged. The lesson generalises past this defect: *a state your types model can be
+discarded in transit*, and a predicate whose only callers are tests is a rule you believe you
+have.
 
 ---
 

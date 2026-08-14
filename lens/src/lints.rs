@@ -103,9 +103,14 @@ artifact exactly as written"
 /// are copied through unaltered, so an overstatement placed here reaches a tribunal
 /// having passed every check. They are scanned exactly like a title or a body.
 ///
-/// If Court Mode ever renders another authored field, it belongs in this list. A
-/// rendered field the lint does not reach is a hole in the claim that the statement
-/// is generated.
+/// This list is NOT the guarantee, and an earlier version of this comment claimed it
+/// was — while `warrant`, `boundaries` and `falsifier` were rendered verbatim and
+/// reached by nothing. Keeping a list in step with a renderer by hand is the failure
+/// mode, not the fix. The guarantee is [`prose_findings_in`], which `freeze` runs over
+/// the FINISHED body: whatever is sealed has been scanned, by construction.
+///
+/// These three stay because catching an overstatement at the TERM gives the author a
+/// finding on the node they can fix, rather than on the packet.
 pub const RENDERED_FIELDS: &[&str] = &["as_used", "not_essence", "stipulated"];
 
 /// Overstatements, and what to say instead.
