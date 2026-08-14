@@ -373,14 +373,29 @@ fn cmd_verify(vault: &Path, packet: &Path) -> Result<u8, String> {
             );
             Ok(exit::OK)
         }
-        // The only one of these that is an accusation.
-        Verification::DigestMismatch { stored, fresh } => {
+        // NOT by itself an accusation. A vault that grew — a corroborating observation
+        // added months later — and a vault whose cited evidence was altered produce the
+        // same verdict, and only one is misconduct. Report the difference, name where it
+        // starts, and let the reader judge.
+        Verification::DigestMismatch {
+            stored,
+            fresh,
+            first_difference,
+        } => {
             println!(
-                "✗ {} does NOT match the vault — the graph changed under a frozen packet",
+                "✗ {} no longer matches the vault — the record has changed since it froze",
                 packet.display()
             );
             println!("  packet sha256 {stored}");
             println!("  vault  sha256 {fresh}");
+            if let Some(d) = first_difference {
+                println!("\n  first difference:\n  {d}");
+            }
+            println!(
+                "\n  This says the record moved, not that anyone altered it. Adding \
+evidence\n  moves it too. Compare the packet against the vault's history before \
+drawing\n  any conclusion about why."
+            );
             Ok(exit::VIOLATIONS)
         }
         // Exit 2, the same code an absent vault returns, because this is the same

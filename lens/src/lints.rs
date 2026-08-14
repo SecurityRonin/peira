@@ -818,11 +818,22 @@ fn self_graded(graph: &Graph) -> Vec<Violation> {
             if author != grader {
                 return None;
             }
+            // Reported on the node CARRYING the edge, not on the claim it points at.
+            // `by=` is an unauthenticated free string, so anyone able to write the vault
+            // can attach `by=<author>` to a claim and make its own `peira status` report
+            // it as defective — the finding landed on the victim, naming a file its
+            // author cannot fix. It now names the file that can be.
+            //
+            // The underlying exposure is not fixable here and is stated rather than
+            // papered over: peira cannot authenticate `by=`. In a shared vault the
+            // question "who actually wrote this edge" is answered by the version
+            // control history, not by the field.
             Some(violation(
                 SELF_GRADED,
-                &e.to,
+                &e.from,
                 format!(
-                    "the grade on {} → {} was settled by `{grader}`, who authored \"{}\"",
+                    "the grade this node puts on {} → {} is settled by `{grader}`, who \
+authored \"{}\" — `by=` is not authenticated, so check the history if you did not write it",
                     e.from, e.to, subject.title
                 ),
                 "an independent reviewer must settle it — an author signing off their \

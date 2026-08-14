@@ -85,12 +85,21 @@ impl std::error::Error for PacketError {}
 pub enum Verification {
     /// Re-derived byte-identically from the vault as it stands.
     Verified,
-    /// The vault changed under the packet. This is the one that is an accusation.
+    /// The vault no longer renders this packet.
+    ///
+    /// **Not by itself an accusation**, and an earlier version of this comment said it
+    /// was. A vault that GREW — a second corroborating observation added months later —
+    /// and a vault whose cited evidence was ALTERED produce the same verdict, and only
+    /// one of them is misconduct. The tool cannot tell them apart, so it reports the
+    /// difference and names where it starts; the reader judges.
     DigestMismatch {
         /// What the packet carries.
         stored: String,
         /// What the vault produces now.
         fresh: String,
+        /// The first line at which the two renderings diverge, if any — evidence a
+        /// reader can act on rather than a bare verdict.
+        first_difference: Option<String>,
     },
     /// Written by a different renderer, so no comparison against it is meaningful.
     FormatSuperseded {
@@ -501,10 +510,27 @@ pub fn verify(graph: &Graph, packet: &Packet) -> Verification {
 
     match freeze(graph, &packet.subject) {
         Ok(fresh) if fresh.digest == packet.digest => Verification::Verified,
-        Ok(fresh) => Verification::DigestMismatch {
-            stored: packet.digest.clone(),
-            fresh: fresh.digest,
-        },
+        Ok(fresh) => {
+            // Name where the two renderings diverge. A bare "does not match" is a
+            // verdict; the first differing line is evidence, and it is usually enough
+            // to tell a vault that grew from one whose cited evidence was altered.
+            let first_difference = packet
+                .body
+                .lines()
+                .zip(fresh.body.lines())
+                .find(|(a, b)| a != b)
+                .map(|(a, b)| format!("stored: {a}\n  fresh:  {b}"))
+                .or_else(|| {
+                    let (s, f) = (packet.body.lines().count(), fresh.body.lines().count());
+                    (s != f)
+                        .then(|| format!("the packet has {s} line(s); the vault now renders {f}"))
+                });
+            Verification::DigestMismatch {
+                stored: packet.digest.clone(),
+                fresh: fresh.digest,
+                first_difference,
+            }
+        }
         // Not tampering: the claim stopped qualifying. The packet is untouched and the
         // error says which gate or defeat is responsible, so it is carried rather than
         // flattened.

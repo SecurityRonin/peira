@@ -360,8 +360,22 @@ pub fn class_extension_declared(graph: &Graph, node: &Node) -> GateResult {
             ),
         };
     };
-    if !matches!(quantifier, "universal" | "class") {
-        return GateResult::NotApplicable;
+    // An UNRECOGNISED value is not "singular-like". `quantifier: all` sailed through as
+    // NotApplicable while quantifying over everything, so a present-but-unknown value
+    // did BETTER than an absent one — and absence already reaches no verdict. Show the
+    // offending value rather than hiding it.
+    match quantifier {
+        "universal" | "class" => {}
+        "singular" => return GateResult::NotApplicable,
+        other => {
+            return GateResult::Unassessed {
+                why: format!(
+                    "\"{}\" declares `quantifier: {other}`, which this gate does not \
+recognise — expected `universal`, `class` or `singular`",
+                    node.title
+                ),
+            }
+        }
     }
     if node.field_list("extension").is_empty() {
         block(
