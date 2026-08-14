@@ -73,12 +73,33 @@ impl Graph {
         // and in the other direction a withdrawn DEFENDER props up the claim it shields
         // — so a live claim would survive on the strength of an argument its own author
         // retracted. Removing it from the relation is the honest form.
-        let withdrawn: BTreeSet<NodeId> = self
+        // A retraction is an AUTHORED ASSERTION, not a fact about the world, and it
+        // binds only while it itself stands. Asking merely "is this withdrawn" let an
+        // idle note by anyone at all suppress a legitimate attack — the last writer
+        // won, and the graph got quietly smaller with every note.
+        //
+        // So a retraction whose author has itself been retracted stops binding, and
+        // what it withdrew comes back. Resolved to a fixed point because the chain can
+        // be any length, over a set that only grows, so it terminates.
+        let retractions: Vec<(&NodeId, &NodeId)> = self
             .edges
             .iter()
             .filter(|e| matches!(e.kind, EdgeKind::Retracts | EdgeKind::Supersedes))
-            .map(|e| e.to.clone())
+            .map(|e| (&e.from, &e.to))
             .collect();
+
+        let mut withdrawn: BTreeSet<NodeId> = BTreeSet::new();
+        for _ in 0..=retractions.len() {
+            let next: BTreeSet<NodeId> = retractions
+                .iter()
+                .filter(|(from, _)| !withdrawn.contains(*from))
+                .map(|(_, to)| (*to).clone())
+                .collect();
+            if next == withdrawn {
+                break;
+            }
+            withdrawn = next;
+        }
 
         let mut map: BTreeMap<NodeId, Vec<NodeId>> = BTreeMap::new();
         for edge in self
@@ -168,6 +189,56 @@ impl Graph {
 
 #[cfg(test)]
 mod tests {
+
+    /// A retraction is an authored assertion, not a fact about the world.
+    ///
+    /// Withdrawn claims were removed from the attack relation so a retracted attacker
+    /// could not defeat a live claim. Right in principle, wrong in scope: the removal
+    /// asked *is this withdrawn* and never *by whom, and does the withdrawal stand*. So
+    /// an idle note by anyone at all flipped a defeated claim to `review_ready`, froze a
+    /// packet, and the packet asserted "every attack on it is itself defeated" — while
+    /// printing the withdrawn rival twice.
+    ///
+    /// A retraction that is ITSELF withdrawn restores what it withdrew. Anything else
+    /// makes the last writer win.
+    #[test]
+    fn a_retraction_that_is_itself_retracted_restores_the_attack() {
+        use crate::{Edge, EdgeKind, NodeId};
+        let mk = |id: &str, kind: &str| {
+            crate::parse_node(&format!("---\nid: {id}\ntype: {kind}\ntitle: t\n---\n"))
+                .expect("fixture parses")
+        };
+        let mut g = Graph::new();
+        for (id, k) in [
+            ("c1", "claim"),
+            ("rival", "claim"),
+            ("d1", "dissent"),
+            ("d2", "dissent"),
+        ] {
+            g.insert_node(mk(id, k));
+        }
+        let e = |f: &str, t: &str, k: EdgeKind| Edge::new(NodeId::new(f), NodeId::new(t), k);
+        g.insert_edge(e("rival", "c1", EdgeKind::Contradicts));
+
+        assert!(
+            !g.grounded_extension().contains(&NodeId::new("c1")),
+            "a live attack defeats it"
+        );
+
+        g.insert_edge(e("d1", "rival", EdgeKind::Retracts));
+        assert!(
+            g.grounded_extension().contains(&NodeId::new("c1")),
+            "withdrawing the attacker lets the claim stand"
+        );
+
+        // The retraction is itself withdrawn: the attack is live again.
+        g.insert_edge(e("d2", "d1", EdgeKind::Retracts));
+        assert!(
+            !g.grounded_extension().contains(&NodeId::new("c1")),
+            "a withdrawn retraction cannot go on suppressing the attack — otherwise the \
+last writer wins, and the graph gets quietly smaller with every note"
+        );
+    }
     use super::*;
     use crate::{
         edge::EdgeKind,

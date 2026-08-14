@@ -234,6 +234,37 @@ fn defeat_block(graph: &Graph, claim: &Node) -> String {
 /// `freeze` could see it, and `peira status` contradicted the packet command.
 fn render_body(graph: &Graph, id: &NodeId) -> Option<String> {
     let claim = graph.node(id)?;
+
+    // An attack REMOVED because it was withdrawn was not DEFEATED, and saying so would
+    // be the packet's own overstatement. Disclose it: an idle note by anyone at all can
+    // withdraw a rival, and a reader is entitled to know that is why nothing stands
+    // against this claim.
+    let withdrawn_attacks: Vec<&Node> = graph
+        .edges_to(id)
+        .filter(|e| e.kind.is_attack())
+        .filter(|e| {
+            graph
+                .edges_to(&e.from)
+                .any(|r| matches!(r.kind, EdgeKind::Retracts | EdgeKind::Supersedes))
+        })
+        .filter_map(|e| graph.node(&e.from))
+        .collect();
+
+    let standing = if withdrawn_attacks.is_empty() {
+        "Survives in the grounded extension; every attack on it is itself defeated.".to_owned()
+    } else {
+        let names = withdrawn_attacks
+            .iter()
+            .map(|n| format!("[{}] {}", n.id, n.title))
+            .collect::<Vec<_>>()
+            .join("; ");
+        format!(
+            "Survives in the grounded extension — but NOT because every attack was \
+answered. {} attack(s) were WITHDRAWN by a retraction rather than defeated on the \
+merits: {names}. Read the retraction before relying on this.",
+            withdrawn_attacks.len()
+        )
+    };
     let supports = related(graph, claim, EdgeKind::Supports);
     let contradicts = related(graph, claim, EdgeKind::Contradicts);
     let limits = related(graph, claim, EdgeKind::Limits);
@@ -288,7 +319,7 @@ fn render_body(graph: &Graph, id: &NodeId) -> Option<String> {
          \n\
          ## Standing\n\
          \n\
-         Survives in the grounded extension; every attack on it is itself defeated.\n\
+         {standing}\n\
          All enforced gates pass.\n",
         id = claim.id,
         format = PACKET_FORMAT,

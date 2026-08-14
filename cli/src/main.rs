@@ -6,7 +6,7 @@
 //! nodes and edges all day and never assert that anything is accepted.
 
 use clap::{Parser, Subcommand};
-use peira_core::{Graph, NodeId};
+use peira_core::{EdgeKind, Graph, NodeId};
 use peira_court::Verification;
 use peira_lens::{examine_graph, lints, Violation, CATALOG};
 use std::{
@@ -123,6 +123,25 @@ fn report(violations: &[Violation], what: &str) -> u8 {
     exit::VIOLATIONS
 }
 
+/// Attacks that stopped counting because someone withdrew them.
+///
+/// The status line said "every attack on it is itself defeated" while an idle note by
+/// anyone at all could withdraw a rival — the attack was removed, not answered, and
+/// the difference is the whole of what a reader needs. The packet discloses it; a
+/// status line that disagreed with the packet would be the drift this file already
+/// deleted once.
+fn withdrawn_attacks(graph: &Graph, id: &NodeId) -> usize {
+    graph
+        .edges_to(id)
+        .filter(|e| e.kind.is_attack())
+        .filter(|e| {
+            graph
+                .edges_to(&e.from)
+                .any(|r| matches!(r.kind, EdgeKind::Retracts | EdgeKind::Supersedes))
+        })
+        .count()
+}
+
 /// Everything blocking one node — the same question `freeze` asks, asked once.
 ///
 /// This filtered findings to the node's own id while court walked the evidential
@@ -215,7 +234,11 @@ fn cmd_status(vault: &Path, id: &str) -> Result<u8, String> {
     println!(
         "  grounded extension : {}",
         if grounded {
-            "IN — every attack on it is itself defeated"
+            if withdrawn_attacks(&graph, &id) > 0 {
+                "IN — but some attacks were WITHDRAWN, not answered (see `peira packet`)"
+            } else {
+                "IN — every attack on it is itself defeated"
+            }
         } else if is_arg {
             "OUT — an attack stands unanswered"
         } else {

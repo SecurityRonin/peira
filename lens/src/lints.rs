@@ -487,12 +487,16 @@ fn retracted(graph: &Graph, node: &Node) -> Vec<Violation> {
     // still LOAD-BEARING: something live still leans on it. Court Mode reaches this
     // through the evidential closure, so a packet resting on withdrawn work is refused
     // while a properly retained history stays quiet.
+    // `is_attack()`, not the literal `Attacks` kind: a withdrawn node that CONTRADICTS
+    // or NEGATES something is doing exactly as much work as one that attacks it, and
+    // naming one of three grammars let the other two pass unreported. When you forbid a
+    // thing, sweep for the other spellings of it.
     let still_cited = graph
         .edges_to(&node.id)
         .any(|e| e.kind == EdgeKind::Supports)
         || graph
             .edges_from(&node.id)
-            .any(|e| matches!(e.kind, EdgeKind::Supports | EdgeKind::Attacks));
+            .any(|e| e.kind == EdgeKind::Supports || e.kind.is_attack());
     if !still_cited {
         return Vec::new();
     }
@@ -538,7 +542,17 @@ not a finding",
 /// Claims only, and support edges only. A hypothesis may rest on anything while it is
 /// still a candidate; an observation is not graded, it is what does the grading.
 fn ungraded_support(graph: &Graph, node: &Node) -> Vec<Violation> {
-    if node.kind != NodeKind::Claim {
+    // Claims, and hypotheses something LEANS ON — the same load-bearing rule the
+    // promotion gates use. A node-kind test here let an ungraded inference edge hide
+    // inside a chain: observation --graded--> h1 --UNGRADED--> h2 --graded--> claim
+    // reported nothing, went review_ready, and froze. Every other check in this file
+    // asks whether a node is carrying weight; this one asked what kind it was.
+    let carries_weight = node.kind == NodeKind::Claim
+        || (node.kind == NodeKind::Hypothesis
+            && graph
+                .edges_from(&node.id)
+                .any(|e| e.kind == EdgeKind::Supports));
+    if !carries_weight {
         return Vec::new();
     }
     graph
