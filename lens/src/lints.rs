@@ -126,6 +126,42 @@ const ULTIMATE_ISSUES: &[&str] = &[
     "infringed",
 ];
 
+/// Whether the clause containing `needle` is itself negated.
+///
+/// A clause boundary is a comma, semicolon, or a coordinating conjunction. Looking only
+/// at the text between the nearest boundary and the word asks the right question — does
+/// the negator GOVERN this word — where scanning the whole sentence merely asked whether
+/// one appears somewhere.
+///
+/// A heuristic over English, and it says so: it will miss subordinate structures a
+/// grammar would catch. It is deliberately biased toward FIRING, because the check it
+/// guards blocks a packet and the alternative is an unhedged verdict reaching a
+/// tribunal.
+fn clause_negated(haystack: &str, needle: &str) -> bool {
+    let Some(at) = haystack.find(needle) else {
+        return false;
+    };
+    let head = &haystack[..at];
+    let start = [
+        ",",
+        ";",
+        ":",
+        " and ",
+        " but ",
+        " however ",
+        " while ",
+        " whereas ",
+    ]
+    .iter()
+    .filter_map(|b| head.rfind(b).map(|i| i + b.len()))
+    .max()
+    .unwrap_or(0);
+
+    head[start..]
+        .split(|c: char| !c.is_alphanumeric() && c != '\'')
+        .any(|w| NEGATORS.contains(&w))
+}
+
 /// A claim that decides the tribunal's question instead of describing evidence.
 ///
 /// Layer 3 is never the expert's — see `docs/method/expert-witness.md`. The
@@ -138,27 +174,21 @@ const ULTIMATE_ISSUES: &[&str] = &[
 /// must never reach one.
 fn legal_conclusions(node: &Node) -> Vec<Violation> {
     let haystack = format!("{} {}", node.title, node.body).to_ascii_lowercase();
-    // SENTENCE-level negation, not the four-word lookback the verb lint uses. "The
-    // record is not evidence that the account holder is liable" is a correct negative
-    // finding, and the negator sits eight words from the word it negates — it denies
-    // the whole proposition rather than the adjacent term.
+    // Negation is scoped to the CLAUSE the word sits in, not the whole sentence.
     //
-    // The trade is deliberate and costs real coverage: "X is guilty, and NOTHING
-    // contradicts it" is missed because it contains a negator. That is the right
-    // direction for a check that BLOCKS. A false positive here refuses the careful,
-    // properly-hedged sentence an expert is obliged to write, and a checker that
-    // punishes the discipline it teaches is one people switch off. What it misses was
-    // caught by nothing before.
-    let sentence_negated = haystack
-        .split(|c: char| !c.is_alphanumeric() && c != '\'')
-        .any(|w| NEGATORS.contains(&w));
-    if sentence_negated {
-        return Vec::new();
-    }
-
+    // "does a negator appear anywhere" was the wrong question, and appending any
+    // negated clause switched this check off — including, in the worked case, a clause
+    // that is ITSELF on the substitution table: whether a thing is "in dispute" is the
+    // tribunal's call, so the phrase that evaded the check is one the check exists to
+    // catch.
+    //
+    //   negator in the SAME clause  -> "the record is NOT evidence that X is LIABLE"
+    //                                  a correct negative finding, and it passes
+    //   negator in a LATER clause   -> "X is GUILTY, and this is NOT in dispute"
+    //                                  the conclusion stands unhedged, and it fires
     ULTIMATE_ISSUES
         .iter()
-        .filter(|w| contains_phrase(&haystack, w))
+        .filter(|w| contains_phrase(&haystack, w) && !clause_negated(&haystack, w))
         .map(|w| {
             violation(
                 LEGAL_CONCLUSION,
