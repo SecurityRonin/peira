@@ -734,6 +734,50 @@ stipulated: the entry proves the suspect executed the binary\n---\n",
         );
     }
 
+    /// Negation is scoped to a CLAUSE, not a sentence.
+    ///
+    /// Sentence-level negation was the right instinct for the wrong reason: it asked
+    /// *does a negator appear* rather than *does the negator govern this word*. So
+    /// appending any negated clause switched the check off — and the appended clause in
+    /// the worked case is itself on the expert-witness substitution table as something
+    /// to delete, because whether a thing is in dispute is the tribunal's call.
+    #[test]
+    fn a_negator_in_a_later_clause_does_not_excuse_the_conclusion() {
+        let fired = |title: &str| {
+            let g = graph_of(
+                vec![node(&format!(
+                    "---\nid: c1\ntype: claim\ntitle: {title}\n---\n"
+                ))],
+                vec![],
+            );
+            lint(&g)
+                .into_iter()
+                .filter(|v| v.gate == "PEIR-LINT-LEGAL-CONCLUSION")
+                .count()
+        };
+
+        assert_eq!(
+            fired("The suspect is guilty of unauthorised access, and this is not in dispute"),
+            1,
+            "the negator governs a later clause; the conclusion still stands unhedged"
+        );
+        assert_eq!(
+            fired("The record is not evidence that the account holder is liable"),
+            0,
+            "here the negator governs the clause the word sits in — a correct negative finding"
+        );
+        assert_eq!(
+            fired("No relationship was found, and the transfer cannot be attributed"),
+            0,
+            "an ordinary hedged negative must stay quiet"
+        );
+        assert_eq!(
+            fired("The defendant is liable; nothing further was examined"),
+            1,
+            "a semicolon is a clause boundary too"
+        );
+    }
+
     /// A claim may not decide the tribunal's question.
     ///
     /// Layer 3 is never the expert's. The forbidden-verb lint cannot reach this —
