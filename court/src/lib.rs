@@ -293,20 +293,56 @@ fn standing_line(graph: &Graph, id: &NodeId) -> String {
     // be the packet's own overstatement. Disclose it: an idle note by anyone at all can
     // withdraw a rival, and a reader is entitled to know that is why nothing stands
     // against this claim.
+    // `Graph::withdrawn()`, not a direct-edge test. A retraction that has itself been
+    // retracted does not bind, so the attacker is LIVE — and asking only "does an
+    // incoming retraction exist" counted it as withdrawn anyway. That is the
+    // non-monotone defect fixed in `core` and never propagated here; a fix that does not
+    // reach its copies is barely a fix.
+    let withdrawn = graph.withdrawn();
     let withdrawn_attacks: Vec<&Node> = graph
         .edges_to(id)
         .filter(|e| e.kind.is_attack())
-        .filter(|e| {
-            graph
-                .edges_to(&e.from)
-                .any(|r| matches!(r.kind, EdgeKind::Retracts | EdgeKind::Supersedes))
-        })
+        .filter(|e| withdrawn.contains(&e.from))
         .filter_map(|e| graph.node(&e.from))
         .collect();
 
-    if withdrawn_attacks.is_empty() {
-        "Survives in the grounded extension; every attack on it is itself defeated.".to_owned()
+    // The SUBJECT's own lifecycle. A claim withdrawn and then restored froze into a
+    // packet mentioning neither event, though both are material to anyone weighing it —
+    // and the packet already discloses the symmetric fact about attacks. An attack
+    // removed is not an attack answered; by the same argument, a claim restored is not a
+    // claim never doubted.
+    let lifted: Vec<String> = graph
+        .edges_to(id)
+        .filter(|e| matches!(e.kind, EdgeKind::Retracts | EdgeKind::Supersedes))
+        .filter(|e| withdrawn.contains(&e.from))
+        .map(|e| {
+            let by = graph
+                .edges_to(&e.from)
+                .filter(|r| matches!(r.kind, EdgeKind::Retracts | EdgeKind::Supersedes))
+                .map(|r| r.from.to_string())
+                .collect::<Vec<_>>()
+                .join(", ");
+            format!("[{}] (itself withdrawn by {by})", e.from)
+        })
+        .collect();
+
+    let history = if lifted.is_empty() {
+        String::new()
     } else {
+        format!(
+            "\n\nThis claim was WITHDRAWN and later restored: {} no longer binds. It stands \
+because the withdrawal was lifted, not because it was never doubted — read the record before \
+relying on it.",
+            lifted.join("; ")
+        )
+    };
+
+    if withdrawn_attacks.is_empty() {
+        return format!(
+            "Survives in the grounded extension; every attack on it is itself defeated.{history}"
+        );
+    }
+    {
         // A withdrawn rival's title is ANOTHER AUTHOR'S prose, quoted so the reader knows
         // what was withdrawn. Rendering it raw put it in the scanned region, so a
         // verdict-titled rival blocked the claim it had attacked — the victim punished
@@ -331,7 +367,7 @@ fn standing_line(graph: &Graph, id: &NodeId) -> String {
         format!(
             "Survives in the grounded extension — but NOT because every attack was \
 answered. {} attack(s) were WITHDRAWN by a retraction rather than defeated on the \
-merits: {names}. Read the retraction before relying on this.",
+merits: {names}. Read the retraction before relying on this.{history}",
             withdrawn_attacks.len()
         )
     }
@@ -767,6 +803,97 @@ aspect: function\n---\n",
             1,
             "authored text manufactured a second section heading; the packet's structure \
 must be the renderer's alone. Headings found: {headings:?}"
+        );
+    }
+
+    /// Both disclosures must survive together.
+    ///
+    /// The first version appended the subject's lifecycle to one branch only, so a claim
+    /// that was BOTH restored and standing over a withdrawn attacker disclosed one fact
+    /// and dropped the other. Two disclosures in one function is two chances to forget
+    /// one.
+    #[test]
+    fn a_claim_both_restored_and_shielded_discloses_both() {
+        let e = |f: &str, t: &str, k: EdgeKind| Edge::new(NodeId::new(f), NodeId::new(t), k);
+        let mut g = clean_graph();
+        // Restored: r1 withdrew it, r2 lifted that.
+        g.insert_node(node(
+            "---\nid: r1\ntype: dissent\ntitle: withdraw it\n---\n",
+        ));
+        g.insert_node(node("---\nid: r2\ntype: dissent\ntitle: mistaken\n---\n"));
+        g.insert_edge(e("r1", "c1", EdgeKind::Retracts));
+        g.insert_edge(e("r2", "r1", EdgeKind::Retracts));
+        // Shielded: a rival exists and was withdrawn.
+        g.insert_node(node("---\nid: atk\ntype: claim\ntitle: a rival\n---\n"));
+        g.insert_node(node(
+            "---\nid: d1\ntype: dissent\ntitle: withdraw the rival\n---\n",
+        ));
+        g.insert_edge(e("atk", "c1", EdgeKind::Contradicts));
+        g.insert_edge(e("d1", "atk", EdgeKind::Retracts));
+
+        let line = standing_line(&g, &NodeId::new("c1"));
+        assert!(
+            line.contains("WITHDRAWN by a retraction"),
+            "the withdrawn attack must be disclosed: {line}"
+        );
+        assert!(
+            line.contains("later restored"),
+            "the subject's own restoration must be disclosed in the SAME line: {line}"
+        );
+    }
+
+    /// A claim restored after withdrawal must say so, and a restored ATTACK must count.
+    ///
+    /// Two halves of one omission. `standing_line` disclosed withdrawn attacks and said
+    /// nothing about the subject's own lifecycle — so a claim that was withdrawn and then
+    /// un-withdrawn froze into a packet mentioning neither event, though both are
+    /// material to anyone weighing it.
+    ///
+    /// And its withdrawn-attack test was a DIRECT EDGE test rather than
+    /// `Graph::withdrawn()`, so a retraction that had itself been retracted still counted
+    /// the attacker as withdrawn — the non-monotone defect fixed in `core` and never
+    /// propagated here. A fix that does not reach its copies is barely a fix.
+    #[test]
+    fn the_standing_line_discloses_the_subjects_own_lifecycle() {
+        let e = |f: &str, t: &str, k: EdgeKind| Edge::new(NodeId::new(f), NodeId::new(t), k);
+
+        // The subject was withdrawn, and the withdrawal was itself withdrawn.
+        let mut g = clean_graph();
+        g.insert_node(node(
+            "---\nid: r1\ntype: dissent\ntitle: withdraw it\n---\n",
+        ));
+        g.insert_node(node(
+            "---\nid: r2\ntype: dissent\ntitle: that was mistaken\n---\n",
+        ));
+        g.insert_edge(e("r1", "c1", EdgeKind::Retracts));
+        g.insert_edge(e("r2", "r1", EdgeKind::Retracts));
+
+        let body = render_body(&g, &NodeId::new("c1")).expect("renders");
+        assert!(
+            body.contains("r1"),
+            "a claim restored after withdrawal must name the retraction that was lifted; \
+the packet said nothing about either event:\n{body}"
+        );
+
+        // An attacker whose retraction was itself retracted is LIVE again, so it must
+        // not appear as a withdrawn attack.
+        let mut g2 = clean_graph();
+        g2.insert_node(node("---\nid: atk\ntype: claim\ntitle: a rival\n---\n"));
+        g2.insert_node(node(
+            "---\nid: d1\ntype: dissent\ntitle: withdraw the rival\n---\n",
+        ));
+        g2.insert_node(node(
+            "---\nid: d2\ntype: dissent\ntitle: no, it stands\n---\n",
+        ));
+        g2.insert_edge(e("atk", "c1", EdgeKind::Contradicts));
+        g2.insert_edge(e("d1", "atk", EdgeKind::Retracts));
+        g2.insert_edge(e("d2", "d1", EdgeKind::Retracts));
+
+        let line = standing_line(&g2, &NodeId::new("c1"));
+        assert!(
+            !line.contains("WITHDRAWN by a retraction"),
+            "d1 is itself retracted, so the attack is live and must not be reported as \
+withdrawn — this used a direct-edge test instead of the fixed point: {line}"
         );
     }
 
