@@ -28,6 +28,8 @@ pub const WINDOW_EDGE_AS_ONSET: &str = "PEIR-LINT-WINDOW-EDGE-AS-ONSET";
 pub const UNGROUNDED_CHAIN: &str = "PEIR-LINT-UNGROUNDED-CHAIN";
 /// A claim the record itself withdraws or replaces.
 pub const RETRACTED: &str = "PEIR-LINT-RETRACTED";
+/// An instrument nobody has shown to work.
+pub const UNCONTROLLED_INSTRUMENT: &str = "PEIR-LINT-UNCONTROLLED-INSTRUMENT";
 /// Support nobody has weighed.
 pub const UNGRADED_SUPPORT: &str = "PEIR-LINT-UNGRADED-SUPPORT";
 /// A finding that decides the ultimate issue — the tribunal's question, not the expert's.
@@ -488,6 +490,44 @@ association without the causal verb",
         }
     }
     out
+}
+
+/// Evidence resting on an instrument nobody has shown to work.
+///
+/// From `docs/method/source-register.md`: the failure a register exists for is a source
+/// that answers SUCCESSFULLY with the wrong thing — a 200 carrying an empty body, a
+/// filter matching a field that does not exist. The control that catches it is a
+/// positive one: a query whose answer you already know. Until an instrument has fired
+/// on a known positive, a null from it is an UNMEASURED result wearing a measurement's
+/// clothes, and "no evidence of X" built on it is confident precisely because the search
+/// found nothing.
+///
+/// Reported on the OBSERVATION, not the instrument: the observation is what cites it,
+/// and its author is who can add the control or stop relying on the reading.
+///
+/// Silent where no `measured_by:` edge exists at all. Instrument provenance is not yet
+/// required — demanding it everywhere would be ceremony, and this fires only for authors
+/// who recorded an instrument and left it uncontrolled.
+fn uncontrolled_instrument(graph: &Graph, node: &Node) -> Vec<Violation> {
+    graph
+        .edges_from(&node.id)
+        .filter(|e| e.kind == EdgeKind::MeasuredBy)
+        .filter_map(|e| graph.node(&e.to).map(|i| (e, i)))
+        .filter(|(_, i)| i.field("positive_control").is_none())
+        .map(|(_, i)| {
+            violation(
+                UNCONTROLLED_INSTRUMENT,
+                &node.id,
+                format!(
+                    "\"{}\" was measured by `{}` ({}), which declares no `positive_control:` \
+— nothing has shown this instrument fires when it should",
+                    node.title, i.id, i.title
+                ),
+                "record a `positive_control:` on the instrument — a query whose answer is \
+already known — or treat its nulls as unmeasured rather than as zero",
+            )
+        })
+        .collect()
 }
 
 /// The subject of a packet, withdrawn by its own record.
@@ -1074,6 +1114,47 @@ fn false_independence(graph: &Graph, node: &Node) -> Vec<Violation> {
                 e.kind == EdgeKind::Duplicates
                     && ((&e.from == *a && &e.to == *b) || (&e.from == *b && &e.to == *a))
             });
+
+            // SHARED INSTRUMENT. Two readings from one tool are one line of evidence
+            // however they are labelled, and G4 is defined as multiple materially
+            // INDEPENDENT convergent lines. `duplicates:` catches only the author who
+            // declares the overlap; this catches the overlap itself.
+            let instruments_of = |id: &NodeId| -> BTreeSet<NodeId> {
+                graph
+                    .edges_from(id)
+                    .filter(|e| e.kind == EdgeKind::MeasuredBy)
+                    .map(|e| e.to.clone())
+                    .collect()
+            };
+            let shared: Vec<NodeId> = instruments_of(a)
+                .intersection(&instruments_of(b))
+                .cloned()
+                .collect();
+
+            if !shared.is_empty() {
+                let names = shared
+                    .iter()
+                    .map(|i| {
+                        graph
+                            .node(i)
+                            .map_or_else(|| i.to_string(), |n| format!("{i} ({})", n.title))
+                    })
+                    .collect::<Vec<_>>()
+                    .join(", ");
+                out.push(violation(
+                    FALSE_INDEPENDENCE,
+                    &node.id,
+                    format!(
+                        "`{a}` and `{b}` both support \"{}\", and both were measured by {names} \
+— one instrument is one line of evidence, not two",
+                        node.title
+                    ),
+                    "cite them as a single line, or corroborate with evidence from an \
+instrument that could fail differently — convergence between two runs of one tool is \
+repetition, not independence",
+                ));
+            }
+
             if duplicated {
                 out.push(violation(
                     FALSE_INDEPENDENCE,
@@ -1106,6 +1187,7 @@ pub fn lint(graph: &Graph) -> Vec<Violation> {
         out.extend(ungrounded_chains(graph, node));
         out.extend(retracted(graph, node));
         out.extend(ungraded_support(graph, node));
+        out.extend(uncontrolled_instrument(graph, node));
         out.extend(legal_conclusions(node));
         out.extend(declaration_contradicted(node));
     }
@@ -1281,6 +1363,66 @@ stipulated: the entry proves the suspect executed the binary\n---\n",
             0,
             "\"produced\" is ordinary forensic description — a heuristic that fires on \
 professional prose is one people switch off"
+        );
+    }
+
+    /// An instrument with no recorded positive control cannot certify a zero.
+    ///
+    /// From `docs/method/source-register.md`: a source that answers successfully with
+    /// the WRONG thing is the failure mode a register exists for, and the control that
+    /// catches it is a positive one — a query whose answer you already know. Until an
+    /// instrument has fired on a known positive, a null from it is an UNMEASURED result
+    /// wearing a measurement's clothes.
+    ///
+    /// The discipline was documented, the graph could express it, and nothing read it.
+    #[test]
+    fn an_instrument_with_no_positive_control_cannot_certify_a_null() {
+        let claim = node("---\nid: c1\ntype: claim\ntitle: t\n---\n");
+        let e = |f: &str, t: &str, k: EdgeKind| Edge::new(NodeId::new(f), NodeId::new(t), k);
+        let fired = |g: &Graph| {
+            lint(g)
+                .into_iter()
+                .filter(|v| v.gate == "PEIR-LINT-UNCONTROLLED-INSTRUMENT")
+                .count()
+        };
+
+        let uncontrolled = graph_of(
+            vec![
+                claim.clone(),
+                node("---\nid: i1\ntype: instrument\ntitle: a feed nobody has tested\n---\n"),
+                node("---\nid: o1\ntype: observation\ntitle: the search returned nothing\n---\n"),
+            ],
+            vec![
+                e("o1", "c1", EdgeKind::Supports),
+                e("o1", "i1", EdgeKind::MeasuredBy),
+            ],
+        );
+        assert_eq!(
+            fired(&uncontrolled),
+            1,
+            "an instrument that has never been shown to fire on a known positive cannot \
+support a claim — its null is unmeasured, not zero"
+        );
+
+        let controlled = graph_of(
+            vec![
+                claim,
+                node(
+                    "---\nid: i1\ntype: instrument\ntitle: a feed with a control\n\
+positive_control: returns a nonzero price for a major listed asset at a known past date\n---\n",
+                ),
+                node("---\nid: o1\ntype: observation\ntitle: the search returned nothing\n---\n"),
+            ],
+            vec![
+                e("o1", "c1", EdgeKind::Supports),
+                e("o1", "i1", EdgeKind::MeasuredBy),
+            ],
+        );
+        assert_eq!(
+            fired(&controlled),
+            0,
+            "a declared positive control is what the register asks for; demanding more \
+would punish the author who kept one"
         );
     }
 

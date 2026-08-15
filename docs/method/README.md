@@ -140,7 +140,9 @@ to prevent.
 | **A deliverable is compiled from the record and re-derivable** | `peira packet` / `peira verify` — digest re-derivation | **enforced for the rendered projection** ⁷ |
 | A withdrawn or replaced claim is not citable | `PEIR-LINT-RETRACTED` | **enforced** |
 | **An unrecognised value goes red, never silently interpreted** | — | **violated by the loader** ⁸ |
-| **An observation names the instrument it came off** | `measured_by:` edge to an `instrument` node | **expressible, unenforced** |
+| **An observation names the instrument it came off** | `measured_by:` edge to an `instrument` node | **expressible; provenance not required** ¹² |
+| **Two readings from one instrument are one line** | `PEIR-LINT-FALSE-INDEPENDENCE` | **enforced** |
+| **An instrument nobody has shown to work cannot certify a null** | `PEIR-LINT-UNCONTROLLED-INSTRUMENT` | **enforced when declared** ¹² |
 | **Instrument validity: positive and negative controls** | `instrument` node fields | **node only, no checks** |
 | **Refusal counted separately from zero** | — | **not mechanised** |
 | **A cap yields a floor, never a total** | — | **not mechanised** |
@@ -150,6 +152,11 @@ to prevent.
 ⁹ The lint reports a leak on the node that carries it. `freeze` filters violations to the claim's
 own id, so a privilege leak on a *supporting* node does not stop a packet — and the packet renders
 that supporter's id and title. Flagging is not exclusion; read the lint output before exporting.
+
+¹² Recording an instrument is still optional — demanding provenance on every observation would be
+ceremony, and ceremony is routed around. What is enforced is that a recorded instrument must carry a
+`positive_control:`, and that two supporters sharing one instrument are one line. Both fire only for
+authors who wrote a `measured_by:` edge, so the discipline rewards recording rather than punishing it.
 
 ¹¹ The gates trust `quantifier:` and `causal_rung:` because an author knows what a claim asserts —
 but a claim saying "on every host" while declaring `quantifier: singular` switches 白馬非馬 off by
