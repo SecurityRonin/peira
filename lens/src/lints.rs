@@ -373,7 +373,12 @@ fn predicated_of_a_party(haystack: &str, word: &str) -> bool {
 /// what the author declared and how the author wrote. A heuristic, and it says so —
 /// but a contradiction between two things the author supplied is a fact about the
 /// document, not an inference about the world.
-fn declaration_contradicted(node: &Node) -> Vec<Violation> {
+/// Does the prose quantify over the world, and did the author say so?
+///
+/// Extracted from [`declaration_contradicted`] when that function outgrew its line
+/// budget — split on the seam it already had, since the quantifier and causal halves
+/// share nothing but the node.
+fn contradicted_quantifier(node: &Node) -> Vec<Violation> {
     // STRONG universals are attributions wherever they appear — "every host was
     // compromised by the account holder" is a universal claim in a body as much as in a
     // title. WEAK ones are scanned in the title only: "this node holds the pointer,
@@ -384,19 +389,6 @@ fn declaration_contradicted(node: &Node) -> Vec<Violation> {
     // are UTC" is a scope note, and refusing it punishes a careful author.
     const STRONG: &[&str] = &["every", "always"];
     const WEAK: &[&str] = &["all", "each", "any", "never", "none"];
-    // Strong causal markers only. "produced" and "made" were tried and removed: both
-    // are routine descriptive verbs in forensic writing — "the tool produced output",
-    // "installation produced the record" — and flagging them punished a legitimate
-    // rival hypothesis in this repository's own fixture. A heuristic that fires on
-    // ordinary professional prose is one people switch off.
-    const INTERVENTIONAL: &[&str] = &[
-        "caused",
-        "causes",
-        "causing",
-        "resulted in",
-        "led to",
-        "because of",
-    ];
 
     let title = node.title.to_ascii_lowercase();
     let full = format!("{} {}", node.title, node.body).to_ascii_lowercase();
@@ -522,6 +514,26 @@ sentence to the scope you can support",
     // Absence as well as false declaration, exactly as for `quantifier:`. "Deleting the
     // key CAUSED the artefact to disappear" with no `causal_rung:` drew nothing — the
     // rung gate never runs, so the strongest word in the sentence went unexamined.
+    out
+}
+
+/// Does the prose claim about DOING, while the declared rung says only seeing?
+fn contradicted_rung(node: &Node) -> Vec<Violation> {
+    // Strong causal markers only. "produced" and "made" were tried and removed: both
+    // are routine descriptive verbs in forensic writing — "the tool produced output",
+    // "installation produced the record" — and flagging them punished a legitimate
+    // rival hypothesis in this repository's own fixture. A heuristic that fires on
+    // ordinary professional prose is one people switch off.
+    const INTERVENTIONAL: &[&str] = &[
+        "caused",
+        "causes",
+        "causing",
+        "resulted in",
+        "led to",
+        "because of",
+    ];
+    let full = format!("{} {}", node.title, node.body).to_ascii_lowercase();
+    let mut out = Vec::new();
     let rung = node.field("causal_rung");
     if rung.is_none() || rung == Some("association") {
         if let Some(w) = INTERVENTIONAL
@@ -549,6 +561,12 @@ association without the causal verb",
             ));
         }
     }
+    out
+}
+
+fn declaration_contradicted(node: &Node) -> Vec<Violation> {
+    let mut out = contradicted_quantifier(node);
+    out.extend(contradicted_rung(node));
     out
 }
 
