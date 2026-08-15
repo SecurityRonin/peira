@@ -22,7 +22,7 @@
 pub mod gates;
 pub mod lints;
 
-use peira_core::{Graph, Node, NodeId, NodeKind};
+use peira_core::{EdgeKind, Graph, Node, NodeId, NodeKind};
 use std::fmt;
 
 /// The intellectual lineage a lens comes from.
@@ -209,6 +209,60 @@ pub fn lens(id: &str) -> Option<&'static Lens> {
 /// Every lens that is enforced today.
 pub fn enforced() -> impl Iterator<Item = &'static Lens> {
     CATALOG.iter().filter(|l| l.phase == Phase::Enforced)
+}
+
+/// Whether anything in the graph leans on this node.
+///
+/// **The single definition of load-bearing.** Three functions used to answer this
+/// question and none agreed with the others — `gates::under_promotion`,
+/// `lints::ungraded_support` and the closure walk in `court` — and they had drifted
+/// apart by accretion, each defect fixed in isolation. Every audit round found at least
+/// one bug that was exactly that drift: a node in the closure but examined by nothing,
+/// a supporter of a declared prerequisite examined by one walk and not the other,
+/// `depends_on` followed in the wrong direction by one of them.
+///
+/// The rule, and the reason for each part:
+///
+/// - **A `Claim` always.** It asserts by existing; nothing has to lean on it.
+/// - **Weight that REACHES a claim.** Following any outgoing support counted a
+///   hypothesis supporting a bare sketch as load-bearing, so thinking out loud in two
+///   steps was held to the promotion bar. The walk is transitive and stops at a claim.
+/// - **An incoming `depends_on`.** `c1 --depends_on--> h1` says c1 cannot hold without
+///   h1, so h1 carries c1's weight. This is the direction that was missed twice: the
+///   edge that makes a node load-bearing can point either way.
+///
+/// Deliberately NOT a node-kind test. Whether a node carries weight is a property of
+/// the edges around it, and a kind test has been removed from this codebase three times
+/// and reintroduced twice. `court`'s closure asks a different question — *what does this
+/// packet rest on and render* — and is named for it rather than sharing this one.
+#[must_use]
+pub fn carries_weight(graph: &Graph, node: &Node) -> bool {
+    if node.kind == NodeKind::Claim {
+        return true;
+    }
+    let mut seen: std::collections::BTreeSet<&NodeId> = std::collections::BTreeSet::new();
+    let mut stack = vec![&node.id];
+    while let Some(n) = stack.pop() {
+        if !seen.insert(n) {
+            continue;
+        }
+        for e in graph.edges_from(n).filter(|e| e.kind == EdgeKind::Supports) {
+            if graph.node(&e.to).is_some_and(|d| d.kind == NodeKind::Claim) {
+                return true;
+            }
+            stack.push(&e.to);
+        }
+        for e in graph.edges_to(n).filter(|e| e.kind == EdgeKind::DependsOn) {
+            if graph
+                .node(&e.from)
+                .is_some_and(|d| d.kind == NodeKind::Claim)
+            {
+                return true;
+            }
+            stack.push(&e.from);
+        }
+    }
+    false
 }
 
 /// Run every enforced gate over every node in the graph, returning the violations.
@@ -823,6 +877,60 @@ falsifiable, not merely plausible",
     ///
     /// Asserted through the public aggregation, not the predicate, because the
     /// predicate was already right — it was the join that discarded it.
+    /// Load-bearing, asserted against an INDEPENDENT table rather than against itself.
+    ///
+    /// A first version of this test asserted "anything the promotion gates examine, the
+    /// grading demand also considers". That is true BY CONSTRUCTION now that both share
+    /// [`carries_weight`], so it could never fail — a tautology wearing a test's
+    /// clothes. Mutating `carries_weight` to drop the `depends_on` direction left it
+    /// green, which is how it was caught.
+    ///
+    /// So the expectations are written out independently of the implementation. Each row
+    /// is a fact about the domain: what it means for something to be leaned on.
+    #[test]
+    fn load_bearing_matches_what_it_means_to_be_leaned_on() {
+        use peira_core::{parse_node, Edge, EdgeKind, Graph, NodeId};
+
+        // (wiring, node kind, expected: does anything lean on it?)
+        let cases: &[(&str, &str, bool)] = &[
+            ("isolated", "observation", false),
+            ("isolated", "hypothesis", false),
+            ("isolated", "claim", true), // a claim asserts by existing
+            ("supports a claim", "observation", true),
+            ("supports a claim", "hypothesis", true),
+            ("supports a claim", "run", true),
+            ("a claim depends on it", "observation", true), // the direction missed twice
+            ("a claim depends on it", "hypothesis", true),
+            ("a claim depends on it", "protocol", true),
+            ("supports a bare sketch", "hypothesis", false), // thinking out loud
+            ("supports a bare sketch", "observation", false),
+            ("it depends on a claim", "hypothesis", false), // needs ≠ carries
+        ];
+
+        for (wiring, kind, expected) in cases {
+            let mut g = Graph::new();
+            g.insert_node(parse_node("---\nid: c1\ntype: claim\ntitle: t\n---\n").unwrap());
+            g.insert_node(
+                parse_node("---\nid: h0\ntype: hypothesis\ntitle: sketch\n---\n").unwrap(),
+            );
+            let n = parse_node(&format!("---\nid: x\ntype: {kind}\ntitle: t\n---\n")).unwrap();
+            g.insert_node(n.clone());
+            let e = |f: &str, t: &str, k: EdgeKind| Edge::new(NodeId::new(f), NodeId::new(t), k);
+            match *wiring {
+                "supports a claim" => g.insert_edge(e("x", "c1", EdgeKind::Supports)),
+                "a claim depends on it" => g.insert_edge(e("c1", "x", EdgeKind::DependsOn)),
+                "supports a bare sketch" => g.insert_edge(e("x", "h0", EdgeKind::Supports)),
+                "it depends on a claim" => g.insert_edge(e("x", "c1", EdgeKind::DependsOn)),
+                _ => {}
+            }
+            assert_eq!(
+                carries_weight(&g, &n),
+                *expected,
+                "a {kind} where {wiring}: expected carries_weight = {expected}"
+            );
+        }
+    }
+
     /// The kind filter must not sit in front of the load-bearing test.
     ///
     /// `under_promotion` decides whether a node is examined — but `Lens::examine`

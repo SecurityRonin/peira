@@ -8,7 +8,7 @@
 //! was missing. It never returns `Pass`. Silence is not consent.
 
 use crate::{GateResult, Violation};
-use peira_core::{EdgeKind, Graph, Node, NodeId, NodeKind};
+use peira_core::{EdgeKind, Graph, Node, NodeKind};
 
 // ── Stable published gate codes ──────────────────────────────────────────────
 // These appear in Court Mode packets. A shipped code never changes meaning.
@@ -94,84 +94,29 @@ impl CausalRung {
 /// Same rule as `PEIR-LINT-RETRACTED`: the obligation attaches to being load-bearing,
 /// not to the node kind.
 fn under_promotion(graph: &Graph, node: &Node) -> bool {
-    // A node kind is a SELF-DECLARED STRING, so it cannot be the exemption. The `_ =>
-    // false` arm here was a static scope hiding inside the load-bearing test that
-    // replaced one: relabelling a universal over-claim `type: observation` stripped all
-    // seven promotion obligations while it went on supporting a claim.
+    // Load-bearing AND asserting. The first half is [`crate::carries_weight`] — the one
+    // definition, shared with the grading demand — and this adds the only thing that is
+    // genuinely specific to PROMOTION gates.
     //
-    // An observation that RECORDS declares none of these fields and is examined by
-    // nothing — the gates return NotApplicable of their own accord. One that ASSERTS,
-    // in the shape of a claim, and is leaned on, answers like one.
-    // Weight must REACH A CLAIM, not merely leave the node. Any outgoing support edge
-    // counted, so a hypothesis supporting a bare sketch hypothesis — nothing anywhere
-    // near a claim — was held to the full promotion bar while its own parent stayed
-    // exempt. The exemption is for thinking out loud, and thinking out loud in two
-    // steps is still thinking out loud.
-    let leaned_on = || {
-        let mut seen: std::collections::BTreeSet<&NodeId> = std::collections::BTreeSet::new();
-        let mut stack = vec![&node.id];
-        while let Some(n) = stack.pop() {
-            if !seen.insert(n) {
-                continue;
-            }
-            // FORWARD along Supports only. `n --depends_on--> c` says n NEEDS c, which
-            // makes C load-bearing and says nothing about n — following it here treated
-            // a sketch that merely declares what it needs as though it were carrying a
-            // claim. The direction that matters is handled below.
-            for e in graph.edges_from(n).filter(|e| e.kind == EdgeKind::Supports) {
-                if graph.node(&e.to).is_some_and(|d| d.kind == NodeKind::Claim) {
-                    return true;
-                }
-                stack.push(&e.to);
-            }
-            // BACKWARDS along DependsOn: a claim that declares `depends_on: [h1]` leans
-            // on h1, so anything supporting h1 is carrying the claim's weight too. The
-            // evidential closure in `court` already reached those supporters, and this
-            // walk did not — so they sat inside the closure and were examined by
-            // nothing. Two walks answering one question must answer it the same way.
-            for e in graph.edges_to(n).filter(|e| e.kind == EdgeKind::DependsOn) {
-                if graph
-                    .node(&e.from)
-                    .is_some_and(|d| d.kind == NodeKind::Claim)
-                {
-                    return true;
-                }
-                stack.push(&e.from);
-            }
-        }
-        graph
-            .edges_to(&node.id)
-            .any(|e| e.kind == EdgeKind::DependsOn)
-    };
-    // Leaned on AND asserting. Leaned-on alone would demand a quantifier and a causal
-    // rung from every observation that supports anything, which is ceremony, and
-    // ceremony is routed around. A node that declares one of these fields has taken a
-    // position in the shape of a claim; one that records has not.
-    // `aspect:` is NOT on this list, and putting it there was the honest-annotator trap
-    // a second time: 體用 ASKS an observation to declare whether its evidence bears on
-    // substance or function, so treating that answer as "this node takes a position"
-    // punished the author who answered. These three assert; `aspect:` classifies.
-    // `evaluative: true` says "this node passes judgement", which is as much a position
-    // as a quantifier is — and `is_evaluative` catches the node whose own words do it
-    // without the field. `aspect:` stays off the list: 體用 ASKS an observation to
-    // declare it, so counting the answer as a position punishes the author who answers.
-    let asserts = || {
-        ["quantifier", "causal_rung", "warrant"]
-            .iter()
-            .any(|f| node.field(f).is_some())
-            || is_evaluative(node)
-    };
+    // The refinement: these gates ask whether a node declares its scope, its warrant,
+    // its rung. A hypothesis is an ARGUMENT and competes in the extension, so being
+    // leaned on is enough. Everything else is evidence, and demanding a quantifier from
+    // every supporting observation is ceremony — ceremony is routed around. It must
+    // also have taken a position.
+    //
+    // `aspect:` is deliberately not a position: 體用 ASKS an observation to declare it,
+    // so counting the answer would punish the author who answers.
+    if !crate::carries_weight(graph, node) {
+        return false;
+    }
     match node.kind {
-        // A claim asserts by existing.
-        NodeKind::Claim => true,
-        // A hypothesis is an ARGUMENT — it competes in the extension — so being leaned
-        // on is enough. This is what stops an unexamined hypothesis laundering a
-        // conclusion into a packet.
-        NodeKind::Hypothesis => leaned_on(),
-        // Everything else is evidence or reference. Being leaned on is not enough:
-        // demanding a quantifier and a causal rung from every supporting observation is
-        // ceremony, and ceremony is routed around. It must also have taken a position.
-        _ => leaned_on() && asserts(),
+        NodeKind::Claim | NodeKind::Hypothesis => true,
+        _ => {
+            ["quantifier", "causal_rung", "warrant"]
+                .iter()
+                .any(|f| node.field(f).is_some())
+                || is_evaluative(node)
+        }
     }
 }
 

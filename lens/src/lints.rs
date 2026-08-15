@@ -889,20 +889,11 @@ fn ungraded_support(graph: &Graph, node: &Node) -> Vec<Violation> {
     // without h1, so h1 is carrying c1's weight even though nothing "supports" anything
     // from h1. The edge that makes a node load-bearing can point either way, and only
     // one direction was checked.
-    // Whether an edge was graded is a property of the EDGE, not of the kind of node it
-    // lands on — the third time this session a kind test has done scoping it has no
-    // business doing. A claim that declares `depends_on: [o3]` says it cannot hold
-    // without o3, and that is exactly as ungraded whether o3 is an observation, a run
-    // or a protocol.
-    //
-    // A Claim is always weighed. Anything else is weighed when something leans on it.
-    let carries_weight = node.kind == NodeKind::Claim
-        || graph
-            .edges_from(&node.id)
-            .any(|e| matches!(e.kind, EdgeKind::Supports | EdgeKind::DependsOn))
-        || graph
-            .edges_to(&node.id)
-            .any(|e| e.kind == EdgeKind::DependsOn);
+    // The one definition, shared with the promotion gates. Grading needs no refinement
+    // on top of it: whether an edge was graded is a property of the EDGE, so a claim
+    // declaring `depends_on: [o3]` is exactly as ungraded whether o3 is an observation,
+    // a run or a protocol.
+    let carries_weight = crate::carries_weight(graph, node);
     if !carries_weight {
         return Vec::new();
     }
