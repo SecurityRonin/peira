@@ -1284,6 +1284,74 @@ professional prose is one people switch off"
         );
     }
 
+    /// Two observations off the same instrument are one line, not two.
+    ///
+    /// `false_independence` fired only where an author explicitly wrote `duplicates:` —
+    /// the honest-author-only shape this project keeps finding. But independence is what
+    /// the whole grading system rests on: G4 means *multiple materially independent
+    /// convergent lines*, and two readings from one tool are one line however they are
+    /// labelled.
+    ///
+    /// `instrument` nodes and `measured_by:` edges have existed since the schema work
+    /// and had **zero consumers outside `core`** — the same state `retracts:` was in
+    /// before it turned out to be the structural synonym for a refused field.
+    #[test]
+    fn two_observations_off_one_instrument_are_not_independent() {
+        let instrument =
+            node("---\nid: i1\ntype: instrument\ntitle: the parser build under test\n---\n");
+        let claim = node("---\nid: c1\ntype: claim\ntitle: t\n---\n");
+        let obs = |id: &str| {
+            node(&format!(
+                "---\nid: {id}\ntype: observation\ntitle: r\n---\n"
+            ))
+        };
+        let e = |f: &str, t: &str, k: EdgeKind| Edge::new(NodeId::new(f), NodeId::new(t), k);
+
+        let shared = graph_of(
+            vec![claim.clone(), instrument.clone(), obs("o1"), obs("o2")],
+            vec![
+                e("o1", "c1", EdgeKind::Supports),
+                e("o2", "c1", EdgeKind::Supports),
+                e("o1", "i1", EdgeKind::MeasuredBy),
+                e("o2", "i1", EdgeKind::MeasuredBy),
+            ],
+        );
+        let fired = |g: &Graph| {
+            lint(g)
+                .into_iter()
+                .filter(|v| v.gate == "PEIR-LINT-FALSE-INDEPENDENCE")
+                .count()
+        };
+        assert_eq!(
+            fired(&shared),
+            1,
+            "two supporters measured by the same instrument are one line of evidence"
+        );
+
+        // Different instruments: genuinely two lines, and must stay quiet.
+        let distinct = graph_of(
+            vec![
+                claim,
+                instrument,
+                node("---\nid: i2\ntype: instrument\ntitle: an independent tool\n---\n"),
+                obs("o1"),
+                obs("o2"),
+            ],
+            vec![
+                e("o1", "c1", EdgeKind::Supports),
+                e("o2", "c1", EdgeKind::Supports),
+                e("o1", "i1", EdgeKind::MeasuredBy),
+                e("o2", "i2", EdgeKind::MeasuredBy),
+            ],
+        );
+        assert_eq!(
+            fired(&distinct),
+            0,
+            "different instruments are different lines — flagging them would punish the \
+author who recorded provenance at all"
+        );
+    }
+
     /// A claim may not decide the tribunal's question.
     ///
     /// Layer 3 is never the expert's. The forbidden-verb lint cannot reach this —
