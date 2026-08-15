@@ -11,6 +11,17 @@ use std::collections::{BTreeMap, BTreeSet};
 pub struct Graph {
     nodes: BTreeMap<NodeId, Node>,
     edges: Vec<Edge>,
+    /// Adjacency indices into `edges`, by source and by target.
+    ///
+    /// `edges_from`/`edges_to` were full scans of the edge vector, and the promotion
+    /// gates run a transitive walk that calls them once per node per gate — so a chain
+    /// of 400 nodes took 17 seconds and the cost grew cubically. A forensic vault is
+    /// not small, and a checker nobody can afford to run is a checker nobody runs.
+    ///
+    /// Held inside `Graph` and updated in `insert_edge`, so no caller can forget it and
+    /// no caller changes.
+    out: BTreeMap<NodeId, Vec<usize>>,
+    inc: BTreeMap<NodeId, Vec<usize>>,
 }
 
 impl Graph {
@@ -27,6 +38,9 @@ impl Graph {
 
     /// Add an edge.
     pub fn insert_edge(&mut self, edge: Edge) {
+        let i = self.edges.len();
+        self.out.entry(edge.from.clone()).or_default().push(i);
+        self.inc.entry(edge.to.clone()).or_default().push(i);
         self.edges.push(edge);
     }
 
@@ -48,12 +62,20 @@ impl Graph {
 
     /// Edges whose source is `id`.
     pub fn edges_from<'a>(&'a self, id: &'a NodeId) -> impl Iterator<Item = &'a Edge> {
-        self.edges.iter().filter(move |e| &e.from == id)
+        self.out
+            .get(id)
+            .into_iter()
+            .flatten()
+            .filter_map(move |i| self.edges.get(*i))
     }
 
     /// Edges whose target is `id`.
     pub fn edges_to<'a>(&'a self, id: &'a NodeId) -> impl Iterator<Item = &'a Edge> {
-        self.edges.iter().filter(move |e| &e.to == id)
+        self.inc
+            .get(id)
+            .into_iter()
+            .flatten()
+            .filter_map(move |i| self.edges.get(*i))
     }
 
     /// Node ids that reference something absent from the graph, paired with the
@@ -79,34 +101,66 @@ impl Graph {
     /// a claim `peira packet` refused. One question, asked once.
     #[must_use]
     pub fn withdrawn(&self) -> BTreeSet<NodeId> {
-        // , not a fact about the world, and it
-        // binds only while it itself stands. Asking merely "is this withdrawn" let an
-        // idle note by anyone at all suppress a legitimate attack — the last writer
-        // won, and the graph got quietly smaller with every note.
+        // GROUNDED over the retraction relation — the same skeptical machinery this file
+        // already uses for attacks, and for the same reason.
         //
-        // So a retraction whose author has itself been retracted stops binding, and
-        // what it withdrew comes back. Resolved to a fixed point because the chain can
-        // be any length, over a set that only grows, so it terminates.
-        let retractions: Vec<(&NodeId, &NodeId)> = self
+        // The previous version recomputed the set from scratch each pass, so as it grew
+        // FEWER retractions stayed active and the set shrank: the opposite of monotone.
+        // A retraction cycle oscillated forever, the loop exited on its bound, and the
+        // answer was whichever phase the PARITY of the vault's total retraction count
+        // landed on. Adding an unrelated bookkeeping note flipped a defeated claim to
+        // standing. The comment claiming "a set that only grows, so it terminates" was
+        // false, and it was the argument for correctness rather than a description of it.
+        //
+        // A retraction binds only if its author is DEFINITELY undefeated. Where
+        // retractions dispute each other and none settles, none of them binds — a
+        // contested withdrawal must not silently suppress an attack, which is this
+        // project's rule about never making the graph quietly smaller.
+        let retracts: Vec<(&NodeId, &NodeId)> = self
             .edges
             .iter()
             .filter(|e| matches!(e.kind, EdgeKind::Retracts | EdgeKind::Supersedes))
             .map(|e| (&e.from, &e.to))
             .collect();
+        if retracts.is_empty() {
+            return BTreeSet::new();
+        }
 
-        let mut withdrawn: BTreeSet<NodeId> = BTreeSet::new();
-        for _ in 0..=retractions.len() {
-            let next: BTreeSet<NodeId> = retractions
+        let retractors_of = |x: &NodeId| -> Vec<&NodeId> {
+            retracts
                 .iter()
-                .filter(|(from, _)| !withdrawn.contains(*from))
-                .map(|(_, to)| (*to).clone())
+                .filter(|(_, to)| *to == x)
+                .map(|(from, _)| *from)
+                .collect()
+        };
+
+        // Least fixed point of "every retraction against x is itself retracted by
+        // something settled". Monotone by construction: `settled` only ever grows, and
+        // the sequence stabilises within one step per participant.
+        let participants: BTreeSet<&NodeId> = retracts.iter().flat_map(|(f, t)| [*f, *t]).collect();
+        let mut settled: BTreeSet<NodeId> = BTreeSet::new();
+        loop {
+            let next: BTreeSet<NodeId> = participants
+                .iter()
+                .filter(|x| {
+                    retractors_of(x)
+                        .iter()
+                        .all(|r| retractors_of(r).iter().any(|rr| settled.contains(*rr)))
+                })
+                .map(|x| (*x).clone())
                 .collect();
-            if next == withdrawn {
+            if next == settled {
                 break;
             }
-            withdrawn = next;
+            settled = next;
         }
-        withdrawn
+
+        // Withdrawn: retracted by an author that is itself settled-undefeated.
+        retracts
+            .iter()
+            .filter(|(from, _)| settled.contains(*from))
+            .map(|(_, to)| (*to).clone())
+            .collect()
     }
 
     fn attackers(&self) -> BTreeMap<NodeId, Vec<NodeId>> {
@@ -205,6 +259,48 @@ impl Graph {
 
 #[cfg(test)]
 mod tests {
+
+    /// A retraction cycle must not make the answer depend on the rest of the vault.
+    ///
+    /// `withdrawn()` recomputed its set from scratch each pass, so it shrank as it grew
+    /// and a cycle oscillated forever; the loop exited on its bound and returned
+    /// whichever phase the PARITY of the vault's retraction count landed on. Adding an
+    /// unrelated bookkeeping note flipped a defeated claim to standing.
+    #[test]
+    fn a_retraction_cycle_does_not_depend_on_unrelated_retractions() {
+        use crate::{Edge, EdgeKind, NodeId};
+        let mk = |id: &str| {
+            crate::parse_node(&format!("---\nid: {id}\ntype: claim\ntitle: t\n---\n"))
+                .expect("fixture parses")
+        };
+        let build = |extra: bool| {
+            let mut g = Graph::new();
+            for id in ["c1", "rival", "r1", "r2", "z", "d9"] {
+                g.insert_node(mk(id));
+            }
+            let e = |f: &str, t: &str, k: EdgeKind| Edge::new(NodeId::new(f), NodeId::new(t), k);
+            g.insert_edge(e("rival", "c1", EdgeKind::Contradicts));
+            g.insert_edge(e("r1", "rival", EdgeKind::Retracts));
+            g.insert_edge(e("r1", "r2", EdgeKind::Retracts));
+            g.insert_edge(e("r2", "r1", EdgeKind::Retracts));
+            if extra {
+                // Entirely unrelated to the dispute.
+                g.insert_edge(e("d9", "z", EdgeKind::Retracts));
+            }
+            g.grounded_extension().contains(&NodeId::new("c1"))
+        };
+        assert_eq!(
+            build(false),
+            build(true),
+            "an unrelated retraction elsewhere in the vault changed whether this claim \
+survives — the answer depended on a count, not on the dispute"
+        );
+        assert!(
+            !build(false),
+            "r1 and r2 retract each other, so neither settles and neither binds; the \
+attack on c1 therefore stands. A contested withdrawal must not suppress an attack."
+        );
+    }
 
     /// A retraction is an authored assertion, not a fact about the world.
     ///

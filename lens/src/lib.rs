@@ -247,6 +247,17 @@ claim was never examined for it — a gate that could not run has cleared nothin
 }
 
 /// Node kinds that compete in the graph and can therefore be attacked.
+///
+/// Used for the ATTACK relation, and deliberately no longer for scoping promotion
+/// gates. `Lens::examine` applies `applies_to` BEFORE the gate runs, so a static kind
+/// list in front of `gates::under_promotion` made its non-argument arm unreachable:
+/// a universal over-claim labelled `type: observation` drew zero findings and froze,
+/// while the identical node labelled `type: hypothesis` drew six and was refused.
+///
+/// That is the first defect this project ever found, one layer up — a rule that is
+/// correct, unit-tested, and never reached. The lenses whose gates decide their own
+/// scope now declare `applies_to: &[]` and let the gate decide, so there is ONE kind
+/// test rather than two disagreeing ones.
 const ARGUMENTS: &[NodeKind] = &[NodeKind::Claim, NodeKind::Hypothesis];
 
 // Promotion obligations attach to being LOAD-BEARING rather than to the node kind:
@@ -261,7 +272,7 @@ pub static CATALOG: &[Lens] = &[
         tradition: Tradition::Chinese,
         failure_mode: "judging something without ever declaring the standard judged against",
         operation: "an evaluative claim requires a `judged_by` edge to a Criterion",
-        applies_to: ARGUMENTS,
+        applies_to: &[],
         gates: &[Gate {
             code: gates::CRITERION_UNDECLARED,
             check: gates::criterion_declared,
@@ -283,7 +294,7 @@ suspicious without ever stating the standard of suspicion, so the reader cannot 
 definition never licensed",
         operation: "every key term resolves to a Term node carrying as_used, not_essence and \
 stipulated",
-        applies_to: ARGUMENTS,
+        applies_to: &[],
         gates: &[Gate {
             code: gates::TERM_UNSTIPULATED,
             check: gates::key_terms_stipulated,
@@ -324,7 +335,7 @@ about what it is.",
         tradition: Tradition::Chinese,
         failure_mode: "sliding between a type and its tokens, or between intension and extension",
         operation: "a claim quantifying over a class must declare that class's extension",
-        applies_to: ARGUMENTS,
+        applies_to: &[],
         gates: &[Gate {
             code: gates::CLASS_EXTENSION_UNDECLARED,
             check: gates::class_extension_declared,
@@ -345,7 +356,7 @@ interchangeable, however natural the slide feels.",
         failure_mode: "collapsing a contested question into a binary before the other positions \
 have been stated",
         operation: "a contested claim must address all four corners: A, ¬A, both, neither",
-        applies_to: ARGUMENTS,
+        applies_to: &[],
         gates: &[Gate {
             code: gates::CORNERS_UNADDRESSED,
             check: gates::four_corners_addressed,
@@ -365,7 +376,7 @@ Amcache record: catalogued without execution — neither cleanly one nor the oth
         failure_mode: "the unstated warrant: grounds and claim are given, the rule connecting \
 them never is",
         operation: "`warrant` is a required field, not an optional one",
-        applies_to: ARGUMENTS,
+        applies_to: &[],
         gates: &[Gate {
             code: gates::WARRANT_MISSING,
             check: gates::warrant_present,
@@ -407,7 +418,7 @@ reaches G4.",
 data, and stating a conclusion with no boundary conditions",
         operation: "a claim above the association rung requires an executed protocol supporting \
 it; every claim declares its boundaries",
-        applies_to: ARGUMENTS,
+        applies_to: &[],
         gates: &[
             Gate {
                 code: gates::CAUSAL_RUNG_UNREACHED,
@@ -582,7 +593,7 @@ not because the reason is necessarily good, but because not knowing it is not an
         tradition: Tradition::Modern,
         failure_mode: "no recorded falsifier, so nothing could ever count as being wrong",
         operation: "promotion requires at least one stated condition that would defeat the claim",
-        applies_to: ARGUMENTS,
+        applies_to: &[],
         gates: &[Gate {
             code: gates::FALSIFIER_MISSING,
             check: gates::falsifier_declared,
@@ -812,6 +823,55 @@ falsifiable, not merely plausible",
     ///
     /// Asserted through the public aggregation, not the predicate, because the
     /// predicate was already right — it was the join that discarded it.
+    /// The kind filter must not sit in front of the load-bearing test.
+    ///
+    /// `under_promotion` decides whether a node is examined — but `Lens::examine`
+    /// applies `applies_to` FIRST, so its non-argument arm never ran on the shipping
+    /// path. A universal over-claim labelled `type: observation` drew zero findings and
+    /// froze; the identical node labelled `type: hypothesis` drew six and was refused.
+    ///
+    /// Asserted through `examine_graph` — the JOIN — and not by calling the gate
+    /// directly. The round-3 test for this passed precisely because it called the gate
+    /// directly, which is how the same defect survived being fixed once already.
+    #[test]
+    fn a_load_bearing_assertion_is_examined_whatever_kind_it_declares() {
+        use peira_core::{parse_node, Edge, EdgeKind, Graph, NodeId};
+
+        let counts = |kind: &str| {
+            let mut g = Graph::new();
+            g.insert_node(parse_node("---\nid: c1\ntype: claim\ntitle: t\n---\n").unwrap());
+            g.insert_node(
+                parse_node(&format!(
+                    "---\nid: o9\ntype: {kind}\n\
+title: Every entry on every version is written at execution time\n\
+quantifier: universal\n---\n"
+                ))
+                .unwrap(),
+            );
+            g.insert_edge(Edge::new(
+                NodeId::new("o9"),
+                NodeId::new("c1"),
+                EdgeKind::Supports,
+            ));
+            examine_graph(&g)
+                .into_iter()
+                .filter(|v| v.subject.as_str() == "o9")
+                .count()
+        };
+
+        let as_hypothesis = counts("hypothesis");
+        assert!(
+            as_hypothesis > 0,
+            "a load-bearing assertion must be examined"
+        );
+        assert_eq!(
+            counts("observation"),
+            as_hypothesis,
+            "the SAME node must be examined the same way whatever `type:` it declares — \
+the kind is a self-declared string, and relabelling it must not strip the obligations"
+        );
+    }
+
     #[test]
     fn a_gate_that_reached_no_verdict_is_not_silently_dropped() {
         use peira_core::{parse_node, Graph};

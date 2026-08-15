@@ -114,14 +114,29 @@ fn under_promotion(graph: &Graph, node: &Node) -> bool {
             if !seen.insert(n) {
                 continue;
             }
-            for e in graph
-                .edges_from(n)
-                .filter(|e| matches!(e.kind, EdgeKind::Supports | EdgeKind::DependsOn))
-            {
+            // FORWARD along Supports only. `n --depends_on--> c` says n NEEDS c, which
+            // makes C load-bearing and says nothing about n — following it here treated
+            // a sketch that merely declares what it needs as though it were carrying a
+            // claim. The direction that matters is handled below.
+            for e in graph.edges_from(n).filter(|e| e.kind == EdgeKind::Supports) {
                 if graph.node(&e.to).is_some_and(|d| d.kind == NodeKind::Claim) {
                     return true;
                 }
                 stack.push(&e.to);
+            }
+            // BACKWARDS along DependsOn: a claim that declares `depends_on: [h1]` leans
+            // on h1, so anything supporting h1 is carrying the claim's weight too. The
+            // evidential closure in `court` already reached those supporters, and this
+            // walk did not — so they sat inside the closure and were examined by
+            // nothing. Two walks answering one question must answer it the same way.
+            for e in graph.edges_to(n).filter(|e| e.kind == EdgeKind::DependsOn) {
+                if graph
+                    .node(&e.from)
+                    .is_some_and(|d| d.kind == NodeKind::Claim)
+                {
+                    return true;
+                }
+                stack.push(&e.from);
             }
         }
         graph
@@ -132,10 +147,19 @@ fn under_promotion(graph: &Graph, node: &Node) -> bool {
     // rung from every observation that supports anything, which is ceremony, and
     // ceremony is routed around. A node that declares one of these fields has taken a
     // position in the shape of a claim; one that records has not.
+    // `aspect:` is NOT on this list, and putting it there was the honest-annotator trap
+    // a second time: 體用 ASKS an observation to declare whether its evidence bears on
+    // substance or function, so treating that answer as "this node takes a position"
+    // punished the author who answered. These three assert; `aspect:` classifies.
+    // `evaluative: true` says "this node passes judgement", which is as much a position
+    // as a quantifier is — and `is_evaluative` catches the node whose own words do it
+    // without the field. `aspect:` stays off the list: 體用 ASKS an observation to
+    // declare it, so counting the answer as a position punishes the author who answers.
     let asserts = || {
-        ["quantifier", "causal_rung", "aspect", "warrant"]
+        ["quantifier", "causal_rung", "warrant"]
             .iter()
             .any(|f| node.field(f).is_some())
+            || is_evaluative(node)
     };
     match node.kind {
         // A claim asserts by existing.

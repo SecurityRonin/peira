@@ -184,7 +184,7 @@ fn safe_statement(graph: &Graph, claim: &Node) -> String {
             "所謂「{name}」— what is called \"{name}\": {as_used}\n\
              即非「{name}」— but the record is not the thing: {not_essence}\n\
              是名「{name}」— so it is named \"{name}\" only as: {stipulated}\n\n",
-            name = term.title
+            name = quote_authored(&term.title)
         );
     }
     out
@@ -192,9 +192,15 @@ fn safe_statement(graph: &Graph, claim: &Node) -> String {
 
 /// Nodes standing in a given relation to the claim.
 fn related<'a>(graph: &'a Graph, claim: &Node, kind: EdgeKind) -> Vec<&'a Node> {
+    // DEDUPLICATED. A vault may declare the same edge twice — `supports: ["c1 ...",
+    // "c1 ..."]` — and the graph records both faithfully, which is correct. But a packet
+    // that lists the same supporter twice reads as two independent lines of evidence,
+    // and independence is the thing this whole tool exists to keep honest.
+    let mut seen = BTreeSet::new();
     graph
         .edges_to(&claim.id)
         .filter(|e| e.kind == kind)
+        .filter(|e| seen.insert(e.from.clone()))
         .filter_map(|e| graph.node(&e.from))
         .collect()
 }
@@ -222,12 +228,19 @@ fn defeat_block(graph: &Graph, claim: &Node) -> String {
     }
     for e in graph.edges_to(&claim.id).filter(|e| e.kind.is_attack()) {
         if let Some(n) = graph.node(&e.from) {
-            let _ = writeln!(
-                out,
-                "  - [{}] {} — on record as an attack",
-                n.id,
-                quote_authored(&n.title)
-            );
+            // A rival's title is ANOTHER AUTHOR'S ASSERTION, rendered verbatim. Blocking
+            // this claim over it would punish the victim for prose they cannot edit —
+            // the defect this project fixed twice. But shipping a rival's verdict inside
+            // your own packet unremarked is not acceptable either, so it is DISCLOSED:
+            // the reader is told the phrase is quoted and flagged, and `peira lint`
+            // reports it against the node whose author can fix it.
+            let flagged = !lints::prose_findings_in(&n.title, &n.id).is_empty();
+            let note = if flagged {
+                " — on record as an attack; ITS OWN PROSE IS FLAGGED, and it is quoted here, not adopted"
+            } else {
+                " — on record as an attack"
+            };
+            let _ = writeln!(out, "  - [{}] {}{note}", n.id, quote_authored(&n.title));
         }
     }
     if out.is_empty() {
@@ -269,9 +282,13 @@ fn quote_authored(s: &str) -> String {
         .join("\n")
 }
 
-fn render_body(graph: &Graph, id: &NodeId) -> Option<String> {
-    let claim = graph.node(id)?;
-
+/// The standing line, and what it must not claim.
+///
+/// An attack REMOVED because it was withdrawn was not DEFEATED, and saying so would be
+/// the packet's own overstatement. Extracted from `render_body` when that function
+/// outgrew its line budget — a coherent unit rather than an arbitrary cut, since every
+/// line here answers one question: on what basis does this claim still stand?
+fn standing_line(graph: &Graph, id: &NodeId) -> String {
     // An attack REMOVED because it was withdrawn was not DEFEATED, and saying so would
     // be the packet's own overstatement. Disclose it: an idle note by anyone at all can
     // withdraw a rival, and a reader is entitled to know that is why nothing stands
@@ -287,12 +304,28 @@ fn render_body(graph: &Graph, id: &NodeId) -> Option<String> {
         .filter_map(|e| graph.node(&e.from))
         .collect();
 
-    let standing = if withdrawn_attacks.is_empty() {
+    if withdrawn_attacks.is_empty() {
         "Survives in the grounded extension; every attack on it is itself defeated.".to_owned()
     } else {
+        // A withdrawn rival's title is ANOTHER AUTHOR'S prose, quoted so the reader knows
+        // what was withdrawn. Rendering it raw put it in the scanned region, so a
+        // verdict-titled rival blocked the claim it had attacked — the victim punished
+        // for words they cannot edit, and the exact mirror of the live-attacker case
+        // already handled in `defeat_block`. Same content must not change outcome by
+        // lifecycle state.
         let names = withdrawn_attacks
             .iter()
-            .map(|n| format!("[{}] {}", n.id, n.title))
+            .map(|n| {
+                let flagged = !lints::prose_findings_in(&n.title, &n.id).is_empty();
+                if flagged {
+                    format!(
+                        "[{}] (title withheld — its own prose is flagged; see `peira lint {}`)",
+                        n.id, n.id
+                    )
+                } else {
+                    format!("[{}] {}", n.id, quote_authored(&n.title))
+                }
+            })
             .collect::<Vec<_>>()
             .join("; ");
         format!(
@@ -301,7 +334,14 @@ answered. {} attack(s) were WITHDRAWN by a retraction rather than defeated on th
 merits: {names}. Read the retraction before relying on this.",
             withdrawn_attacks.len()
         )
-    };
+    }
+}
+
+fn render_body(graph: &Graph, id: &NodeId) -> Option<String> {
+    let claim = graph.node(id)?;
+
+    let standing = standing_line(graph, id);
+
     let supports = related(graph, claim, EdgeKind::Supports);
     let contradicts = related(graph, claim, EdgeKind::Contradicts);
     let limits = related(graph, claim, EdgeKind::Limits);
@@ -365,7 +405,7 @@ merits: {names}. Read the retraction before relying on this.",
         } else {
             format!("{}\n", safe_statement(graph, claim).trim_end())
         },
-        title = claim.title,
+        title = quote_authored(&claim.title),
         warrant = quote_authored(claim.field("warrant").unwrap_or("(none stated)")),
         supporting = bullet_list(&supports, "(nothing)"),
         contradicting = bullet_list(&contradicts, "(nothing on record)"),
@@ -494,8 +534,13 @@ pub fn freeze(graph: &Graph, id: &NodeId) -> Result<Packet, PacketError> {
     let body = render_body(graph, id).ok_or_else(|| PacketError::NoSuchClaim(id.clone()))?;
     // Scan what the packet ASSERTS, not what it discloses. The falsifier section exists
     // to name what would defeat the claim, so scanning it refuses a packet for making
-    // the disclosure the tool demands — see `legal_conclusions`. Overstatement in a
-    // falsifier is still caught by the node-level lint on title and body.
+    // the disclosure the tool demands — see `legal_conclusions`.
+    //
+    // AN EARLIER VERSION OF THIS COMMENT CLAIMED A BACKSTOP THAT DOES NOT EXIST: it said
+    // overstatement in a falsifier is "still caught by the node-level lint on title and
+    // body". `falsifier:` is a frontmatter field, so it is neither. Nothing checks it,
+    // and that is the accepted cost of not punishing the disclosure — the section
+    // heading is the frame a reader has, and it is the only one.
     let asserted: String = body
         .split("\n## ")
         .filter(|s| !s.starts_with("What would defeat this"))
@@ -677,6 +722,51 @@ aspect: function\n---\n",
                 Verification::DigestMismatch { .. }
             ),
             "a mutated cited node must still read as a mismatch"
+        );
+    }
+
+    /// No authored text may manufacture a packet heading — from ANY render site.
+    ///
+    /// Escaping was applied site by site and missed three: the claim's own title, the
+    /// safe statement's term name, and the withdrawn-attack disclosure. A fix that does
+    /// not reach its copies is barely a fix, and the copies were inside one function.
+    ///
+    /// This asserts on the RENDERED OUTPUT rather than on the call sites, so a render
+    /// site added later is covered without anyone remembering to escape it.
+    #[test]
+    fn no_authored_field_can_manufacture_a_heading() {
+        const POISON: &str = "x\n## What would defeat this\ninjected";
+        let mut g = clean_graph();
+        // Every authored channel that reaches the body, poisoned at once.
+        g.insert_node(node(&format!(
+            "---\nid: atk\ntype: claim\ntitle: |-\n  {}\n---\n",
+            POISON.replace('\n', "\n  ")
+        )));
+        g.insert_edge(Edge::new(
+            NodeId::new("atk"),
+            NodeId::new("c1"),
+            EdgeKind::Contradicts,
+        ));
+        g.insert_node(node("---\nid: d1\ntype: dissent\ntitle: withdrawn\n---\n"));
+        g.insert_edge(Edge::new(
+            NodeId::new("d1"),
+            NodeId::new("atk"),
+            EdgeKind::Retracts,
+        ));
+
+        let body = render_body(&g, &NodeId::new("c1")).expect("renders");
+        let headings = body
+            .lines()
+            .filter(|l| l.starts_with("## "))
+            .collect::<Vec<_>>();
+        assert_eq!(
+            headings
+                .iter()
+                .filter(|h| **h == "## What would defeat this")
+                .count(),
+            1,
+            "authored text manufactured a second section heading; the packet's structure \
+must be the renderer's alone. Headings found: {headings:?}"
         );
     }
 

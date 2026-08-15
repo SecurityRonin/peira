@@ -143,23 +143,35 @@ const OVERSTATEMENTS: &[(&str, &str)] = &[
 /// the one being called it.
 const NEEDS_A_PERSON: &[&str] = &["innocent", "guilty", "liable", "negligent"];
 
-/// Subjects that make those words a verdict about somebody.
+/// Deliberately only the unambiguous ones. "user", "account", "holder", "company" and
+/// "party" were on this list and collided with ordinary technical language — "user
+/// hive" made "Entries in the user hive are liable to be overwritten" read as a verdict
+/// Parties a verdict can be about.
+///
+/// The list is COMPLETE — nothing is omitted for collision. It was cut back twice and
+/// both cuts were wrong: removing `employee`, `company`, `holder` and `party` let "The
+/// employee is guilty of data theft" freeze, and removing `user` let "The user is
+/// guilty of unauthorised access" freeze.
+///
+/// The collision that prompted the cutting — "user hive" reading as a verdict about a
+/// person — is handled in [`clause_has_party`], where a party word followed by a
+/// technical noun is recognised as naming a thing. Fixing a false positive by deleting
+/// the rule is how a checker stops checking.
 const PARTIES: &[&str] = &[
     "suspect",
     "defendant",
     "accused",
     "respondent",
     "claimant",
+    "employee",
+    "company",
+    "user",
+    "director",
+    "holder",
+    "party",
     "he",
     "she",
     "they",
-    "party",
-    "holder",
-    "account",
-    "employee",
-    "director",
-    "company",
-    "user",
 ];
 
 /// **A heuristic backstop, and NOT complete.** An earlier version of this comment said
@@ -268,6 +280,50 @@ fn clause_at_is_negated(haystack: &str, at: usize) -> bool {
         .any(|w| NEGATORS.contains(&w))
 }
 
+/// Whether the clause ending at `at` names a party.
+///
+/// `user` is on the party list and collides with technical names — "user hive", "user
+/// profile". The collision is handled HERE rather than by deleting the word: a party
+/// word immediately followed by a technical noun is naming a thing, not a person.
+fn clause_has_party(haystack: &str, at: usize) -> bool {
+    const TECHNICAL: &[&str] = &[
+        "hive",
+        "profile",
+        "account",
+        "key",
+        "path",
+        "registry",
+        "folder",
+        "directory",
+        "file",
+        "session",
+        "space",
+        "agent",
+        "mode",
+        "id",
+        "name",
+    ];
+    let start = ["\n", ",", ";", ":", " and ", " but "]
+        .iter()
+        .filter_map(|b| haystack[..at].rfind(b).map(|i| i + b.len()))
+        .max()
+        .unwrap_or(0);
+    haystack[start..at]
+        .match_indices(|c: char| c.is_alphanumeric())
+        .map(|(i, _)| i)
+        .filter_map(|i| {
+            let seg = &haystack[start + i..at];
+            let word = seg.split(|c: char| !c.is_alphanumeric()).next()?;
+            PARTIES
+                .contains(&word)
+                .then(|| (start + i + word.len(), word))
+        })
+        .any(|(end, _)| {
+            let rest = haystack[end..].trim_start();
+            !TECHNICAL.iter().any(|n| rest.starts_with(n))
+        })
+}
+
 /// Whether an ultimate-issue word is said OF SOMEBODY.
 ///
 /// `innocent`, `guilty`, `liable`, `negligent` decide nothing when their subject is a
@@ -283,18 +339,23 @@ fn predicated_of_a_party(haystack: &str, word: &str) -> bool {
     if !NEEDS_A_PERSON.contains(&word) {
         return true;
     }
+    // "liable TO BE overwritten" is the passive, prone-to sense — ordinary English about
+    // how evidence degrades. "liable TO PAY damages" is the legal one, and exempting
+    // every "liable to " let it through. Only the passive construction is innocent, and
+    // only where THIS occurrence sits: scanning the whole node let one unrelated
+    // "liable to be" suppress every verdict in it.
+    // PER OCCURRENCE, which is what the comment always claimed and the code did not do:
+    // one "liable to be overwritten" suppressed every later "liable" in the same node,
+    // including a real verdict. An occurrence is exempt only where IT is the passive,
+    // prone-to construction; any other occurrence is judged on its own.
+    if word == "liable" {
+        return occurrences(haystack, word).any(|at| {
+            !haystack[at..].starts_with("liable to be ") && clause_has_party(haystack, at)
+        });
+    }
     // ANY occurrence said of a party makes it a verdict — the same reason
     // `clause_negated` looks at all of them rather than the first.
-    occurrences(haystack, word).any(|at| {
-        let start = ["\n", ",", ";", ":", " and ", " but "]
-            .iter()
-            .filter_map(|b| haystack[..at].rfind(b).map(|i| i + b.len()))
-            .max()
-            .unwrap_or(0);
-        haystack[start..at]
-            .split(|c: char| !c.is_alphanumeric() && c != '\'')
-            .any(|w| PARTIES.contains(&w))
-    })
+    occurrences(haystack, word).any(|at| clause_has_party(haystack, at))
 }
 
 /// A declaration the claim's own words contradict.
@@ -316,8 +377,11 @@ fn declaration_contradicted(node: &Node) -> Vec<Violation> {
     // title. WEAK ones are scanned in the title only: "this node holds the pointer,
     // never the bytes" is method description, and firing on it broke this repository's
     // own clean fixture.
-    const STRONG: &[&str] = &["every", "all", "always", "each"];
-    const WEAK: &[&str] = &["any", "never", "none"];
+    // Body-scanned: assertive enough that appearing in prose is a claim about the
+    // world. "all" and "each" were here and are not — "All timestamps in this report
+    // are UTC" is a scope note, and refusing it punishes a careful author.
+    const STRONG: &[&str] = &["every", "always"];
+    const WEAK: &[&str] = &["all", "each", "any", "never", "none"];
     // Strong causal markers only. "produced" and "made" were tried and removed: both
     // are routine descriptive verbs in forensic writing — "the tool produced output",
     // "installation produced the record" — and flagging them punished a legitimate
@@ -330,12 +394,10 @@ fn declaration_contradicted(node: &Node) -> Vec<Violation> {
         "resulted in",
         "led to",
         "because of",
-        "triggered",
     ];
 
     let title = node.title.to_ascii_lowercase();
     let full = format!("{} {}", node.title, node.body).to_ascii_lowercase();
-    let haystack = title.clone();
     let mut out = Vec::new();
 
     // Fires on ABSENCE as well as on a false declaration. Declaring `singular` on a
@@ -344,10 +406,37 @@ fn declaration_contradicted(node: &Node) -> Vec<Violation> {
     // absence. Silence where an assertion was made is not neutral.
     let quantifier = node.field("quantifier");
     if quantifier != Some("universal") && quantifier != Some("class") {
+        // A WEAK word is ordinary prose mid-sentence ("all of the entries were read")
+        // and a universal claim when it OPENS one ("All systems in the estate show this
+        // pattern"). Scanning weak words in the title only let the second escape by
+        // moving one line down; scanning them everywhere fired on the first.
+        // ...unless the sentence is about the DOCUMENT rather than the world. "All
+        // timestamps in this report are UTC" is metadiscourse — a scope note telling the
+        // reader how to read what follows — and blocking it punishes a careful author.
+        // "All systems in the estate show this pattern" is a claim. The distinction is a
+        // category, not a special case: statements about the artefact are not statements
+        // about the subject matter.
+        const METADISCOURSE: &[&str] = &[
+            "in this report",
+            "in this analysis",
+            "in this document",
+            "in this examination",
+            "throughout this report",
+            "herein",
+            "below",
+            "above",
+        ];
+        let sentence_initial = |w: &str| {
+            full.split(['.', '\n']).any(|s| {
+                let s = s.trim_start();
+                s.starts_with(w) && !METADISCOURSE.iter().any(|m| s.contains(m))
+            })
+        };
         let found = STRONG
             .iter()
             .find(|w| contains_phrase(&full, w))
-            .or_else(|| WEAK.iter().find(|w| contains_phrase(&title, w)));
+            .or_else(|| WEAK.iter().find(|w| contains_phrase(&title, w)))
+            .or_else(|| WEAK.iter().find(|w| sentence_initial(w)));
         if let Some(w) = found {
             out.push(violation(
                 DECLARATION_CONTRADICTED,
@@ -368,18 +457,31 @@ sentence to the scope you can support",
         }
     }
 
-    if node.field("causal_rung") == Some("association") {
+    // Absence as well as false declaration, exactly as for `quantifier:`. "Deleting the
+    // key CAUSED the artefact to disappear" with no `causal_rung:` drew nothing — the
+    // rung gate never runs, so the strongest word in the sentence went unexamined.
+    let rung = node.field("causal_rung");
+    if rung.is_none() || rung == Some("association") {
         if let Some(w) = INTERVENTIONAL
             .iter()
-            .find(|w| contains_phrase(&haystack, w))
+            // FULL text. "caused", "resulted in", "led to" are unambiguous claims about
+            // doing wherever they sit — unlike "all", which is ordinary prose. Scanning
+            // the title alone let the sentence move one line down and escape.
+            .find(|w| contains_phrase(&full, w))
         {
             out.push(violation(
                 DECLARATION_CONTRADICTED,
                 &node.id,
-                format!(
-                    "declares `causal_rung: association` but says \"{w}\" — that is a \
-claim about doing, not about seeing"
-                ),
+                match rung {
+                    Some(r) => format!(
+                        "declares `causal_rung: {r}` but says \"{w}\" — that is a claim \
+about doing, not about seeing"
+                    ),
+                    None => format!(
+                        "says \"{w}\" and declares no `causal_rung:` — the ladder gate \
+never runs, so a claim about DOING is examined as though it were about seeing"
+                    ),
+                },
                 "raise the rung and satisfy it with an executed protocol, or state the \
 association without the causal verb",
             ));
@@ -769,25 +871,49 @@ not a finding",
 /// reviewed direct perception, so `Grade` and `Pramana` bound only authors who chose
 /// to be bound — the apparatus was inert unless volunteered into.
 ///
-/// Claims only, and support edges only. A hypothesis may rest on anything while it is
-/// still a candidate; an observation is not graded, it is what does the grading.
+/// Claims always; anything else when something leans on it. Support AND `depends_on`
+/// edges, because a declared prerequisite is the stronger relation of the two.
+///
+/// An earlier version of this comment said "claims only, and support edges only", and
+/// it was false in three ways at once by the time anyone read it — the kind test had
+/// gone, `depends_on` had been added in both directions, and each change left the
+/// sentence behind. A comment describing scope is the first thing a scope change
+/// invalidates.
 fn ungraded_support(graph: &Graph, node: &Node) -> Vec<Violation> {
     // Claims, and hypotheses something LEANS ON — the same load-bearing rule the
     // promotion gates use. A node-kind test here let an ungraded inference edge hide
     // inside a chain: observation --graded--> h1 --UNGRADED--> h2 --graded--> claim
     // reported nothing, went review_ready, and froze. Every other check in this file
     // asks whether a node is carrying weight; this one asked what kind it was.
+    // Incoming DependsOn counts too: `c1 --depends_on--> h1` means c1 cannot hold
+    // without h1, so h1 is carrying c1's weight even though nothing "supports" anything
+    // from h1. The edge that makes a node load-bearing can point either way, and only
+    // one direction was checked.
+    // Whether an edge was graded is a property of the EDGE, not of the kind of node it
+    // lands on — the third time this session a kind test has done scoping it has no
+    // business doing. A claim that declares `depends_on: [o3]` says it cannot hold
+    // without o3, and that is exactly as ungraded whether o3 is an observation, a run
+    // or a protocol.
+    //
+    // A Claim is always weighed. Anything else is weighed when something leans on it.
     let carries_weight = node.kind == NodeKind::Claim
-        || (node.kind == NodeKind::Hypothesis
-            && graph
-                .edges_from(&node.id)
-                .any(|e| e.kind == EdgeKind::Supports));
+        || graph
+            .edges_from(&node.id)
+            .any(|e| matches!(e.kind, EdgeKind::Supports | EdgeKind::DependsOn))
+        || graph
+            .edges_to(&node.id)
+            .any(|e| e.kind == EdgeKind::DependsOn);
     if !carries_weight {
         return Vec::new();
     }
     graph
         .edges_to(&node.id)
-        .filter(|e| e.kind == EdgeKind::Supports && e.grade().is_none())
+        // DependsOn as well as Supports. `depends_on` is documented as "the target must
+        // hold for the source to" — a STRONGER relation than support — so an ungraded
+        // prerequisite is evidence nobody weighed, by the same argument and more so.
+        .filter(|e| {
+            matches!(e.kind, EdgeKind::Supports | EdgeKind::DependsOn) && e.grade().is_none()
+        })
         .map(|e| {
             violation(
                 UNGRADED_SUPPORT,
