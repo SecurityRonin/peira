@@ -428,17 +428,77 @@ fn declaration_contradicted(node: &Node) -> Vec<Violation> {
             "below",
             "above",
         ];
-        let sentence_initial = |w: &str| {
-            full.split(['.', '\n']).any(|s| {
-                let s = s.trim_start();
-                s.starts_with(w) && !METADISCOURSE.iter().any(|m| s.contains(m))
-            })
+        // ...or an INSTRUCTION. "Always image the disk before every acquisition" is a
+        // procedure, and being universal is what makes it one rather than a suggestion.
+        // An instruction says what to DO; a claim says what IS.
+        //
+        // Detected in the TEXT, not by node kind. A kind test has been removed from this
+        // codebase three times, and skipping `Protocol` would let an author relabel a
+        // universal claim and escape — a protocol's title renders into any packet it
+        // supports. Same category-not-special-case shape as the metadiscourse carve-out
+        // above.
+        //
+        // Fails SAFE: an instruction the list misses is merely flagged, and the author
+        // sees why. A claim wrongly excused would not be.
+        const DEONTIC: &[&str] = &[
+            " must ",
+            " must not",
+            " should ",
+            " shall ",
+            " ought to ",
+            " is required to ",
+        ];
+        const IMPERATIVE_OPENERS: &[&str] = &[
+            "always ",
+            "never ",
+            "do not ",
+            "verify ",
+            "record ",
+            "image ",
+            "capture ",
+            "document ",
+            "acquire ",
+            "photograph ",
+            "seal ",
+            "hash ",
+            "ensure ",
+            "confirm ",
+            "label ",
+            "store ",
+            "avoid ",
+            "check ",
+        ];
+        let is_instruction = |s: &str| {
+            let s = s.trim_start();
+            IMPERATIVE_OPENERS.iter().any(|o| s.starts_with(o))
+                || DEONTIC.iter().any(|d| s.contains(d))
+        };
+        // ONE place the exemption applies. There are three ways a universal can be
+        // found — strong word anywhere, weak word in the title, weak word opening a
+        // sentence — and guarding two of them left "Verify the hash on all acquired
+        // images" firing through the third. A rule with three entry points needs one
+        // gate, not three.
+        let in_a_claiming_sentence = |w: &str, hay: &str| {
+            contains_phrase(hay, w)
+                && hay
+                    .split(['.', '\n'])
+                    .filter(|s| contains_phrase(s, w))
+                    .any(|s| !is_instruction(s) && !METADISCOURSE.iter().any(|m| s.contains(m)))
         };
         let found = STRONG
             .iter()
-            .find(|w| contains_phrase(&full, w))
-            .or_else(|| WEAK.iter().find(|w| contains_phrase(&title, w)))
-            .or_else(|| WEAK.iter().find(|w| sentence_initial(w)));
+            .find(|w| in_a_claiming_sentence(w, &full))
+            .or_else(|| WEAK.iter().find(|w| in_a_claiming_sentence(w, &title)))
+            .or_else(|| {
+                WEAK.iter().find(|w| {
+                    full.split(['.', '\n']).any(|s| {
+                        let s = s.trim_start();
+                        s.starts_with(*w)
+                            && !METADISCOURSE.iter().any(|m| s.contains(m))
+                            && !is_instruction(s)
+                    })
+                })
+            });
         if let Some(w) = found {
             out.push(violation(
                 DECLARATION_CONTRADICTED,
@@ -1363,6 +1423,62 @@ stipulated: the entry proves the suspect executed the binary\n---\n",
             0,
             "\"produced\" is ordinary forensic description — a heuristic that fires on \
 professional prose is one people switch off"
+        );
+    }
+
+    /// An instruction is not a universal claim about the world.
+    ///
+    /// "Always image the disk before every acquisition" is a **procedure**, and being
+    /// universal is what makes it one rather than a suggestion. The declaration lint
+    /// read `always` and `every` as unbacked quantification and demanded a
+    /// `quantifier:`, which a protocol has no business declaring.
+    ///
+    /// Deliberately NOT solved by skipping `Protocol` nodes: a kind test has been
+    /// removed from this codebase three times, and an author could relabel a universal
+    /// claim `type: protocol` and escape — a protocol's title renders into any packet it
+    /// supports. The distinction is in the TEXT. An instruction says what to DO; a claim
+    /// says what IS.
+    #[test]
+    fn an_instruction_is_not_a_universal_claim() {
+        let fired = |kind: &str, title: &str| {
+            let g = graph_of(
+                vec![node(&format!(
+                    "---\nid: x\ntype: {kind}\ntitle: {title}\n---\n"
+                ))],
+                vec![],
+            );
+            lint(&g)
+                .into_iter()
+                .filter(|v| v.gate == "PEIR-LINT-DECLARATION-CONTRADICTED")
+                .count()
+        };
+
+        for t in [
+            "Always image the disk before every acquisition",
+            "Every exhibit must be photographed before it is opened",
+            "Verify the hash on all acquired images",
+            "Never power on the original device",
+        ] {
+            assert_eq!(
+                fired("protocol", t),
+                0,
+                "an instruction is not a claim: {t}"
+            );
+        }
+
+        assert_eq!(
+            fired(
+                "protocol",
+                "Every Amcache entry is written at execution time"
+            ),
+            1,
+            "a claim about the world does not stop being one because the node says \
+`type: protocol` — the kind is a self-declared string"
+        );
+        assert_eq!(
+            fired("claim", "Every Amcache entry is written at execution time"),
+            1,
+            "and it still fires on a claim"
         );
     }
 
