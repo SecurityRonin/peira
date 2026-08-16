@@ -401,12 +401,21 @@ drawing\n  any conclusion about why."
         // Exit 2, the same code an absent vault returns, because this is the same
         // category: not a verdict, an inability to reach one. Reporting it as a
         // mismatch would accuse the holder of a packet that is perfectly intact.
-        Verification::FormatSuperseded { stored, current } => {
+        Verification::FormatSuperseded {
+            stored,
+            current,
+            body_matches: _,
+        } => {
             println!(
                 "? {} was written in packet format {stored}; this build renders {current}",
                 packet.display()
             );
             println!("  no verdict — re-freeze the claim to compare against this format");
+            println!(
+                "\n  This build cannot re-derive it, so nothing here is a verdict about \
+the\n  packet's integrity. A body that differs beyond the format line is\n  consistent BOTH with an older renderer and with alteration, and peira\n  cannot tell those apart — the information is not in the artifact.\n  Compare against the vault's \
+history at the time it was frozen."
+            );
             Ok(exit::ERROR)
         }
         // A verdict, but about the CLAIM rather than the packet: something now blocks

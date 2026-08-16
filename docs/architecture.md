@@ -42,7 +42,7 @@ describes what each check *does* and this describes what its output *supports*.
 | "All enforced gates pass" | gates that reached no verdict are discarded before this is printed |
 | `review_ready` | computed from an empty blocking list and grounded membership; nothing reads whether a reviewer signed |
 | grounded membership | attack edges are author-declared; standing can be manufactured |
-| a verified packet | `verify` compares the rendered projection only, and a format-line edit demotes tampering to "no verdict" — unchanged, and still the sharpest open defect |
+| a verified packet | `verify` compares the rendered projection only. A format-line edit no longer demotes tampering: if the format number is the SOLE difference from the current rendering, that is an edit and is named one. Where the body differs beyond it, staleness and alteration are indistinguishable from the artifact, and `verify` says so rather than picking one |
 | a mismatch as evidence of tampering | a vault that GREW and one whose evidence was ALTERED give the same verdict. `verify` names the first differing line so you can tell them apart; it cannot tell them apart for you |
 | the `by=` on a grade | an unauthenticated free string. Anyone able to write the vault can attach one. The packet now DISCLOSES this and names who is credited, but peira cannot check it — the gates are pure functions of the graph, so they cannot consult the version-control history that would answer it |
 | a settled grade | the ceiling binds only edges that declare a means of knowing — an undeclared one now reaches no verdict rather than passing, but a *contradicted* declaration is only reported, never corrected |

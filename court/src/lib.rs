@@ -102,11 +102,21 @@ pub enum Verification {
         first_difference: Option<String>,
     },
     /// Written by a different renderer, so no comparison against it is meaningful.
+    ///
+    /// **Reached only when the difference is more than the format line.** A packet whose
+    /// format number is the SOLE difference from the current rendering has been edited —
+    /// an older renderer could not have produced a body identical to a newer one's — and
+    /// that is reported as [`Verification::DigestMismatch`] instead.
     FormatSuperseded {
         /// The format the packet declares.
         stored: u32,
         /// The format this build renders.
         current: u32,
+        /// Whether the body matches the current rendering once the format line alone is
+        /// normalised. Always false here; `true` is the edit case and does not reach
+        /// this variant. Carried so a caller can state what is and is not known rather
+        /// than inferring it.
+        body_matches: bool,
     },
     /// The claim no longer freezes at all — a gate now blocks it, or it has since been
     /// defeated. Nothing is wrong with the packet; the claim stopped qualifying.
@@ -647,10 +657,31 @@ pub fn verify(graph: &Graph, packet: &Packet) -> Verification {
     // read as an accusation.
     let stored = declared_format(&packet.body);
     if stored != PACKET_FORMAT {
-        return Verification::FormatSuperseded {
-            stored,
-            current: PACKET_FORMAT,
-        };
+        // NORMALISE THE FORMAT LINE AND RE-COMPARE. If the body becomes byte-identical
+        // to the current rendering once only its format number is corrected, then the
+        // format line is the sole difference — and a packet written by an older renderer
+        // cannot be byte-identical to a newer one's output. That is an edit, provably,
+        // and calling it "no verdict" is how the one accusatory outcome became the one
+        // an adversary could opt out of.
+        //
+        // Where the body differs beyond that line, peira genuinely cannot tell staleness
+        // from alteration: the information is not in the artifact. It says so.
+        let normalised = packet.body.replace(
+            &format!("Packet format: {stored}"),
+            &format!("Packet format: {PACKET_FORMAT}"),
+        );
+        let body_matches = freeze(graph, &packet.subject).is_ok_and(|fresh| {
+            hash_bytes(Algorithm::Sha256, normalised.as_bytes()) == fresh.digest
+        });
+
+        if !body_matches {
+            return Verification::FormatSuperseded {
+                stored,
+                current: PACKET_FORMAT,
+                body_matches,
+            };
+        }
+        // Fall through: the format line was edited on an otherwise-current packet.
     }
 
     match freeze(graph, &packet.subject) {
@@ -755,16 +786,24 @@ stipulated: the OS recorded this path in Amcache\n---\n",
         // not comparable against what this build renders.
         let stale = Packet::from_stored(
             packet.subject.clone(),
-            packet.body.replace(
-                &format!("Packet format: {PACKET_FORMAT}"),
-                "Packet format: 0",
-            ),
+            packet
+                .body
+                .replace(
+                    &format!("Packet format: {PACKET_FORMAT}"),
+                    "Packet format: 0",
+                )
+                // A genuinely older renderer produced a DIFFERENT body, not the current one
+                // with a different number on it. The fixture used to flip only the format
+                // line, which is now — correctly — the edit case: no older renderer could
+                // emit a body byte-identical to today's.
+                .replace("## Standing", "## Status"),
         );
         assert_eq!(
             verify(&g, &stale),
             Verification::FormatSuperseded {
                 stored: 0,
-                current: PACKET_FORMAT
+                current: PACKET_FORMAT,
+                body_matches: false,
             },
             "a packet from an older renderer must not be reported as tampering"
         );
@@ -881,6 +920,60 @@ must be the renderer's alone. Headings found: {headings:?}"
             line.contains("later restored"),
             "the subject's own restoration must be disclosed in the SAME line: {line}"
         );
+    }
+
+    /// A format-line edit must not launder tampering into "no verdict".
+    ///
+    /// `verify` checked the declared format FIRST and returned before comparing digests,
+    /// so editing one line — the format number — converted "this artifact no longer
+    /// matches the record" into "this build cannot check this artifact". The one
+    /// accusatory verdict was the one an adversary could opt out of. Five audit rounds
+    /// raised it; every proposed fix was worse than the disclosure, because a genuinely
+    /// old packet also mismatches and reporting THAT would be a false accusation.
+    ///
+    /// There is a discriminator nobody used: normalise the format line and re-compare.
+    /// If a stored packet becomes byte-identical to the current rendering once only its
+    /// format number is corrected, the format line is the SOLE difference — and a packet
+    /// written by an older renderer cannot be byte-identical to a newer one's output.
+    /// That is an edit, provably, and it is reported as one.
+    #[test]
+    fn a_format_line_edit_is_reported_as_an_edit_not_as_staleness() {
+        let g = clean_graph();
+        let fresh = freeze(&g, &NodeId::new("c1")).expect("freezes");
+
+        // Flip only the format number on an otherwise-current packet.
+        let tampered = Packet::from_stored(
+            fresh.subject.clone(),
+            fresh.body.replace(
+                &format!("Packet format: {PACKET_FORMAT}"),
+                "Packet format: 1",
+            ),
+        );
+        assert!(
+            matches!(verify(&g, &tampered), Verification::DigestMismatch { .. }),
+            "the format line was the only thing changed on a current packet — an older \
+renderer could not have produced this body, so it is an edit and must be named one"
+        );
+
+        // A packet that genuinely differs elsewhere as well: peira cannot tell staleness
+        // from alteration, and must say so rather than pick one.
+        let older = Packet::from_stored(
+            fresh.subject.clone(),
+            fresh
+                .body
+                .replace(
+                    &format!("Packet format: {PACKET_FORMAT}"),
+                    "Packet format: 1",
+                )
+                .replace("## Standing", "## Standing (old renderer)"),
+        );
+        match verify(&g, &older) {
+            Verification::FormatSuperseded { body_matches, .. } => assert!(
+                !body_matches,
+                "the body differs beyond the format line, so this is the undecidable case"
+            ),
+            other => panic!("expected FormatSuperseded for a genuinely older body: {other:?}"),
+        }
     }
 
     /// A packet must not present unverifiable review as though it were established.
