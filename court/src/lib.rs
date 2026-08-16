@@ -128,9 +128,14 @@ impl Verification {
 /// that assertion being covered by the hash it is checked against.
 ///
 /// Bumping this invalidates every packet frozen before the bump — deliberately, and
-/// visibly, which is the whole point. A body change that did not bump it would be the
+/// visibly, which is the whole point.
+///
+/// **2** — the body gained a "Provenance of the grading" section disclosing that `by=`
+/// attributions are self-declared. Without the bump every packet frozen under format 1
+/// would report `DigestMismatch`, which is an accusation, when the truth is that the
+/// renderer changed underneath them. A body change that did not bump it would be the
 /// silent case this exists to remove.
-pub const PACKET_FORMAT: u32 = 1;
+pub const PACKET_FORMAT: u32 = 2;
 
 /// A frozen citation packet.
 #[non_exhaustive]
@@ -376,6 +381,38 @@ merits: {names}. Read the retraction before relying on this.{history}",
 fn render_body(graph: &Graph, id: &NodeId) -> Option<String> {
     let claim = graph.node(id)?;
 
+    // WHO IS CREDITED, and the limit on that credit. `by=` is a free string: peira has
+    // no way to check that the named reviewer settled the grade, because the gates are
+    // pure functions of the graph and cannot consult the version control that would
+    // answer it. The packet used to rest on graded evidence and say nothing about the
+    // grading at all — asserting that gates passed while the review they relied on was
+    // unverifiable.
+    //
+    // Disclosure, as everywhere else peira cannot establish something. Naming the
+    // reviewers is what makes it actionable: a reader who knows the matter can tell
+    // whether the person credited plausibly did the work.
+    let mut graders: Vec<String> = graph
+        .edges_to(id)
+        .filter(|e| matches!(e.kind, EdgeKind::Supports | EdgeKind::DependsOn))
+        .filter_map(|e| e.grader().map(std::string::ToString::to_string))
+        .collect();
+    graders.sort_unstable();
+    graders.dedup();
+    let provenance = if graders.is_empty() {
+        String::new()
+    } else {
+        format!(
+            "\n## Provenance of the grading\n\
+             \n\
+             Credited: {}\n\
+             \n\
+             These attributions are SELF-DECLARED and not authenticated. peira records who a\n\
+             grade says it came from; it cannot establish that they settled it. Who wrote an\n\
+             edge is a question for the version-control history of the vault.\n",
+            graders.join(", ")
+        )
+    };
+
     let standing = standing_line(graph, id);
 
     let supports = related(graph, claim, EdgeKind::Supports);
@@ -433,7 +470,8 @@ fn render_body(graph: &Graph, id: &NodeId) -> Option<String> {
          ## Standing\n\
          \n\
          {standing}\n\
-         All enforced gates pass.\n",
+         All enforced gates pass.\n\
+         {provenance}",
         id = claim.id,
         format = PACKET_FORMAT,
         statement = if safe_statement(graph, claim).is_empty() {
@@ -717,7 +755,10 @@ stipulated: the OS recorded this path in Amcache\n---\n",
         // not comparable against what this build renders.
         let stale = Packet::from_stored(
             packet.subject.clone(),
-            packet.body.replace("Packet format: 1", "Packet format: 0"),
+            packet.body.replace(
+                &format!("Packet format: {PACKET_FORMAT}"),
+                "Packet format: 0",
+            ),
         );
         assert_eq!(
             verify(&g, &stale),
@@ -839,6 +880,35 @@ must be the renderer's alone. Headings found: {headings:?}"
         assert!(
             line.contains("later restored"),
             "the subject's own restoration must be disclosed in the SAME line: {line}"
+        );
+    }
+
+    /// A packet must not present unverifiable review as though it were established.
+    ///
+    /// `by=` is a free string. Anyone able to write the vault can attribute a grade to
+    /// anyone, and nothing in peira checks it — the gates are pure functions of the
+    /// graph, so they cannot consult git, and the packet renders no grades at all.
+    ///
+    /// The consequence is not that a forged name reaches a tribunal; it is that the
+    /// packet asserts every gate passed while the review those gates relied on is
+    /// unverifiable, and says nothing about it. peira's answer everywhere else — a
+    /// withdrawn attack, a rival's prose, a restored claim — is to DISCLOSE what it
+    /// cannot establish.
+    #[test]
+    fn a_packet_discloses_that_its_grading_is_self_declared() {
+        let g = clean_graph();
+        let body = render_body(&g, &NodeId::new("c1")).expect("renders");
+        assert!(
+            body.to_lowercase().contains("self-declared")
+                || body.to_lowercase().contains("not authenticated"),
+            "the packet rests on graded evidence and must say the attribution is the \
+author's own, not something peira verified:\n{body}"
+        );
+        // The reviewer named on the edge must appear, so the disclosure is actionable
+        // rather than generic.
+        assert!(
+            body.contains("a-reviewer"),
+            "naming who is credited is what makes the disclosure checkable by a reader"
         );
     }
 
@@ -1034,7 +1104,7 @@ stipulated: the entry proves the file was executed\n---\n",
         let g = clean_graph();
         let p = freeze(&g, &NodeId::new("c1")).expect("clean claim should freeze");
         assert!(
-            p.body.contains("Packet format: 1"),
+            p.body.contains(&format!("Packet format: {PACKET_FORMAT}")),
             "no format declaration:\n{}",
             p.body
         );

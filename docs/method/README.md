@@ -130,6 +130,7 @@ to prevent.
 | Support must reach the world, not only more claims | `PEIR-LINT-UNGROUNDED-CHAIN` | **enforced** |
 | Overstated verbs are flagged, with the safe form named | `PEIR-LINT-FORBIDDEN-VERB` | **enforced, partial** ² |
 | A grade nobody stands behind asserts nothing | `PEIR-LINT-UNREVIEWED-GRADE` | **enforced, narrow** ⁵ |
+| Who settled a grade is recorded, not established | the packet's *Provenance of the grading* section | **disclosed, unverifiable** ¹³ |
 | Authors do not sign off their own findings | `PEIR-LINT-SELF-GRADED` | **checked when declared** ⁶ |
 | Restatements are not corroboration | `PEIR-LINT-FALSE-INDEPENDENCE` | **enforced, narrow** ³ |
 | A window's edge is not the start of a behaviour | `PEIR-LINT-WINDOW-EDGE-AS-ONSET` | **enforced** |
@@ -152,6 +153,11 @@ to prevent.
 ⁹ The lint reports a leak on the node that carries it. `freeze` filters violations to the claim's
 own id, so a privilege leak on a *supporting* node does not stop a packet — and the packet renders
 that supporter's id and title. Flagging is not exclusion; read the lint output before exporting.
+
+¹³ `by=` is a free string and peira cannot check it: the gates are pure functions of the graph —
+no I/O — so they cannot consult the version control that would answer who wrote an edge. The packet
+names who is credited and states plainly that the attribution is self-declared, which is this tool's
+answer everywhere it cannot establish something.
 
 ¹² Recording an instrument is still optional — demanding provenance on every observation would be
 ceremony, and ceremony is routed around. What is enforced is that a recorded instrument must carry a

@@ -44,7 +44,7 @@ describes what each check *does* and this describes what its output *supports*.
 | grounded membership | attack edges are author-declared; standing can be manufactured |
 | a verified packet | `verify` compares the rendered projection only, and a format-line edit demotes tampering to "no verdict" — unchanged, and still the sharpest open defect |
 | a mismatch as evidence of tampering | a vault that GREW and one whose evidence was ALTERED give the same verdict. `verify` names the first differing line so you can tell them apart; it cannot tell them apart for you |
-| the `by=` on a grade | an unauthenticated free string. Anyone able to write the vault can attach one. In a shared vault, who wrote an edge is a question for the version-control history |
+| the `by=` on a grade | an unauthenticated free string. Anyone able to write the vault can attach one. The packet now DISCLOSES this and names who is credited, but peira cannot check it — the gates are pure functions of the graph, so they cannot consult the version-control history that would answer it |
 | a settled grade | the ceiling binds only edges that declare a means of knowing — an undeclared one now reaches no verdict rather than passing, but a *contradicted* declaration is only reported, never corrected |
 | a claim standing because a rival was withdrawn | the packet and `peira status` now DISCLOSE this — read the line; it names the withdrawn attacks rather than claiming they were defeated |
 | absence of a privilege warning on a packet | the lint fires on the node carrying the material; `freeze` examines the claim's evidential closure, so a leak on a *rendered rival* is scanned as text but its own gate profile is not examined |
