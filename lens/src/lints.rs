@@ -80,7 +80,7 @@ pub fn overstatements_in(text: &str, subject: &NodeId) -> Vec<Violation> {
     let haystack = text.to_ascii_lowercase();
     OVERSTATEMENTS
         .iter()
-        .filter(|(word, _)| contains_phrase(&haystack, word) && !is_negated(&haystack, word))
+        .filter(|(word, _)| contains_phrase(&haystack, word) && !clause_negated(&haystack, word))
         .map(|(word, instead)| {
             violation(
                 FORBIDDEN_VERB,
@@ -234,7 +234,7 @@ fn clause_negated(haystack: &str, needle: &str) -> bool {
     // instance happened to come first, so "the suspect is NOT guilty of tampering; the
     // suspect IS guilty of unauthorised access" was excused by its own opening clause.
     // One unhedged occurrence is a verdict however many hedged ones precede it.
-    occurrences(haystack, needle).all(|at| clause_at_is_negated(haystack, at))
+    occurrences(haystack, needle).all(|at| clause_at_is_negated(haystack, at, needle.len()))
 }
 
 /// Byte offsets of every whole-word occurrence of `needle`.
@@ -255,7 +255,25 @@ fn occurrences<'a>(haystack: &'a str, needle: &'a str) -> impl Iterator<Item = u
     })
 }
 
-fn clause_at_is_negated(haystack: &str, at: usize) -> bool {
+fn clause_at_is_negated(haystack: &str, at: usize, len: usize) -> bool {
+    // A negator can FOLLOW the word it governs, and only in the object position.
+    // "proves nothing about execution" is a denial; refusing it punishes the exact
+    // sentence the discipline asks for. Deliberately just the next word — scanning the
+    // rest of the clause would excuse "proves that the file was not present", where the
+    // negator governs the object clause and something is still claimed to be proved.
+    const OBJECT_NEGATORS: &[&str] = &["nothing", "no", "none", "neither"];
+    // Only across SPACES. Any punctuation between is a clause boundary, and "The
+    // defendant is liable; nothing further was examined" is a verdict followed by an
+    // unrelated remark, not a denial.
+    let next_word = haystack[at + len..]
+        .trim_start_matches([' ', '\t'])
+        .split(|c: char| !c.is_alphanumeric() && c != '\'')
+        .next()
+        .unwrap_or_default();
+    if OBJECT_NEGATORS.contains(&next_word) {
+        return true;
+    }
+
     let head = &haystack[..at];
     // A NEWLINE is a clause boundary, and the strongest one. Without it this reads a
     // whole rendered packet as ONE clause, so a negator lines away suppresses a verdict
@@ -707,31 +725,14 @@ fn violation(
 /// Kept small and literal on purpose: this decides whether to SUPPRESS a finding, so a
 /// generous list would silence real overstatements. Anything subtler than a negation
 /// immediately before the verb is left to a human.
+/// `does` is DELIBERATELY absent. It is an auxiliary, not a negator: every negating
+/// form of it — "does not", "doesn't" — is already carried by `not` and `doesn't`, so
+/// the bare word only ever read an emphatic affirmative as a denial. "The metadata does
+/// show the respondent is liable" is as flat a verdict as the sentence without it.
 const NEGATORS: &[&str] = &[
-    "not", "never", "no", "nothing", "cannot", "does", "doesn't", "don't", "isn't", "wasn't",
-    "neither", "nor", "without",
+    "not", "never", "no", "nothing", "cannot", "doesn't", "don't", "isn't", "wasn't", "neither",
+    "nor", "without",
 ];
-
-/// Whether the occurrence of `needle` in `haystack` sits inside its own negation.
-///
-/// The 即非 moment's whole job is denial — "a catalogue entry does not PROVE
-/// execution" is the correct form, and flagging it punishes exactly the careful author
-/// the lint exists to serve. Looks back a few words only: "not" three words before
-/// "proves" negates it; "not" two sentences earlier does not.
-fn is_negated(haystack: &str, needle: &str) -> bool {
-    let Some(at) = haystack.find(needle) else {
-        return false;
-    };
-    haystack[..at]
-        .split(|c: char| !c.is_alphanumeric() && c != '\'')
-        .filter(|w| !w.is_empty())
-        .rev()
-        // Six words, not four: "is NOT evidence that the account holder is liable"
-        // puts the negator six back, and flagging that sentence would block the exact
-        // careful phrasing the expert-witness discipline asks for.
-        .take(6)
-        .any(|w| NEGATORS.contains(&w))
-}
 
 /// Whether `haystack` contains `needle` as a whole-word phrase.
 fn contains_phrase(haystack: &str, needle: &str) -> bool {
@@ -776,7 +777,7 @@ fn forbidden_verbs(node: &Node) -> Vec<Violation> {
             OVERSTATEMENTS
                 .iter()
                 .filter(move |(word, _)| {
-                    contains_phrase(&haystack, word) && !is_negated(&haystack, word)
+                    contains_phrase(&haystack, word) && !clause_negated(&haystack, word)
                 })
                 .map(move |(word, instead)| (*field, *word, *instead))
         })
