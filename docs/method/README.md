@@ -177,9 +177,14 @@ is missed. T3 instrument: our own table, not a decode of anyone's spec.
 
 ¹ The ceiling binds only edges that declare a means of knowing; omitting the declaration evades it.
 ² The lint reports; it rewrites nothing — the safe form travels in the violation's detail line. It
-scans a node's title, body and the three term moments; the warrant, boundaries and falsifiers are
-covered instead by the scan `freeze` runs over the FINISHED packet body, which is what makes
-"rendered but unscanned" structurally impossible rather than a list to keep in step by hand.
+scans a node's title, body and the three term moments; the warrant and boundaries are covered
+instead by the scan `freeze` runs over the FINISHED packet body, which is what makes "rendered but
+unscanned" structurally impossible rather than a list to keep in step by hand. **Falsifiers are the
+one exception, and deliberately:** a falsifier NAMES what would defeat the claim, so scanning it
+refused *"evidence that the entry was forged and the transfer fraudulent"* — precisely what
+`PEIR-FALSIFIER-MISSING` demands — for containing the words it was required to contain. The section
+is excluded from the scan; each line instead carries the prefix *"Would defeat this claim:"*, so a
+line lifted out of the packet keeps the sense the heading gave it.
 ³ Fires only where one supporter is explicitly marked as duplicating another; it does not detect
 two supporters that share an instrument or a source.
 ⁴ Reaches a verdict only when the claim declares the triggering field (`uses_term`, `quantifier`,
@@ -192,8 +197,7 @@ separately by `PEIR-LINT-UNGRADED-SUPPORT`, on claims and on any hypothesis some
 ⁶ Compares the grader against `author:` only when the claim declares one; with `author:` absent
 there is nothing to compare and the lint reports nothing.
 ⁷ The digest covers the packet's rendered body only. Grades, graders, pramāṇas and `measured_by:`
-links are not rendered, so they change without disturbing it — architecture defect 8. An edited
-`Packet format:` line yields no verdict rather than a mismatch — architecture defect 6.
+links are not rendered, so they change without disturbing it — architecture defect 8.
 ⁸ The loader drops an unknown edge attribute, an invalid `grade=` and a misspelt `via=` without a
 diagnostic; a typo removes the pramāṇa ceiling or the review semantics instead of going red —
 architecture defect 9.

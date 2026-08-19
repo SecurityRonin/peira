@@ -86,7 +86,7 @@ what makes C meaningful rather than decorative.
 ## Tamper detection
 
 ```
-freeze                   sha256 4dca74c4347b26f224abbfd427e7ca758a4a1c817c776b2661e358b6470c9765
+freeze                   sha256 660959c1c94985c59b566d10ddeb14a7c2e80421e0fc97a3110e579afc99a5bb
 verify (clean)           ✓ exit=0
 mutate cited observation (asserted present in the file)
 verify (tampered)        ✗ exit=1
@@ -103,17 +103,26 @@ copy of the bounded vault, and each mutation was asserted present before the run
 | Situation | Verdict | Exit | Reads as |
 |---|---|---|---|
 | unchanged vault | `Verified` | 0 | still matches |
-| packet declares format 0 | `FormatSuperseded` | **2** | no verdict — re-freeze to compare |
+| format line alone edited to 0 | `DigestMismatch` | 1 | an edit, named as one |
+| format 0 **and** a body that differs beyond it | `FormatSuperseded` | **2** | no verdict — re-freeze to compare |
 | cited observation rewritten | `DigestMismatch` | 1 | the graph changed under a frozen packet |
 | `falsifier:` removed from the claim | `NoLongerFreezable` | 1 | the claim no longer qualifies, naming the gate |
 
-**Exit 2 is reused deliberately.** It is already the code for an absent vault — *"could
-not look"* — and a superseded format is the same category: an inability to reach a
-verdict, not a verdict. Rendering it as a mismatch would accuse the holder of a packet
-that is perfectly intact.
+**Rows two and three are the same edit to the same line, and they part on the rest of
+the body.** Correcting the format number alone and re-comparing settles it: a body that
+then matches the current rendering byte for byte was rendered by *this* build, so the
+number was changed by hand. An older renderer cannot emit a body identical to a newer
+one's output. Where the body differs beyond that line, the artifact does not carry
+what would separate staleness from alteration, and `verify` says so rather than
+choosing.
 
-The two `1`s are both verdicts about the vault, and their messages differ: one prints
-both digests, the other prints the blocking gate in full.
+**Exit 2 is reused deliberately.** It is already the code for an absent vault — *"could
+not look"* — and a format that genuinely cannot be re-derived is the same category: an
+inability to reach a verdict, not a verdict. Rendering *that* as a mismatch would accuse
+the holder of a packet that is perfectly intact.
+
+The three `1`s are all verdicts about the vault, and their messages differ: two print
+both digests and the first differing line, the third prints the blocking gate in full.
 
 The format marker lives INSIDE the hashed body. Beside it, a tamperer rewrites the
 version freely and the packet asserts a format the digest never covered.
@@ -121,7 +130,7 @@ version freely and the packet asserts a format the digest never covered.
 ## Reproducing
 
 ```bash
-cargo test --workspace --no-fail-fast          # 149 tests, incl. the acceptance suite
+cargo test --workspace --no-fail-fast          # 177 tests, incl. the acceptance suite
 cargo build -p peira-cli && tests/controls.sh target/debug/peira   # A, B and C
 ```
 

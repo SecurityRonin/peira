@@ -287,9 +287,8 @@ peira is this section as machinery, and the mapping is exact where it holds:
 - **Rebuild, and prove the rebuild** — `peira verify` re-derives the packet from the vault as it
   stands and compares digests. An edit that reaches the rendered body surfaces as
   `DigestMismatch`; one confined to fields the packet does not render — a grade, a grader, an
-  instrument link — changes no digest, and a packet edit touching the `Packet format:` line
-  returns no verdict at all. *"The rendered projection agrees with the record"* becomes a build
-  step — that far, and no further (architecture defects 6 and 8).
+  instrument link — changes no digest. *"The rendered projection agrees with the record"* becomes
+  a build step — that far, and no further (architecture defect 8).
 - **Projection** — a packet renders a fixed subset: titles of direct supporters, contradictors and
   limiters, the warrant, boundaries, falsifiers and term moments. The vault stays the superset.
 

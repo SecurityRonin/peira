@@ -49,6 +49,7 @@ describes what each check *does* and this describes what its output *supports*.
 | a claim standing because a rival was withdrawn | the packet and `peira status` now DISCLOSE this — read the line; it names the withdrawn attacks rather than claiming they were defeated |
 | absence of a privilege warning on a packet | the lint fires on the node carrying the material; `freeze` examines the claim's evidential closure, so a leak on a *rendered rival* is scanned as text but its own gate profile is not examined |
 | the generated safe statement | it quotes author-written term fields verbatim |
+| a falsifier line | rendered verbatim and NOT scanned — a falsifier must be free to name what would defeat the claim, and scanning it refused the disclosure the gates demand. It is framed rather than checked: each line carries *"Would defeat this claim:"* so it cannot be read as a finding once quoted away from its heading |
 
 **The honest summary:** peira today is a **structured examination aid that catches specific named
 mistakes**. It is not yet an assurance that a claim is safe to rely on, and no output of it should be
@@ -83,7 +84,8 @@ flowchart LR
     V -.->|"re-derive from the<br/>vault as it stands"| VY
     VY -->|"byte-identical"| OK["Verified"]
     VY -->|"differs"| DM["DigestMismatch —<br/>a fork exists"]
-    VY -->|"stored body declares<br/>another format"| FS["FormatSuperseded —<br/>no verdict, exit 2"]
+    VY -->|"another format, and the<br/>format line is the ONLY<br/>difference — an edit"| DM
+    VY -->|"another format, and the<br/>body differs beyond it"| FS["FormatSuperseded —<br/>no verdict, exit 2"]
 ```
 
 How each half of the discipline maps onto the machinery, honestly:
@@ -91,7 +93,7 @@ How each half of the discipline maps onto the machinery, honestly:
 | Rule | Mechanism | Status |
 |---|---|---|
 | Record before you report | There is no prose write path into a packet: `freeze` renders it from the graph, and the parser refuses `status:` and `confidence:` outright | **enforced** |
-| Correct at the source, then rebuild | `verify` re-derives from the vault and compares digests. An edit that reaches the rendered body surfaces as `DigestMismatch`; one confined to unrendered fields — a grade, a grader, a `via=`, a `measured_by:` — changes no digest, and a packet edit that touches the `Packet format:` line surfaces as `FormatSuperseded`, which is no verdict at all | **enforced, narrow — defects 6 and 8** |
+| Correct at the source, then rebuild | `verify` re-derives from the vault and compares digests. An edit that reaches the rendered body surfaces as `DigestMismatch`; one confined to unrendered fields — a grade, a grader, a `via=`, a `measured_by:` — changes no digest. An edit confined to the `Packet format:` line is named as the edit it is, since no older renderer could emit a body identical to today's | **enforced, narrow — defect 8** |
 | Mark supersession, never silently overwrite | `supersedes:` and `retracts:` edges are read by `PEIR-LINT-RETRACTED`, by the grounded extension, and by the packet's standing line | **enforced** |
 | The deliverable is a projection, never the whole | A packet renders a fixed projection: the claim's title and warrant, the ids and titles of its direct supporters, contradictors and limiters, boundaries, falsifiers, and the term moments. Grades, graders, pramāṇas and instrument links are not in it — so they are not under the digest either | by construction — **and the digest inherits the narrowness (defect 8)** |
 | If it cannot be regenerated, it is not compiled — it is a fork | `Verified` means exactly: the rendered body re-derived byte-identically from the source | **enforced** |
@@ -294,7 +296,8 @@ stateDiagram-v2
 
     Frozen --> Verified: re-derives identically
     Frozen --> DigestMismatch: the rendered body changed under it
-    Frozen --> FormatSuperseded: body declares another format
+    Frozen --> DigestMismatch: the format line is the only thing changed
+    Frozen --> FormatSuperseded: another format, and the body differs beyond it
     Frozen --> NoLongerFreezable: a gate now blocks it
 
     note right of DigestMismatch
@@ -305,20 +308,25 @@ stateDiagram-v2
         Exit 2 — the same code an
         absent vault returns.
         Could not look, not a verdict.
-        An edited format line lands
-        here too — defect 6.
+        Reached only when more than
+        the format line differs.
     end note
 ```
 
 Reusing exit 2 for *"could not reach a verdict"* is deliberate: it is already the code for an
 absent vault, and the acceptance controls exist to prove *found nothing* is distinguishable from
 *could not look*. The packet's format number is declared inside the body `freeze` hashes, so a
-re-render costs a digest change — but that protects nothing at verification. The stored file
-carries no digest of its own: `verify` recomputes one from whatever bytes are on disk, reads the
-declared format from those same untrusted bytes, and returns `FormatSuperseded` before any
-comparison when it differs. A hand edit that touches the format line is therefore reported as an
-old renderer rather than as drift, and nothing distinguishes the two — the one accusatory verdict
-is the one a tamperer can opt out of (defect 6).
+re-render costs a digest change. The stored file carries no digest of its own: `verify` recomputes
+one from whatever bytes are on disk and reads the declared format from those same untrusted bytes.
+It used to return `FormatSuperseded` on that reading alone, which made the one accusatory verdict
+the one a tamperer could opt out of — a hand edit to a single line bought "no verdict" (defect 6).
+
+**The discriminator is in the artifact.** Correct the format number and re-compare: a body that is
+then byte-identical to the current rendering was produced by *this* build, because no older
+renderer emits a newer one's bytes. That is an edit, and `verify` now names it as `DigestMismatch`.
+`FormatSuperseded` is reached only when the body differs beyond that line — where staleness and
+alteration genuinely are indistinguishable from what the artifact carries, and saying so is the
+honest answer rather than a guess.
 
 ---
 
@@ -415,7 +423,7 @@ panel, established four more — each checked against the code it cites before b
 
 | # | Defect | Status |
 |---|---|---|
-| 6 | `verify` reads `Packet format:` from the stored body — untrusted input — and returns `FormatSuperseded`, exit 2, before any comparison when it differs. No digest is stored independently of the packet file, so a hand edit that touches the format line is reported as an old renderer, never as `DigestMismatch` | **confirmed in source; the crate's own test constructs exactly this edit and asserts `FormatSuperseded`** |
+| 6 | `verify` read `Packet format:` from the stored body — untrusted input — and returned `FormatSuperseded`, exit 2, before any comparison. A hand edit to that one line converted *"this artifact no longer matches the record"* into *"this build cannot check it"*, so the single accusatory verdict was the one an adversary could opt out of | **CLOSED.** `verify` now normalises the format line and re-compares: if correcting the number alone makes the body byte-identical to the current rendering, the format line is the sole difference and that is an edit, reported as `DigestMismatch`. Where the body differs beyond it, staleness and alteration are genuinely indistinguishable from the artifact and it says so. The fixture asserting the old behaviour was itself wrong and was corrected |
 | 7 | `freeze` blocks only on violations whose subject is the claim being frozen. A defect on a supporting node — a privilege leak, forbidden prose, a dangling edge — stops nothing unless a claim-scoped gate re-attributes it to the claim | **confirmed in source** |
 | 8 | The digest covers only the rendered projection. Grades, graders, pramāṇas and `measured_by:` links are not rendered, so they change in the vault without disturbing a frozen packet; the change surfaces only if it now trips a gate, as `NoLongerFreezable` — otherwise `Verified` | **confirmed in source** |
 | 9 | The loader silently degrades malformed edge metadata: an unknown attribute key, an invalid `grade=` and a misspelt `via=` are dropped without a diagnostic. `via=percpetion` removes the pramāṇa ceiling; a mangled `grade=` removes review semantics and trips no lint — the same shape as the `quantifier: all` finding above, one layer down | **confirmed in source** |

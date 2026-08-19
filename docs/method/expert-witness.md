@@ -128,9 +128,8 @@ deliverable is **compiled from the record**, never authored beside it — stated
 [`claim-grading.md` §8](claim-grading.md) and mapped onto the machinery in
 [`../architecture.md` §1](../architecture.md). `peira verify` then re-derives the packet from the
 vault and compares digests, so drift that reaches the rendered body announces itself — within two
-limits established by audit: fields the packet does not render (grades, graders, instrument links)
-change no digest, and a packet whose `Packet format:` line was edited returns no verdict rather
-than a mismatch. See [`../architecture.md`](../architecture.md), defects 6 and 8.
+limit established by audit: fields the packet does not render (grades, graders, instrument links)
+change no digest. See [`../architecture.md`](../architecture.md), defect 8.
 
 **A known limit, found by an adversarial audit and confirmed in the source:** the rendered
 statement quotes the author-written term fields — `as_used`, `not_essence`, `stipulated` —
