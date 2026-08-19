@@ -1157,6 +1157,86 @@ otherwise the assertion below measures grooming, which is how this test passed b
         );
     }
 
+    /// Another author's words must not decide this packet's fate — by any spelling.
+    ///
+    /// A rival's title is an assertion its own author wrote and the subject cannot
+    /// edit. `defeat_block` settled this: quote it, flag it, say plainly it is not
+    /// adopted, and report the finding against the node whose author can fix it.
+    /// `standing_line` settled it again for withdrawn attackers.
+    ///
+    /// The `## Contradicting` section was the third door. Spelled `attacks:` the rival
+    /// was disclosed and the packet froze; spelled `contradicts:` — the same words, the
+    /// same node — the victim was blocked for saying "guilty". Same content must not
+    /// change outcome by edge spelling, which is this project's rule about synonyms.
+    #[test]
+    fn a_rival_cannot_block_the_packet_it_is_quoted_in() {
+        let build = |kind: EdgeKind| {
+            let mut g = clean_graph();
+            g.insert_node(node(
+                "---\nid: rival\ntype: claim\ntitle: The suspect is guilty of unauthorised access\n\
+corners:\n  - it was catalogued\n  - it was not catalogued\n  - both mechanisms ran\n  - the question does not arise\n---\n",
+            ));
+            g.insert_edge(Edge::new(NodeId::new("rival"), NodeId::new("c1"), kind));
+            // The rival must itself be answered, or c1 leaves the grounded extension and
+            // freeze refuses for that instead — which would make this test measure
+            // standing rather than prose.
+            g.insert_node(node(
+                "---\nid: rk\ntype: claim\ntitle: The rival account does not fit the host timeline\n---\n",
+            ));
+            g.insert_edge(Edge::new(
+                NodeId::new("rk"),
+                NodeId::new("rival"),
+                EdgeKind::Attacks,
+            ));
+            // c1 becomes contested by either spelling, so answer 四句 in both arms —
+            // otherwise the arms differ for a reason that has nothing to do with prose.
+            g.insert_node(node(
+                "---\nid: c1\ntype: claim\ntitle: The hive catalogued the file at that path\n\
+warrant: A catalogue entry evidences that the path was recorded.\n\
+quantifier: singular\naspect: function\ncausal_rung: association\n\
+boundaries:\n  - Windows 10 1809 and later\n\
+falsifier:\n  - an entry shown to be written without the path ever being present\n\
+corners:\n  - it was catalogued\n  - it was not catalogued\n  - catalogued under one mechanism and not another\n  - the question does not arise\n---\n",
+            ));
+            freeze(&g, &NodeId::new("c1"))
+        };
+
+        let via_attacks = build(EdgeKind::Attacks);
+        let via_contradicts = build(EdgeKind::Contradicts);
+        let via_limits = build(EdgeKind::Limits);
+
+        assert!(
+            via_attacks.is_ok(),
+            "control: the disclosed-rival path already freezes — {:?}",
+            via_attacks.as_ref().err()
+        );
+        assert!(
+            via_contradicts.is_ok(),
+            "the same words under a different edge kind must not block the victim: {:?}",
+            via_contradicts.as_ref().err()
+        );
+        assert!(
+            via_limits.is_ok(),
+            "nor under a third: {:?}",
+            via_limits.as_ref().err()
+        );
+
+        for (what, p) in [
+            ("attacks", via_attacks.unwrap()),
+            ("contradicts", via_contradicts.unwrap()),
+            ("limits", via_limits.unwrap()),
+        ] {
+            assert!(
+                !p.body.contains("guilty"),
+                "{what}: the flagged verdict must not be printed verbatim into a court artifact"
+            );
+            assert!(
+                p.body.contains("rival"),
+                "{what}: but the rival must still be NAMED — withholding the words is not hiding the node"
+            );
+        }
+    }
+
     /// The closure covers everything the packet RENDERS, not only what it rests on.
     ///
     /// `freeze` renders nodes reached by `Contradicts` and `Limits` under their own
