@@ -260,6 +260,46 @@ impl Graph {
 #[cfg(test)]
 mod tests {
 
+    /// Reference material does not compete.
+    ///
+    /// `NodeKind::is_argument` says so in as many words — "a `Term` or `Criterion` is
+    /// reference material: it is *used by* arguments and never competes with them" —
+    /// and `grounded_extension` honours it when choosing CANDIDATES. The attack
+    /// relation did not, so a term carrying `contradicts:` defeated a claim that no
+    /// argument opposed, and no gate or lint said a word about it.
+    #[test]
+    fn a_term_cannot_defeat_a_claim() {
+        use crate::{Edge, EdgeKind, NodeId};
+        let mk = |id: &str, kind: &str| {
+            crate::parse_node(&format!("---\nid: {id}\ntype: {kind}\ntitle: t\n---\n"))
+                .expect("fixture parses")
+        };
+        let build = |attacker_kind: &str| {
+            let mut g = Graph::new();
+            g.insert_node(mk("c1", "claim"));
+            g.insert_node(mk("x1", attacker_kind));
+            g.insert_edge(Edge::new(
+                NodeId::new("x1"),
+                NodeId::new("c1"),
+                EdgeKind::Contradicts,
+            ));
+            g.is_grounded(&NodeId::new("c1"))
+        };
+
+        assert!(
+            !build("claim"),
+            "positive control: an unanswered claim-attack does defeat c1"
+        );
+        assert!(
+            build("term"),
+            "a term is reference material and cannot compete, so c1 stands"
+        );
+        assert!(
+            build("criterion"),
+            "nor can a criterion"
+        );
+    }
+
     /// A retraction cycle must not make the answer depend on the rest of the vault.
     ///
     /// `withdrawn()` recomputed its set from scratch each pass, so it shrank as it grew
