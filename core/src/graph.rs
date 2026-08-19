@@ -163,6 +163,15 @@ impl Graph {
             .collect()
     }
 
+    /// Whether `id` names a node that can argue at all.
+    ///
+    /// A missing node is NOT an argument: a dangling attack edge must not silently
+    /// confer standing on whatever it points at.
+    #[must_use]
+    pub fn is_argument_node(&self, id: &NodeId) -> bool {
+        self.node(id).is_some_and(|n| n.kind.is_argument())
+    }
+
     fn attackers(&self) -> BTreeMap<NodeId, Vec<NodeId>> {
         // A withdrawn claim is not a participant in the dispute. Letting it attack and
         // then be defeated would be wrong twice over: it never had standing to argue,
@@ -172,11 +181,21 @@ impl Graph {
         let withdrawn = self.withdrawn();
 
         let mut map: BTreeMap<NodeId, Vec<NodeId>> = BTreeMap::new();
-        for edge in self
-            .edges
-            .iter()
-            .filter(|e| e.kind.is_attack() && !withdrawn.contains(&e.from))
-        {
+        for edge in self.edges.iter().filter(|e| {
+            e.kind.is_attack()
+                && !withdrawn.contains(&e.from)
+                // REFERENCE MATERIAL DOES NOT COMPETE. `is_argument` says so, and
+                // `grounded_extension` already honours it when choosing candidates —
+                // but the relation itself did not, so a term carrying `contradicts:`
+                // defeated a claim no argument opposed. A rule enforced on one side of
+                // a join is a rule the other side ignores.
+                //
+                // Silently dropping the edge would be the swallow this project forbids,
+                // so `PEIR-LINT-NON-ARGUMENT-ATTACK` reports it against the node whose
+                // author wrote it.
+                && self.is_argument_node(&e.from)
+                && self.is_argument_node(&e.to)
+        }) {
             map.entry(edge.to.clone())
                 .or_default()
                 .push(edge.from.clone());
@@ -294,10 +313,7 @@ mod tests {
             build("term"),
             "a term is reference material and cannot compete, so c1 stands"
         );
-        assert!(
-            build("criterion"),
-            "nor can a criterion"
-        );
+        assert!(build("criterion"), "nor can a criterion");
     }
 
     /// A retraction cycle must not make the answer depend on the rest of the vault.

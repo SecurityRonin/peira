@@ -30,6 +30,9 @@ pub const UNGROUNDED_CHAIN: &str = "PEIR-LINT-UNGROUNDED-CHAIN";
 pub const RETRACTED: &str = "PEIR-LINT-RETRACTED";
 /// An instrument nobody has shown to work.
 pub const UNCONTROLLED_INSTRUMENT: &str = "PEIR-LINT-UNCONTROLLED-INSTRUMENT";
+
+/// An attack edge whose author or target cannot argue.
+pub const NON_ARGUMENT_ATTACK: &str = "PEIR-LINT-NON-ARGUMENT-ATTACK";
 /// Support nobody has weighed.
 pub const UNGRADED_SUPPORT: &str = "PEIR-LINT-UNGRADED-SUPPORT";
 /// A finding that decides the ultimate issue — the tribunal's question, not the expert's.
@@ -809,6 +812,43 @@ verbatim into the packet"
 }
 
 /// References that go nowhere.
+/// An attack edge that the grounded extension will not honour.
+///
+/// A `term` or `criterion` is reference material — `is_argument` says so — so an attack
+/// edge touching one is discarded from the relation. Discarding it SILENTLY is the
+/// swallow this project forbids: the author wrote a move they believe is in play, and
+/// the vault would go on quietly ignoring it. Say what was dropped, and why.
+fn non_argument_attacks(graph: &Graph) -> Vec<Violation> {
+    graph
+        .edges()
+        .filter(|e| e.kind.is_attack())
+        .filter(|e| !graph.is_argument_node(&e.from) || !graph.is_argument_node(&e.to))
+        .filter(|e| graph.node(&e.from).is_some() && graph.node(&e.to).is_some())
+        .map(|e| {
+            let (which, id) = if graph.is_argument_node(&e.from) {
+                ("target", &e.to)
+            } else {
+                ("source", &e.from)
+            };
+            let kind = graph
+                .node(id)
+                .map_or_else(|| "?".to_owned(), |n| n.kind.to_string());
+            violation(
+                NON_ARGUMENT_ATTACK,
+                &e.from,
+                format!(
+                    "`{}` attacks `{}`, but its {which} `{id}` is a `{kind}` — reference \
+material is used by arguments and does not compete with them, so this edge is \
+DISCARDED from the grounded extension",
+                    e.from, e.to
+                ),
+                "attack from a claim, hypothesis, observation or dissent — or record the \
+disagreement as a claim that cites the term, rather than as the term itself",
+            )
+        })
+        .collect()
+}
+
 fn dangling_edges(graph: &Graph) -> Vec<Violation> {
     graph
         .dangling_edges()
@@ -1273,6 +1313,7 @@ is not corroboration",
 #[must_use]
 pub fn lint(graph: &Graph) -> Vec<Violation> {
     let mut out = dangling_edges(graph);
+    out.extend(non_argument_attacks(graph));
     out.extend(unreviewed_grades(graph));
     out.extend(self_graded(graph));
     for node in graph.nodes() {
@@ -1352,6 +1393,40 @@ stipulated: the entry proves the suspect executed the binary\n---\n",
 
     /// Negation is scoped to a CLAUSE, not a sentence.
     ///
+    /// A discarded edge is reported, never swallowed.
+    ///
+    /// The grounded extension drops an attack whose source or target is reference
+    /// material, because reference material does not compete. The author wrote a move
+    /// they believe is in play; leaving it silently ignored is the swallow this project
+    /// forbids, and it hides the reason their claim did not fall.
+    #[test]
+    fn an_attack_from_reference_material_is_reported() {
+        let g = graph_of(
+            vec![
+                node("---\nid: c1\ntype: claim\ntitle: A catalogue entry was recorded\n---\n"),
+                node(
+                    "---\nid: 60.01\ntype: term\ntitle: presence\nas_used: on the system\n\
+not_essence: a record is not the file\nstipulated: the OS recorded this path\n---\n",
+                ),
+            ],
+            vec![Edge::new(
+                NodeId::new("60.01"),
+                NodeId::new("c1"),
+                EdgeKind::Contradicts,
+            )],
+        );
+        let found: Vec<Violation> = lint(&g)
+            .into_iter()
+            .filter(|v| v.gate == NON_ARGUMENT_ATTACK)
+            .collect();
+        assert_eq!(found.len(), 1, "the discarded edge must be named");
+        assert!(
+            found[0].detail.contains("term") && found[0].detail.contains("DISCARDED"),
+            "and it must say what was dropped and why: {}",
+            found[0].detail
+        );
+    }
+
     /// A retraction that has itself been retracted does not bind.
     ///
     /// `Graph::withdrawn()` is a fixed point precisely because retractions can be
