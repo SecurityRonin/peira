@@ -1333,6 +1333,129 @@ stipulated: the entry proves the suspect executed the binary\n---\n",
 
     /// Negation is scoped to a CLAUSE, not a sentence.
     ///
+    /// One negation rule, not two — and the verb lint had the losing copy.
+    ///
+    /// `clause_negated` checks EVERY occurrence within its own clause. `is_negated`
+    /// checked whichever occurrence `find()` reached first, with a six-word lookback
+    /// that walked straight through commas and conjunctions. The forbidden-verb lint
+    /// used the second, so one hedged mention licensed every later unhedged one — an
+    /// author writes "this does not conclusively record the path", then says what they
+    /// meant, and the packet seals the verdict.
+    ///
+    /// Asserted through `lint`, never through the predicate: the last time a check like
+    /// this was verified by calling the function directly, the join was what was broken.
+    #[test]
+    fn an_earlier_hedge_does_not_excuse_a_later_verdict() {
+        let fired = |body: &str| {
+            let g = graph_of(
+                vec![node(&format!(
+                    "---\nid: c1\ntype: claim\ntitle: A catalogue entry was recorded\n---\n\n{body}\n"
+                ))],
+                vec![],
+            );
+            lint(&g)
+                .into_iter()
+                .filter(|v| v.gate == FORBIDDEN_VERB)
+                .count()
+        };
+
+        assert_eq!(
+            fired("The entry conclusively shows the program ran."),
+            1,
+            "positive control: an unhedged intensifier must fire on its own"
+        );
+        assert_eq!(
+            fired(
+                "The hive does not conclusively record the path.\n                 The entry conclusively shows the program ran."
+            ),
+            1,
+            "an earlier NEGATED occurrence must not excuse the later bare one"
+        );
+        assert_eq!(
+            fired("This does not prove execution, but the entry proves that the program ran."),
+            1,
+            "a six-word lookback reached past the comma and the `but` into the previous clause"
+        );
+        assert_eq!(
+            fired("The hive does not conclusively record the path."),
+            0,
+            "a genuinely hedged sentence stays permitted — the point of the check"
+        );
+    }
+
+    /// A bare auxiliary is not a negator.
+    ///
+    /// `does` sat in NEGATORS beside `not`, `never` and `cannot`. Every NEGATING form of
+    /// it — "does not", "doesn't" — was already covered by those entries, so the bare
+    /// word contributed nothing except reading a plain affirmative as a denial. "The
+    /// metadata does establish that the entry was forged" is as flat a verdict as the
+    /// same sentence without the auxiliary.
+    #[test]
+    fn a_bare_auxiliary_does_not_negate() {
+        let fired = |title: &str| {
+            let g = graph_of(
+                vec![node(&format!(
+                    "---\nid: c1\ntype: claim\ntitle: {title}\n---\n"
+                ))],
+                vec![],
+            );
+            lint(&g)
+                .into_iter()
+                .filter(|v| v.gate == "PEIR-LINT-LEGAL-CONCLUSION")
+                .count()
+        };
+
+        assert_eq!(
+            fired("The metadata shows the respondent is liable for the loss"),
+            1,
+            "positive control"
+        );
+        assert_eq!(
+            fired("The metadata does show the respondent is liable for the loss"),
+            1,
+            "`does` is an emphatic auxiliary here, and the verdict is unqualified"
+        );
+        assert_eq!(
+            fired("The metadata does not show the respondent is liable for the loss"),
+            0,
+            "the negating form still reads as negated — `not` carries it, as it always did"
+        );
+    }
+
+    /// A negator can follow the word it governs.
+    ///
+    /// "proves nothing about execution" is a DENIAL, and refusing it punishes the exact
+    /// sentence the discipline asks an expert to write. Only the object position is
+    /// read — the word immediately after the verb — because scanning the whole clause
+    /// would excuse "proves that the file was not present", where the negator governs
+    /// something else entirely.
+    #[test]
+    fn a_negator_in_the_object_position_negates_the_verb() {
+        let fired = |body: &str| {
+            let g = graph_of(
+                vec![node(&format!(
+                    "---\nid: c1\ntype: claim\ntitle: A catalogue entry was recorded\n---\n\n{body}\n"
+                ))],
+                vec![],
+            );
+            lint(&g)
+                .into_iter()
+                .filter(|v| v.gate == FORBIDDEN_VERB)
+                .count()
+        };
+
+        assert_eq!(
+            fired("The entry proves nothing about execution."),
+            0,
+            "a denial, and the careful form of it"
+        );
+        assert_eq!(
+            fired("The entry proves that the file was not present on the volume."),
+            1,
+            "the negator governs the object clause, not the verb — still a claim to have proved something"
+        );
+    }
+
     /// Sentence-level negation was the right instinct for the wrong reason: it asked
     /// *does a negator appear* rather than *does the negator govern this word*. So
     /// appending any negated clause switched the check off — and the appended clause in
