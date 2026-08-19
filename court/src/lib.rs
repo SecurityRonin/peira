@@ -238,7 +238,7 @@ fn bullet_list(nodes: &[&Node], empty: &str) -> String {
         return format!("  {empty}\n");
     }
     nodes.iter().fold(String::new(), |mut acc, n| {
-        let _ = writeln!(acc, "  - [{}] {}", n.id, quote_authored(&n.title));
+        let _ = writeln!(acc, "  - [{}] {}", n.id, foreign_title(n));
         acc
     })
 }
@@ -264,13 +264,16 @@ fn defeat_block(graph: &Graph, claim: &Node) -> String {
             // your own packet unremarked is not acceptable either, so it is DISCLOSED:
             // the reader is told the phrase is quoted and flagged, and `peira lint`
             // reports it against the node whose author can fix it.
-            let flagged = !lints::prose_findings_in(&n.title, &n.id).is_empty();
-            let note = if flagged {
-                " — on record as an attack; ITS OWN PROSE IS FLAGGED, and it is quoted here, not adopted"
-            } else {
-                " — on record as an attack"
-            };
-            let _ = writeln!(out, "  - [{}] {}{note}", n.id, quote_authored(&n.title));
+            // WITHHELD, not annotated. This used to quote a flagged rival with a note
+            // saying it was not adopted — but the packet is what a tribunal reads, and
+            // an ultimate-issue verdict printed inside it is in front of them however
+            // it is captioned. `foreign_title` names the node and points at the lint.
+            let _ = writeln!(
+                out,
+                "  - [{}] {} — on record as an attack",
+                n.id,
+                foreign_title(n)
+            );
         }
     }
     if out.is_empty() {
@@ -310,6 +313,30 @@ fn quote_authored(s: &str) -> String {
         })
         .collect::<Vec<_>>()
         .join("\n")
+}
+
+/// Another author's title, rendered so it cannot punish the node quoting it.
+///
+/// A rival's, limiter's or contradictor's prose is written by someone the subject
+/// cannot edit. Rendering it raw put it in the region `freeze` scans, so the subject
+/// was refused for words that were never theirs — and the finding landed on the wrong
+/// author, who could do nothing about it.
+///
+/// Disclosure over refusal, the same answer this file already reached twice: name the
+/// node, withhold the flagged words, and point at the lint that reports them against
+/// the author who can fix them. Withholding the words is not hiding the node.
+///
+/// ONE function, because this was fixed in `defeat_block`, fixed again in
+/// `standing_line`, and arrived a third time through the `## Contradicting` section.
+fn foreign_title(n: &Node) -> String {
+    if lints::prose_findings_in(&n.title, &n.id).is_empty() {
+        quote_authored(&n.title)
+    } else {
+        format!(
+            "(title withheld — its own prose is flagged; see `peira lint {}`)",
+            n.id
+        )
+    }
 }
 
 /// The attacks on `id` that were WITHDRAWN rather than answered.
@@ -396,17 +423,7 @@ relying on it.",
         // lifecycle state.
         let names = withdrawn_attacks
             .iter()
-            .map(|n| {
-                let flagged = !lints::prose_findings_in(&n.title, &n.id).is_empty();
-                if flagged {
-                    format!(
-                        "[{}] (title withheld — its own prose is flagged; see `peira lint {}`)",
-                        n.id, n.id
-                    )
-                } else {
-                    format!("[{}] {}", n.id, quote_authored(&n.title))
-                }
-            })
+            .map(|n| format!("[{}] {}", n.id, foreign_title(n)))
             .collect::<Vec<_>>()
             .join("; ");
         format!(
@@ -1243,6 +1260,12 @@ corners:\n  - it was catalogued\n  - it was not catalogued\n  - catalogued under
     /// headings, and the closure followed only `Supports` and `UsesTerm` — so a legal
     /// conclusion on a limiter printed verbatim into a court artifact while `peira lint`
     /// reported it happily elsewhere.
+    ///
+    /// THE REMEDY CHANGED, and the concern did not. This test used to require a
+    /// REFUSAL, which punished the subject for prose another author wrote and they
+    /// could not edit — the same defect, in the other direction. Withholding the
+    /// flagged words satisfies the original worry more exactly than refusing did: the
+    /// conclusion still never reaches the artifact, and the packet still freezes.
     #[test]
     fn a_packet_answers_for_the_limiters_and_rivals_it_prints() {
         let mut g = clean_graph();
@@ -1254,11 +1277,17 @@ corners:\n  - it was catalogued\n  - it was not catalogued\n  - catalogued under
             NodeId::new("c1"),
             EdgeKind::Limits,
         ));
-        let err = freeze(&g, &NodeId::new("c1"))
-            .expect_err("a packet rendering a limiter that decides the ultimate issue must refuse");
+        let p = freeze(&g, &NodeId::new("c1"))
+            .expect("the subject is not answerable for a limiter's prose");
         assert!(
-            err.to_string().contains("guilty"),
-            "the refusal must quote what would have been printed: {err}"
+            !p.body.contains("guilty"),
+            "the ultimate issue must not print verbatim into a court artifact:\n{}",
+            p.body
+        );
+        assert!(
+            p.body.contains("lim") && p.body.contains("peira lint lim"),
+            "and the reader must be told which node was withheld, and where to read it:\n{}",
+            p.body
         );
     }
 
