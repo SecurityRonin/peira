@@ -145,7 +145,10 @@ impl Verification {
 /// would report `DigestMismatch`, which is an accusation, when the truth is that the
 /// renderer changed underneath them. A body change that did not bump it would be the
 /// silent case this exists to remove.
-pub const PACKET_FORMAT: u32 = 2;
+///
+/// **3** — stated falsifiers gained the `FALSIFIER_FRAME` prefix, so a defeat line
+/// keeps its conditional sense once quoted away from the heading.
+pub const PACKET_FORMAT: u32 = 3;
 
 /// The prefix carried by every STATED falsifier in a packet's defeat section.
 ///
@@ -249,7 +252,9 @@ fn bullet_list(nodes: &[&Node], empty: &str) -> String {
 fn defeat_block(graph: &Graph, claim: &Node) -> String {
     let mut out = String::new();
     for f in claim.field_list("falsifier") {
-        let _ = writeln!(out, "  - {}", quote_authored(f));
+        // The frame travels with the line. See `FALSIFIER_FRAME`: what a reader
+        // finally reads is the sentence somebody lifted OUT of this section.
+        let _ = writeln!(out, "  - {FALSIFIER_FRAME} {}", quote_authored(f));
     }
     for e in graph.edges_to(&claim.id).filter(|e| e.kind.is_attack()) {
         if let Some(n) = graph.node(&e.from) {
@@ -633,8 +638,12 @@ pub fn freeze(graph: &Graph, id: &NodeId) -> Result<Packet, PacketError> {
     // AN EARLIER VERSION OF THIS COMMENT CLAIMED A BACKSTOP THAT DOES NOT EXIST: it said
     // overstatement in a falsifier is "still caught by the node-level lint on title and
     // body". `falsifier:` is a frontmatter field, so it is neither. Nothing checks it,
-    // and that is the accepted cost of not punishing the disclosure — the section
-    // heading is the frame a reader has, and it is the only one.
+    // and that is the accepted cost of not punishing the disclosure.
+    //
+    // WHAT THE COST IS NOW, exactly: an author can still seal any sentence here
+    // unexamined. What changed is that the sentence can no longer be mistaken for a
+    // finding by a reader who meets it alone — `FALSIFIER_FRAME` rides on the line
+    // itself rather than on the heading above it. Unscanned, but not unframed.
     let asserted: String = body
         .split("\n## ")
         .filter(|s| !s.starts_with("What would defeat this"))
@@ -1283,6 +1292,16 @@ aspect: function\n---\n",
             p.body
                 .contains("Catalogued without the path ever being present"),
             "an attack edge satisfied the gate but the attacker is not named:\n{}",
+            p.body
+        );
+        // The other half of the framing property, so that disjunct is not merely
+        // asserted in `a_defeat_line_carries_its_frame_out_of_the_section` but reached:
+        // a rival's title is quoted here, and quoting it without saying so adopts it.
+        assert!(
+            p.body.contains(
+                "Catalogued without the path ever being present — on record as an attack"
+            ),
+            "the attacker's title is quoted without the note that frames it:\n{}",
             p.body
         );
     }
