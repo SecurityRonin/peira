@@ -6,7 +6,7 @@
 //! nodes and edges all day and never assert that anything is accepted.
 
 use clap::{Parser, Subcommand};
-use peira_core::{EdgeKind, Graph, NodeId};
+use peira_core::{Graph, NodeId};
 use peira_court::Verification;
 use peira_lens::{examine_graph, lints, Violation, CATALOG};
 use std::{
@@ -130,16 +130,12 @@ fn report(violations: &[Violation], what: &str) -> u8 {
 /// the difference is the whole of what a reader needs. The packet discloses it; a
 /// status line that disagreed with the packet would be the drift this file already
 /// deleted once.
+/// Delegated, never re-derived. This was a direct-edge test while court used the
+/// `Graph::withdrawn()` fixed point, so `status` and `packet` gave opposite accounts of
+/// the same restored attack. Two implementations of one question is how a checker and
+/// the thing it checks drift apart — the same seam `blocking_for` already closes.
 fn withdrawn_attacks(graph: &Graph, id: &NodeId) -> usize {
-    graph
-        .edges_to(id)
-        .filter(|e| e.kind.is_attack())
-        .filter(|e| {
-            graph
-                .edges_to(&e.from)
-                .any(|r| matches!(r.kind, EdgeKind::Retracts | EdgeKind::Supersedes))
-        })
-        .count()
+    peira_court::withdrawn_attacks(graph, id).len()
 }
 
 /// Everything blocking one node — the same question `freeze` asks, asked once.
@@ -473,7 +469,7 @@ fn main() -> ExitCode {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use peira_core::{parse_node, Edge, Node};
+    use peira_core::{parse_node, Edge, EdgeKind, Node};
 
     fn node(src: &str) -> Node {
         parse_node(src).expect("fixture parses")

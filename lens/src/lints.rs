@@ -945,16 +945,34 @@ fn retracted(graph: &Graph, node: &Node) -> Vec<Violation> {
     // retention the design requires — and counting its own incoming support as "still
     // cited" made the comment below false: every properly retained history fired
     // forever. What matters is whether the withdrawn node is holding something ELSE up.
-    let still_cited = graph.edges_from(&node.id).any(|e| {
-        e.kind == EdgeKind::Supports || e.kind == EdgeKind::DependsOn || e.kind.is_attack()
-    });
-    if !still_cited {
+    // DIRECTION. `X depends_on Y` is an edge from X to Y, so the OUTGOING direction
+    // asks what this node leans on — the opposite question. What makes it load-bearing
+    // is what leans on IT, and reading the wrong way meant a fully-groomed withdrawn
+    // prerequisite reported nothing at all while a claim declaring it could not hold
+    // without that prerequisite froze cleanly.
+    let holds_something_up = graph
+        .edges_from(&node.id)
+        .any(|e| e.kind == EdgeKind::Supports || e.kind.is_attack())
+        || graph
+            .edges_to(&node.id)
+            .any(|e| e.kind == EdgeKind::DependsOn);
+    if !holds_something_up {
+        return Vec::new();
+    }
+
+    // `Graph::withdrawn()`, not a direct-edge test — the same fixed point court reads.
+    // A retraction that has itself been retracted does not bind, and asking merely
+    // whether an incoming retraction EXISTS blocked a live supporter forever with a
+    // message the vault's own semantics call false.
+    let withdrawn = graph.withdrawn();
+    if !withdrawn.contains(&node.id) {
         return Vec::new();
     }
 
     graph
         .edges_to(&node.id)
         .filter(|e| matches!(e.kind, EdgeKind::Retracts | EdgeKind::Supersedes))
+        .filter(|e| !withdrawn.contains(&e.from))
         .map(|e| {
             let (verb, remedy) = if e.kind == EdgeKind::Retracts {
                 (

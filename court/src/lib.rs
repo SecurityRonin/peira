@@ -312,6 +312,26 @@ fn quote_authored(s: &str) -> String {
         .join("\n")
 }
 
+/// The attacks on `id` that were WITHDRAWN rather than answered.
+///
+/// Public because three places asked this and two asked it wrongly. `Graph::withdrawn()`
+/// is a fixed point: a retraction that has itself been retracted does not bind, so the
+/// attack it named is live again. A direct-edge test — "does an incoming retraction
+/// exist" — counts it as withdrawn anyway, and that is what `peira status` did while
+/// this file did the other thing, on the same vault, in the same run.
+///
+/// One implementation, so there is nothing left to disagree with.
+#[must_use]
+pub fn withdrawn_attacks<'g>(graph: &'g Graph, id: &NodeId) -> Vec<&'g Node> {
+    let withdrawn = graph.withdrawn();
+    graph
+        .edges_to(id)
+        .filter(|e| e.kind.is_attack())
+        .filter(|e| withdrawn.contains(&e.from))
+        .filter_map(|e| graph.node(&e.from))
+        .collect()
+}
+
 /// The standing line, and what it must not claim.
 ///
 /// An attack REMOVED because it was withdrawn was not DEFEATED, and saying so would be
@@ -329,12 +349,7 @@ fn standing_line(graph: &Graph, id: &NodeId) -> String {
     // non-monotone defect fixed in `core` and never propagated here; a fix that does not
     // reach its copies is barely a fix.
     let withdrawn = graph.withdrawn();
-    let withdrawn_attacks: Vec<&Node> = graph
-        .edges_to(id)
-        .filter(|e| e.kind.is_attack())
-        .filter(|e| withdrawn.contains(&e.from))
-        .filter_map(|e| graph.node(&e.from))
-        .collect();
+    let withdrawn_attacks = withdrawn_attacks(graph, id);
 
     // The SUBJECT's own lifecycle. A claim withdrawn and then restored froze into a
     // packet mentioning neither event, though both are material to anyone weighing it —
@@ -1087,16 +1102,43 @@ withdrawn — this used a direct-edge test instead of the fixed point: {line}"
     /// cannot hold without c2 froze cleanly while the vault recorded c2 as withdrawn.
     #[test]
     fn a_packet_answers_for_the_prerequisites_it_declares() {
-        let mut g = clean_graph();
-        g.insert_node(node(
-            "---\nid: c2\ntype: claim\ntitle: The prerequisite finding\n---\n",
+        // GROOMED. The prerequisite used to be a bare `title:` line, so it drew eight
+        // unrelated findings and `freeze` refused for those instead — the test named
+        // withdrawal and measured grooming, and no withdrawal finding was raised at
+        // all. It passed for four audit rounds while the behaviour it names did not
+        // occur. The control below is the point: without the retraction this freezes.
+        let groomed = "---\nid: c2\ntype: claim\ntitle: The prerequisite finding\n\
+warrant: The register records the entry, and licenses nothing beyond that.\n\
+quantifier: singular\naspect: function\ncausal_rung: association\n\
+no_terms_of_art: true\n\
+boundaries:\n  - Windows 10 1809 and later\n\
+falsifier:\n  - a register shown to record entries that were never written\n---\n";
+
+        let mut clean = clean_graph();
+        clean.insert_node(node(groomed));
+        clean.insert_node(node(
+            "---\nid: o2\ntype: observation\ntitle: the register entry is present\n\
+aspect: function\n---\n",
         ));
+        clean.insert_edge(
+            Edge::new(NodeId::new("o2"), NodeId::new("c2"), EdgeKind::Supports)
+                .graded_by(Grade::G2, "a-reviewer")
+                .via(Pramana::Perception),
+        );
+        clean.insert_edge(
+            Edge::new(NodeId::new("c1"), NodeId::new("c2"), EdgeKind::DependsOn)
+                .graded_by(Grade::G2, "a-reviewer")
+                .via(Pramana::Inference),
+        );
+        assert!(
+            freeze(&clean, &NodeId::new("c1")).is_ok(),
+            "control: with the prerequisite groomed and NOT withdrawn, c1 must freeze — \
+otherwise the assertion below measures grooming, which is how this test passed before: {:?}",
+            freeze(&clean, &NodeId::new("c1")).err()
+        );
+
+        let mut g = clean;
         g.insert_node(node("---\nid: d1\ntype: dissent\ntitle: withdrawn\n---\n"));
-        g.insert_edge(Edge::new(
-            NodeId::new("c1"),
-            NodeId::new("c2"),
-            EdgeKind::DependsOn,
-        ));
         g.insert_edge(Edge::new(
             NodeId::new("d1"),
             NodeId::new("c2"),
@@ -1104,9 +1146,14 @@ withdrawn — this used a direct-edge test instead of the fixed point: {line}"
         ));
         let err = freeze(&g, &NodeId::new("c1"))
             .expect_err("a claim may not freeze over a prerequisite the record withdraws");
+        let msg = err.to_string();
         assert!(
-            err.to_string().contains("c2"),
-            "the refusal must name the prerequisite: {err}"
+            msg.contains("c2"),
+            "the refusal must name the prerequisite: {msg}"
+        );
+        assert!(
+            msg.contains("RETRACTED"),
+            "and it must refuse for the WITHDRAWAL, not for some unrelated finding: {msg}"
         );
     }
 
