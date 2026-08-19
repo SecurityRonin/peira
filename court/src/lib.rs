@@ -147,6 +147,16 @@ impl Verification {
 /// silent case this exists to remove.
 pub const PACKET_FORMAT: u32 = 2;
 
+/// The prefix carried by every STATED falsifier in a packet's defeat section.
+///
+/// A heading frames the lines beneath it only while they stay beneath it. The one
+/// place a falsifier is read is the place it has been lifted out of — a submission, a
+/// letter, a slide — and there the heading is gone while the sentence remains.
+///
+/// Public because a reader parsing packets needs to know which prefix is the renderer's
+/// and which words are the author's.
+pub const FALSIFIER_FRAME: &str = "Would defeat this claim:";
+
 /// A frozen citation packet.
 #[non_exhaustive]
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -1275,6 +1285,38 @@ aspect: function\n---\n",
             "an attack edge satisfied the gate but the attacker is not named:\n{}",
             p.body
         );
+    }
+
+    /// Every line of the defeat section must carry its own frame.
+    ///
+    /// The section heading is the only thing telling a reader that these are
+    /// conditions which WOULD defeat the claim rather than things asserted about the
+    /// world — and a heading does not travel. Lifted into a skeleton argument or an
+    /// email, `- the transfer was fraudulent` is indistinguishable from a finding.
+    ///
+    /// The attack bullets already solved this, one loop below in the same function:
+    /// each ends "— on record as an attack", so the disclosure survives quotation.
+    /// The stated falsifiers were the lines that did not.
+    #[test]
+    fn a_defeat_line_carries_its_frame_out_of_the_section() {
+        let g = clean_graph();
+        let p = freeze(&g, &NodeId::new("c1")).expect("clean claim should freeze");
+        let section = p
+            .body
+            .split("\n## ")
+            .find(|s| s.starts_with("What would defeat this"))
+            .expect("the defeat section renders");
+        let bullets: Vec<&str> = section
+            .lines()
+            .filter(|l| l.trim_start().starts_with("- "))
+            .collect();
+        assert!(!bullets.is_empty(), "no bullets to check:\n{section}");
+        for line in bullets {
+            assert!(
+                line.contains(FALSIFIER_FRAME) || line.contains("on record as an attack"),
+                "this line reads as an assertion once quoted away from the heading:\n{line}"
+            );
+        }
     }
 
     #[test]
