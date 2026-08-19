@@ -1334,6 +1334,78 @@ stipulated: the entry proves the suspect executed the binary\n---\n",
 
     /// Negation is scoped to a CLAUSE, not a sentence.
     ///
+    /// A retraction that has itself been retracted does not bind.
+    ///
+    /// `Graph::withdrawn()` is a fixed point precisely because retractions can be
+    /// lifted. The lint asked the pre-fix question — "does an incoming retraction
+    /// exist" — so a supporter whose withdrawal was lifted blocked its claim forever,
+    /// with a message the vault's own semantics call false. Third copy of one fix.
+    #[test]
+    fn a_lifted_retraction_does_not_block() {
+        let build = |lift: bool| {
+            let mut nodes = vec![
+                node("---\nid: c1\ntype: claim\ntitle: A catalogue entry was recorded\n---\n"),
+                node("---\nid: o1\ntype: observation\ntitle: the entry is present\n---\n"),
+                node("---\nid: d1\ntype: dissent\ntitle: the observation was withdrawn\n---\n"),
+            ];
+            let mut edges = vec![
+                Edge::new(NodeId::new("o1"), NodeId::new("c1"), EdgeKind::Supports),
+                Edge::new(NodeId::new("d1"), NodeId::new("o1"), EdgeKind::Retracts),
+            ];
+            if lift {
+                nodes.push(node(
+                    "---\nid: d2\ntype: dissent\ntitle: that withdrawal was itself withdrawn\n---\n",
+                ));
+                edges.push(Edge::new(
+                    NodeId::new("d2"),
+                    NodeId::new("d1"),
+                    EdgeKind::Retracts,
+                ));
+            }
+            lint(&graph_of(nodes, edges))
+                .into_iter()
+                .filter(|v| v.gate == RETRACTED)
+                .count()
+        };
+
+        assert_eq!(
+            build(false),
+            1,
+            "positive control: a binding retraction is reported"
+        );
+        assert_eq!(
+            build(true),
+            0,
+            "d1 is itself withdrawn, so it does not bind and o1 is live"
+        );
+    }
+
+    /// A prerequisite is load-bearing through its INCOMING edges.
+    ///
+    /// `X depends_on Y` is an edge from X to Y, so what makes Y load-bearing is that
+    /// something depends ON it. `still_cited` read the outgoing direction — Y's own
+    /// dependencies — which is the question of what Y leans on, not what leans on Y. A
+    /// fully-groomed withdrawn prerequisite therefore reported nothing at all.
+    #[test]
+    fn a_withdrawn_prerequisite_is_load_bearing() {
+        let g = graph_of(
+            vec![
+                node("---\nid: c1\ntype: claim\ntitle: A catalogue entry was recorded\n---\n"),
+                node("---\nid: p1\ntype: claim\ntitle: The prerequisite finding\n---\n"),
+                node("---\nid: d1\ntype: dissent\ntitle: the prerequisite was withdrawn\n---\n"),
+            ],
+            vec![
+                Edge::new(NodeId::new("c1"), NodeId::new("p1"), EdgeKind::DependsOn),
+                Edge::new(NodeId::new("d1"), NodeId::new("p1"), EdgeKind::Retracts),
+            ],
+        );
+        assert_eq!(
+            lint(&g).into_iter().filter(|v| v.gate == RETRACTED).count(),
+            1,
+            "c1 declares it cannot hold without p1, and the record withdraws p1"
+        );
+    }
+
     /// One negation rule, not two — and the verb lint had the losing copy.
     ///
     /// `clause_negated` checks EVERY occurrence within its own clause. `is_negated`

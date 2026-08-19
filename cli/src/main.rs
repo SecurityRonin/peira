@@ -469,3 +469,64 @@ fn main() -> ExitCode {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use peira_core::{parse_node, Edge, Node};
+
+    fn node(src: &str) -> Node {
+        parse_node(src).expect("fixture parses")
+    }
+
+    /// The display path had no tests, and it drifted.
+    ///
+    /// `Graph::withdrawn()` is a fixed point: a retraction that has itself been
+    /// retracted does not bind, so the attack it named is LIVE again. Asking only
+    /// "does an incoming retraction exist" counts it as withdrawn anyway — the
+    /// pre-fix question, which court stopped asking and this file went on asking. So
+    /// `peira status` reported an attack WITHDRAWN on the same vault whose packet
+    /// reported it defeated on the merits.
+    #[test]
+    fn withdrawn_attacks_follows_the_fixed_point() {
+        let mut g = Graph::new();
+        g.insert_node(node(
+            "---\nid: c1\ntype: claim\ntitle: A catalogue entry was recorded\n---\n",
+        ));
+        g.insert_node(node(
+            "---\nid: a1\ntype: claim\ntitle: The installer wrote it\n---\n",
+        ));
+        g.insert_node(node(
+            "---\nid: d1\ntype: dissent\ntitle: that attack is withdrawn\n---\n",
+        ));
+        g.insert_edge(Edge::new(
+            NodeId::new("a1"),
+            NodeId::new("c1"),
+            EdgeKind::Attacks,
+        ));
+        g.insert_edge(Edge::new(
+            NodeId::new("d1"),
+            NodeId::new("a1"),
+            EdgeKind::Retracts,
+        ));
+        assert_eq!(
+            withdrawn_attacks(&g, &NodeId::new("c1")),
+            1,
+            "positive control: a binding retraction withdraws the attack"
+        );
+
+        g.insert_node(node(
+            "---\nid: d2\ntype: dissent\ntitle: that withdrawal was itself withdrawn\n---\n",
+        ));
+        g.insert_edge(Edge::new(
+            NodeId::new("d2"),
+            NodeId::new("d1"),
+            EdgeKind::Retracts,
+        ));
+        assert_eq!(
+            withdrawn_attacks(&g, &NodeId::new("c1")),
+            0,
+            "the retraction was lifted, so nothing was withdrawn — status must not say otherwise"
+        );
+    }
+}
