@@ -130,6 +130,36 @@ fn report(violations: &[Violation], what: &str) -> u8 {
 /// the difference is the whole of what a reader needs. The packet discloses it; a
 /// status line that disagreed with the packet would be the drift this file already
 /// deleted once.
+/// Findings bearing on `id`, scoped the way `freeze` scopes them.
+///
+/// This filtered to the node's OWN id — the exact narrowing deleted from `status` and
+/// `packet` two commits earlier, still alive in a third caller. So `peira gates --node
+/// X` reported "nothing to report" and exit 0 over a claim `peira status X` reported
+/// blocking, because every finding sat one hop away on X's own evidence.
+fn scoped_to(graph: &Graph, id: &NodeId, found: Vec<Violation>) -> Vec<Violation> {
+    let closure = peira_court::evidential_closure(graph, id);
+    found
+        .into_iter()
+        .filter(|v| closure.contains(&v.subject))
+        .collect()
+}
+
+/// What `peira status` should exit with.
+///
+/// The defeat verdict was PRINTED and then dropped: status said "contested — defeated
+/// in the grounded extension" and exited 0, while `packet` refused the same claim and
+/// exited 1. A state the output names must reach the exit code, or every script reading
+/// this command is told the claim is fine.
+const fn status_exit(blocking_empty: bool, grounded: bool, is_argument: bool) -> u8 {
+    if !blocking_empty {
+        return exit::VIOLATIONS;
+    }
+    if is_argument && !grounded {
+        return exit::VIOLATIONS;
+    }
+    exit::OK
+}
+
 /// Delegated, never re-derived. This was a direct-edge test while court used the
 /// `Graph::withdrawn()` fixed point, so `status` and `packet` gave opposite accounts of
 /// the same restored attack. Two implementations of one question is how a checker and
@@ -208,7 +238,7 @@ fn cmd_gates(vault: &Path, node: Option<String>) -> Result<u8, String> {
         if graph.node(&id).is_none() {
             return Err(format!("no node `{id}` in the vault"));
         }
-        found.retain(|v| v.subject == id);
+        found = scoped_to(&graph, &id, found);
     }
     Ok(report(&found, "gates"))
 }
@@ -263,11 +293,7 @@ fn cmd_status(vault: &Path, id: &str) -> Result<u8, String> {
     );
     println!("\n  (derived, not stored — there is no field to write it to)");
 
-    Ok(if blocking.is_empty() {
-        exit::OK
-    } else {
-        exit::VIOLATIONS
-    })
+    Ok(status_exit(blocking.is_empty(), grounded, is_arg))
 }
 
 fn cmd_graph(vault: &Path, grounded: bool) -> Result<u8, String> {
@@ -473,6 +499,82 @@ mod tests {
 
     fn node(src: &str) -> Node {
         parse_node(src).expect("fixture parses")
+    }
+
+    /// A state the output NAMES must reach the exit code.
+    ///
+    /// `status` printed "contested — defeated in the grounded extension" and returned
+    /// 0, while `packet` refused the same claim and returned 1. Anything scripting this
+    /// command was told the claim was fine.
+    #[test]
+    fn status_exits_non_zero_on_a_defeated_claim() {
+        assert_eq!(
+            status_exit(true, true, true),
+            exit::OK,
+            "clean and standing"
+        );
+        assert_eq!(
+            status_exit(false, true, true),
+            exit::VIOLATIONS,
+            "gates block"
+        );
+        assert_eq!(
+            status_exit(true, false, true),
+            exit::VIOLATIONS,
+            "gates pass, but the claim is defeated — `packet` refuses it, so status must not say 0"
+        );
+        assert_eq!(
+            status_exit(true, false, false),
+            exit::OK,
+            "reference material does not compete, so being outside the extension is not a defeat"
+        );
+    }
+
+    /// `--node` scopes by the closure, not by the id.
+    ///
+    /// Filtering to the node's own id is the narrowing deleted from `status` and
+    /// `packet`; it survived here, so this command answered a narrower question than
+    /// the tool's own refusal and disagreed with it.
+    #[test]
+    fn node_scope_follows_the_evidential_closure() {
+        let mut g = Graph::new();
+        g.insert_node(node(
+            "---\nid: c1\ntype: claim\ntitle: A catalogue entry was recorded\n---\n",
+        ));
+        g.insert_node(node(
+            "---\nid: s1\ntype: claim\ntitle: A supporting claim with nothing declared\n---\n",
+        ));
+        g.insert_edge(Edge::new(
+            NodeId::new("s1"),
+            NodeId::new("c1"),
+            EdgeKind::Supports,
+        ));
+
+        // Real findings: `Violation` is non-exhaustive and refuses hand-built ones,
+        // which is the type doing its job — a scope test on invented findings would
+        // not be a scope test on what the tool actually reports.
+        let found = examine_graph(&g);
+        assert!(
+            found.iter().any(|v| v.subject == NodeId::new("s1")),
+            "control: the bare supporting claim must actually draw findings, or this \
+test asserts nothing"
+        );
+        // On the SUPPORTER's id specifically. Asserting merely that the result is
+        // non-empty passed under the old id-scoped filter too, because c1 has findings
+        // of its own — a control that cannot go red, which is the defect this audit
+        // round is full of.
+        assert!(
+            scoped_to(&g, &NodeId::new("c1"), found.clone())
+                .iter()
+                .any(|v| v.subject == NodeId::new("s1")),
+            "a finding on the evidence c1 rests on bears on c1 — `freeze` refuses for it"
+        );
+        assert!(
+            scoped_to(&g, &NodeId::new("unrelated"), found)
+                .iter()
+                .all(|v| v.subject == NodeId::new("unrelated")),
+            "control: scoping still scopes"
+        );
     }
 
     /// The display path had no tests, and it drifted.

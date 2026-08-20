@@ -560,28 +560,13 @@ fn render_body(graph: &Graph, id: &NodeId) -> Option<String> {
     Some(body)
 }
 
-/// Everything standing in the way of freezing a packet for `id`.
+/// Every node whose examination this claim's packet asserts.
 ///
-/// Public because the CLI must ask the SAME question rather than re-deriving a
-/// narrower one: `peira status` printed "all enforced gates pass" over claims court
-/// refused, because it filtered findings to the claim's own id while this walks the
-/// evidential closure. Two implementations of one question is how a checker and the
-/// thing it checks drift apart.
+/// Public because the CLI scoped by the claim's OWN id — the narrowing this walk was
+/// written to replace — so `peira gates --node X` answered "nothing to report" over a
+/// claim `peira status X` reported blocking. Three callers, one question.
 #[must_use]
-pub fn violations_for(graph: &Graph, id: &NodeId) -> Vec<Violation> {
-    // The EVIDENTIAL CLOSURE: the claim, everything it rests on transitively, and
-    // everything it renders. Filtering to the claim's own id made every check evadable
-    // by one hop — put the overstatement, the ungraded G4 and the missing warrant on a
-    // supporting claim, and a "clean" claim froze on top of it while the vault reported
-    // seven findings nobody's packet had to answer for.
-    //
-    // A packet asserts that what it rests on was examined. That assertion is only true
-    // if the examination follows the support.
-    // Deliberately does NOT include rivals and limiters. Their TITLES are printed, and
-    // the body scan answers for that text — but their own gate profile is their
-    // author's business. Pulling them in blocks the victim of someone else's
-    // frontmatter, which is the defect this project already fixed once in the pramāṇa
-    // gate. What is rendered is scanned; what is rested on is examined.
+pub fn evidential_closure(graph: &Graph, id: &NodeId) -> BTreeSet<NodeId> {
     let mut closure: BTreeSet<NodeId> = BTreeSet::new();
     let mut stack = vec![id.clone()];
     while let Some(n) = stack.pop() {
@@ -639,6 +624,32 @@ pub fn violations_for(graph: &Graph, id: &NodeId) -> Vec<Violation> {
     // `peira status` — which calls this — reported `review_ready` over a claim the
     // packet command refused, which is precisely the drift this function was made
     // public to delete.
+    closure
+}
+
+/// Everything standing in the way of freezing a packet for `id`.
+///
+/// Public because the CLI must ask the SAME question rather than re-deriving a
+/// narrower one: `peira status` printed "all enforced gates pass" over claims court
+/// refused, because it filtered findings to the claim's own id while this walks the
+/// evidential closure. Two implementations of one question is how a checker and the
+/// thing it checks drift apart.
+#[must_use]
+pub fn violations_for(graph: &Graph, id: &NodeId) -> Vec<Violation> {
+    // The EVIDENTIAL CLOSURE: the claim, everything it rests on transitively, and
+    // everything it renders. Filtering to the claim's own id made every check evadable
+    // by one hop — put the overstatement, the ungraded G4 and the missing warrant on a
+    // supporting claim, and a "clean" claim froze on top of it while the vault reported
+    // seven findings nobody's packet had to answer for.
+    //
+    // A packet asserts that what it rests on was examined. That assertion is only true
+    // if the examination follows the support.
+    // Deliberately does NOT include rivals and limiters. Their TITLES are printed, and
+    // the body scan answers for that text — but their own gate profile is their
+    // author's business. Pulling them in blocks the victim of someone else's
+    // frontmatter, which is the defect this project already fixed once in the pramāṇa
+    // gate. What is rendered is scanned; what is rested on is examined.
+    let closure = evidential_closure(graph, id);
     let mut found: Vec<Violation> = lints::subject_withdrawn(graph, id)
         .into_iter()
         .chain(
