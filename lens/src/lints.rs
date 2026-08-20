@@ -690,6 +690,15 @@ fn contradicted_rung(node: &Node) -> Vec<Violation> {
     // "installation produced the record" — and flagging them punished a legitimate
     // rival hypothesis in this repository's own fixture. A heuristic that fires on
     // ordinary professional prose is one people switch off.
+    // Two rungs above association, and the list had grammar for only one of them.
+    // INTERVENTIONAL is the language of doing. COUNTERFACTUAL is the language of what
+    // would have happened otherwise — rung three, the highest on the ladder, and it had
+    // no marker at all, so a claim written in pure counterfactual grammar could declare
+    // `association` and switch the ladder gate off unexamined.
+    //
+    // Both lists are FORMULAIC constructions rather than content words. "establishes"
+    // is deliberately absent: it is the substitution table's own recommended replacement
+    // for "proves", and flagging it would refuse the phrasing the discipline asks for.
     const INTERVENTIONAL: &[&str] = &[
         "caused",
         "causes",
@@ -698,12 +707,23 @@ fn contradicted_rung(node: &Node) -> Vec<Violation> {
         "led to",
         "because of",
     ];
+    const COUNTERFACTUAL: &[&str] = &[
+        "would not have",
+        "would have been",
+        "had it not been",
+        "but for",
+        "could not have occurred without",
+        "could not have happened without",
+        "in the absence of which",
+        "only if",
+    ];
     let full = format!("{} {}", node.title, node.body).to_ascii_lowercase();
     let mut out = Vec::new();
     let rung = node.field("causal_rung");
     if rung.is_none() || rung == Some("association") {
         if let Some(w) = INTERVENTIONAL
             .iter()
+            .chain(COUNTERFACTUAL.iter())
             // FULL text. "caused", "resulted in", "led to" are unambiguous claims about
             // doing wherever they sit — unlike "all", which is ordinary prose. Scanning
             // the title alone let the sentence move one line down and escape.
@@ -1408,10 +1428,28 @@ fn false_independence(graph: &Graph, node: &Node) -> Vec<Violation> {
             // however they are labelled, and G4 is defined as multiple materially
             // INDEPENDENT convergent lines. `duplicates:` catches only the author who
             // declares the overlap; this catches the overlap itself.
+            // PRODUCING instruments only. A tool that MEASURED the substantive fact is
+            // a shared line of evidence; one that merely verified or handled the
+            // artifact is not. Two observations from different sources, each hashed by
+            // the same verification tool, remain two lines — and refusing them punishes
+            // an author for recording provenance, which is the discipline this whole
+            // project asks for.
+            //
+            // Declared on the instrument, and ABSENCE FAILS SAFE: an instrument that
+            // says nothing is treated as producing, so the finding still fires. Writing
+            // `role: verifying` is an accountable act on the record, the same shape as
+            // `no_terms_of_art:` — a claim the author makes and can be held to, rather
+            // than a silence that buys an exemption.
             let instruments_of = |id: &NodeId| -> BTreeSet<NodeId> {
                 graph
                     .edges_from(id)
                     .filter(|e| e.kind == EdgeKind::MeasuredBy)
+                    .filter(|e| {
+                        graph
+                            .node(&e.to)
+                            .and_then(|n| n.field("role"))
+                            .is_none_or(|r| r.trim() != "verifying")
+                    })
                     .map(|e| e.to.clone())
                     .collect()
             };
@@ -1745,6 +1783,104 @@ confirms execution."
         assert!(
             !build(true),
             "the withdrawal was lifted, so c1 stands — the fixed point, not a direct edge"
+        );
+    }
+
+    /// The ladder has three rungs and the backstop had grammar for two.
+    ///
+    /// `contradicted_rung` catches a claim that declares `association` and writes the
+    /// language of DOING. It had no marker for the rung above that — the language of
+    /// what would have happened otherwise — so a claim written in pure counterfactual
+    /// grammar declared `association` and switched the gate off unexamined.
+    ///
+    /// "establishes" stays absent on purpose: it is the substitution table's own
+    /// recommended replacement for "proves", and flagging it would refuse the phrasing
+    /// the discipline asks for.
+    #[test]
+    fn counterfactual_grammar_contradicts_a_declared_association() {
+        let fired = |title: &str| {
+            let g = graph_of(
+                vec![node(&format!(
+                    "---\nid: c1\ntype: claim\ntitle: {title}\ncausal_rung: association\n---\n"
+                ))],
+                vec![],
+            );
+            lint(&g)
+                .into_iter()
+                .filter(|v| v.gate == DECLARATION_CONTRADICTED)
+                .count()
+        };
+
+        assert_eq!(
+            fired("Deleting the file caused the loss of evidence"),
+            1,
+            "positive control: the language of doing"
+        );
+        assert_eq!(
+            fired("The record would not have been written but for the program running"),
+            1,
+            "the language of what would have happened otherwise is a rung higher still"
+        );
+        assert_eq!(
+            fired("The entry establishes that the path was catalogued"),
+            0,
+            "`establishes` is the discipline's own sanctioned word and must stay unflagged"
+        );
+        assert_eq!(
+            fired("The record is consistent with the path having been catalogued"),
+            0,
+            "and ordinary association prose passes"
+        );
+    }
+
+    /// Recording provenance must not cost an author their independence.
+    ///
+    /// Two observations from different sources, each verified with the same hash tool,
+    /// are still two lines of evidence — the tool did not produce either finding. The
+    /// lint read every `measured_by:` alike, so documenting the verification collapsed
+    /// them into one and the careful author was worse off than the silent one.
+    ///
+    /// The exemption is DECLARED and fails safe on absence: an instrument that says
+    /// nothing is treated as producing.
+    #[test]
+    fn a_verifying_instrument_does_not_collapse_two_lines() {
+        let build = |role: &str| {
+            let g = graph_of(
+                vec![
+                    node("---\nid: c1\ntype: claim\ntitle: The path was recorded\n---\n"),
+                    node("---\nid: o1\ntype: observation\ntitle: the hive entry\n---\n"),
+                    node("---\nid: o2\ntype: observation\ntitle: the MFT record\n---\n"),
+                    node(&format!(
+                        "---\nid: t1\ntype: instrument\ntitle: a hash verification tool\n{role}---\n"
+                    )),
+                ],
+                vec![
+                    Edge::new(NodeId::new("o1"), NodeId::new("c1"), EdgeKind::Supports),
+                    Edge::new(NodeId::new("o2"), NodeId::new("c1"), EdgeKind::Supports),
+                    Edge::new(NodeId::new("o1"), NodeId::new("t1"), EdgeKind::MeasuredBy),
+                    Edge::new(NodeId::new("o2"), NodeId::new("t1"), EdgeKind::MeasuredBy),
+                ],
+            );
+            lint(&g)
+                .into_iter()
+                .filter(|v| v.gate == FALSE_INDEPENDENCE)
+                .count()
+        };
+
+        assert_eq!(
+            build(""),
+            1,
+            "absence fails safe: an instrument that declares no role is a producing one"
+        );
+        assert_eq!(
+            build("role: producing\n"),
+            1,
+            "and saying so plainly changes nothing"
+        );
+        assert_eq!(
+            build("role: verifying\n"),
+            0,
+            "a tool that checked the artifact did not produce either finding"
         );
     }
 
