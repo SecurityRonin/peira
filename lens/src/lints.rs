@@ -83,7 +83,11 @@ pub fn overstatements_in(text: &str, subject: &NodeId) -> Vec<Violation> {
     let haystack = text.to_ascii_lowercase();
     OVERSTATEMENTS
         .iter()
-        .filter(|(word, _)| contains_phrase(&haystack, word) && !clause_negated(&haystack, word))
+        .filter(|(word, _)| {
+            contains_phrase(&haystack, word)
+                && !clause_negated(&haystack, word)
+                && !is_a_verification_operation(&haystack)
+        })
         .map(|(word, instead)| {
             violation(
                 FORBIDDEN_VERB,
@@ -297,6 +301,28 @@ const ATTRIBUTIONS: &[&str] = &[
 /// negation sits in the matrix two clauses back. Clause scope is right for ordinary
 /// prose and wrong for this shape, which is exactly the phrasing the discipline asks an
 /// expert to use when the evidence will not carry the point.
+/// Handing the question back, which is the remedy this tool RECOMMENDS.
+///
+/// "Whether the respondent is liable is a matter for the court" is the sentence an
+/// expert is supposed to write when the ultimate issue arises — and it was refused as a
+/// legal conclusion, blocking the packet. A checker that rejects its own prescribed
+/// remedy is one an expert switches off at the first encounter.
+///
+/// These forms ASSERT NOTHING about the issue; they decline it explicitly. Closed and
+/// formulaic, like the other frames.
+const HAND_BACKS: &[&str] = &[
+    "is a matter for the court",
+    "is a matter for the tribunal",
+    "is a question for the court",
+    "is a question for the tribunal",
+    "is for the court to decide",
+    "is for the tribunal to decide",
+    "the court may draw its own conclusions",
+    "the tribunal may draw its own conclusions",
+    "i express no view on",
+    "i express no opinion on",
+];
+
 const HEDGE_OPENERS: &[&str] = &[
     "it has not been possible",
     "it was not possible",
@@ -332,8 +358,16 @@ fn sentence_is_reported_or_refused(haystack: &str, at: usize) -> bool {
     // reason in the other direction: "In my opinion, it cannot be said that …" is the
     // same refusal, and requiring the sentence to begin with the formula refused it.
     let region = &haystack[clause_start(haystack, at)..at];
+    // A hand-back is read over the WHOLE clause, not just the part before the word: the
+    // formula sits AFTER the issue it declines — "whether the respondent is liable is a
+    // matter for the court" — so looking only backwards from `liable` would miss it.
+    let clause_end = haystack[at..]
+        .find(['.', '!', '?', '\n', ';'])
+        .map_or(haystack.len(), |i| at + i);
+    let whole_clause = &haystack[clause_start(haystack, at)..clause_end];
     ATTRIBUTIONS.iter().any(|a| region.contains(a))
         || HEDGE_OPENERS.iter().any(|h| region.contains(h))
+        || HAND_BACKS.iter().any(|b| whole_clause.contains(b))
 }
 
 /// Where the clause containing byte offset `at` begins.
@@ -369,6 +403,29 @@ fn clause_start(haystack: &str, at: usize) -> usize {
         .filter_map(|b| haystack[..at].rfind(b).map(|i| i + b.len()))
         .max()
         .unwrap_or(0)
+}
+
+/// Whether `confirms` here is a cryptographic operation rather than an opinion.
+///
+/// "Hash verification confirmed the image digest" reports what a tool DID. The word is
+/// on the substitution table because "the evidence confirms execution" is an
+/// overstatement of belief — but a checksum matching is a fact about bytes, and every
+/// acquisition note in forensics is written this way. Refusing it makes the tool
+/// unusable on exactly the material it exists for.
+///
+/// Deliberately narrow: only where an integrity operation is the subject.
+fn is_a_verification_operation(clause: &str) -> bool {
+    const OPERATIONS: &[&str] = &[
+        "hash verification",
+        "hash check",
+        "checksum",
+        "digest",
+        "signature verification",
+        "integrity check",
+        "integrity verification",
+        "write blocker",
+    ];
+    OPERATIONS.iter().any(|o| clause.contains(o))
 }
 
 fn clause_at_is_negated(haystack: &str, at: usize, len: usize) -> bool {
@@ -571,7 +628,23 @@ const SCOPES: &[&str] = &[
     "paragraph",
     "figure",
 ];
-const METADISCOURSE: &[&str] = &["herein", "below", "above"];
+// PHRASES, not bare words. `contains("below")` matched "Every host fell below the
+// patch level" and switched the quantifier gate off — the same substring defect fixed
+// in `clause_has_party`, left standing one function away. A word that means "elsewhere
+// in this document" only means it in these forms.
+const METADISCOURSE: &[&str] = &[
+    "herein",
+    "described below",
+    "set out below",
+    "listed below",
+    "shown below",
+    "stated below",
+    "described above",
+    "set out above",
+    "stated above",
+    "shown above",
+    "as above",
+];
 // ...or an INSTRUCTION. "Always image the disk before every acquisition" is a
 // procedure, and being universal is what makes it one rather than a suggestion.
 // An instruction says what to DO; a claim says what IS.
@@ -622,6 +695,35 @@ const IMPERATIVE_OPENERS: &[&str] = &[
 /// comment saying a rule with three entry points needs one gate.
 fn is_exempt_from_quantifier(s: &str) -> bool {
     let t = s.trim_start();
+    // A quantifier that names its own domain has DECLARED its extension in the sentence:
+    // "None of the recovered entries postdates the acquisition", "Each of the four hives
+    // was examined". That is the bounded, scoped writing the discipline asks for, and
+    // refusing it punishes the author for being specific.
+    //
+    // And a PRONOMINAL use quantifies nothing: in "the entry would have been expected;
+    // none was present", `none` refers back to an antecedent — it is not a claim about
+    // a class. The tell is that a verb follows rather than a noun.
+    const BOUNDED: &[&str] = &[
+        "none of the",
+        "each of the",
+        "all of the",
+        "any of the",
+        "every one of the",
+    ];
+    const PRONOMINAL: &[&str] = &[
+        "none was",
+        "none were",
+        "none is",
+        "none are",
+        "none of them",
+        "each was",
+        "each were",
+        "all was",
+        "all were",
+    ];
+    if BOUNDED.iter().any(|b| t.contains(b)) || PRONOMINAL.iter().any(|b| t.contains(b)) {
+        return true;
+    }
     IMPERATIVE_OPENERS.iter().any(|o| t.starts_with(o))
         || DEONTIC.iter().any(|d| t.contains(d))
         || SCOPES.iter().any(|w| {
@@ -669,7 +771,7 @@ fn contradicted_quantifier(node: &Node) -> Vec<Violation> {
         let in_a_claiming_sentence = |w: &str, hay: &str| {
             contains_phrase(hay, w)
                 && hay
-                    .split(['.', '\n'])
+                    .split(['.', '!', '?', '\n'])
                     .filter(|s| contains_phrase(s, w))
                     .any(|s| !is_exempt_from_quantifier(s))
         };
@@ -679,7 +781,7 @@ fn contradicted_quantifier(node: &Node) -> Vec<Violation> {
             .or_else(|| WEAK.iter().find(|w| in_a_claiming_sentence(w, &title)))
             .or_else(|| {
                 WEAK.iter().find(|w| {
-                    full.split(['.', '\n']).any(|s| {
+                    full.split(['.', '!', '?', '\n']).any(|s| {
                         let s = s.trim_start();
                         s.starts_with(*w) && !is_exempt_from_quantifier(s)
                     })
@@ -737,13 +839,11 @@ fn contradicted_rung(node: &Node) -> Vec<Violation> {
     ];
     const COUNTERFACTUAL: &[&str] = &[
         "would not have",
-        "would have been",
         "had it not been",
         "but for",
         "could not have occurred without",
         "could not have happened without",
         "in the absence of which",
-        "only if",
     ];
     let full = format!("{} {}", node.title, node.body).to_ascii_lowercase();
     let mut out = Vec::new();
@@ -991,7 +1091,9 @@ fn forbidden_verbs(node: &Node) -> Vec<Violation> {
             OVERSTATEMENTS
                 .iter()
                 .filter(move |(word, _)| {
-                    contains_phrase(&haystack, word) && !clause_negated(&haystack, word)
+                    contains_phrase(&haystack, word)
+                        && !clause_negated(&haystack, word)
+                        && !is_a_verification_operation(&haystack)
                 })
                 .map(move |(word, instead)| (*field, *word, *instead))
         })
@@ -1494,7 +1596,7 @@ fn false_independence(graph: &Graph, node: &Node) -> Vec<Violation> {
                         graph
                             .node(&e.to)
                             .and_then(|n| n.field("role"))
-                            .is_none_or(|r| r.trim() != "verifying")
+                            .is_none_or(|r| !r.trim().eq_ignore_ascii_case("verifying"))
                     })
                     .map(|e| e.to.clone())
                     .collect()
@@ -1661,6 +1763,65 @@ not_essence: a record is not the file\nstipulated: the OS recorded this path\n--
             "and it must say what was dropped and why: {}",
             found[0].detail
         );
+    }
+
+    /// Eight sentences a careful expert writes, and the two that must still fire.
+    ///
+    /// Every row is a finding from audit round 7. The four "clean" groups are prose the
+    /// discipline asks for; the "fires" rows are the controls that prove the carve-outs
+    /// did not simply switch the checks off.
+    #[test]
+    fn the_prose_an_expert_is_obliged_to_write() {
+        let fired = |title: &str| {
+            let g = graph_of(
+                vec![node(&format!(
+                    "---\nid: n1\ntype: observation\ntitle: {title}\n---\n"
+                ))],
+                vec![],
+            );
+            lint(&g)
+                .into_iter()
+                .filter(|v| {
+                    v.gate == LEGAL_CONCLUSION
+                        || v.gate == FORBIDDEN_VERB
+                        || v.gate == DECLARATION_CONTRADICTED
+                })
+                .count()
+        };
+
+        for clean in [
+            // N8 — the remedy this tool itself recommends
+            "Whether the respondent is liable is a matter for the court",
+            "I express no view on whether the respondent is liable",
+            // N11 — a scope condition is not causal grammar
+            "The record is admissible only if the hive was acquired intact",
+            // N12/N13 — bounded and pronominal, not universal
+            "None of the recovered entries postdates the acquisition",
+            "Each of the four hives was examined",
+            "The entry would have been expected; none was present",
+            // N14 — an integrity operation, not an opinion
+            "Hash verification confirmed the image digest",
+            // N10 — a genuine scope note
+            "All timestamps described below are stated in UTC",
+        ] {
+            assert_eq!(
+                fired(clean),
+                0,
+                "refused prose an expert is obliged to write: {clean}"
+            );
+        }
+
+        for verdict in [
+            // N10 — "below" as a comparative must not buy an exemption
+            "Every host fell below the patch level",
+            // N9 — an imperative plus `!` must not hide the universal after it
+            "Always verify the hash first! Every host on the estate ran the installer",
+            "The respondent is liable for the loss",
+            "The evidence confirms the program was executed",
+            "The respondent is liable; that is a matter for the court",
+        ] {
+            assert!(fired(verdict) > 0, "let a real finding through: {verdict}");
+        }
     }
 
     /// A frame governs its own clause, and no further.
