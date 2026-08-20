@@ -414,10 +414,18 @@ pub fn four_corners_addressed(graph: &Graph, node: &Node) -> GateResult {
     let distinct: std::collections::BTreeSet<String> = corners
         .iter()
         .map(|c| {
+            // PUNCTUATION too. Case and whitespace were folded and trailing marks were
+            // not, so `[It holds, "It holds.", "It holds!", "It holds?"]` counted as
+            // four distinct corners — the same one, typed four ways.
             c.split_whitespace()
                 .collect::<Vec<_>>()
                 .join(" ")
                 .to_lowercase()
+                .chars()
+                .filter(|ch| ch.is_alphanumeric() || *ch == ' ')
+                .collect::<String>()
+                .trim()
+                .to_owned()
         })
         .collect();
     if distinct.len() == 4 {
@@ -653,6 +661,54 @@ mod tests {
 
     fn node(src: &str) -> Node {
         parse_node(src).expect("fixture parses")
+    }
+
+    /// Four corners means four corners, not one typed four ways.
+    ///
+    /// Case and whitespace were folded and trailing punctuation was not, so
+    /// `[It holds, "It holds.", "It holds!", "It holds?"]` satisfied 四句. A checker
+    /// that measures the shape of a string rather than what it says is always one
+    /// keystroke from being satisfied by nothing.
+    #[test]
+    fn punctuation_does_not_make_a_second_corner() {
+        let build = |corners: &str| {
+            let mut g = Graph::new();
+            g.insert_node(node(&format!(
+                "---\nid: c1\ntype: claim\ntitle: The hive catalogued the file\n{corners}---\n"
+            )));
+            g.insert_node(node("---\nid: r1\ntype: claim\ntitle: a rival\n---\n"));
+            g.insert_edge(Edge::new(
+                NodeId::new("r1"),
+                NodeId::new("c1"),
+                EdgeKind::Attacks,
+            ));
+            let n = g.node(&NodeId::new("c1")).expect("c1").clone();
+            four_corners_addressed(&g, &n)
+        };
+
+        let typed_four_ways = concat!(
+            "corners:\n",
+            "  - It holds\n",
+            "  - \"It holds.\"\n",
+            "  - \"It holds!\"\n",
+            "  - \"It holds?\"\n"
+        );
+        let genuinely_four = concat!(
+            "corners:\n",
+            "  - It holds\n",
+            "  - It does not hold\n",
+            "  - It holds in part\n",
+            "  - The question does not arise\n"
+        );
+
+        assert!(
+            matches!(build(typed_four_ways), GateResult::Block(_)),
+            "one corner punctuated four ways addresses one corner"
+        );
+        assert!(
+            matches!(build(genuinely_four), GateResult::Pass),
+            "control: four different positions still pass"
+        );
     }
 
     /// 體用 is owed by whatever carries the weight, not by whatever it calls itself.

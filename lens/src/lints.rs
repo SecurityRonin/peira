@@ -1319,9 +1319,17 @@ fn retracted(graph: &Graph, node: &Node) -> Vec<Violation> {
     // is what leans on IT, and reading the wrong way meant a fully-groomed withdrawn
     // prerequisite reported nothing at all while a claim declaring it could not hold
     // without that prerequisite froze cleanly.
+    // A DISCARDED attack holds nothing up. Counting it made withdrawing a REDUNDANT
+    // defender — a node whose attack the argumentation never honoured — newly block the
+    // packet it was not holding up, which punishes exactly the machloket retention this
+    // project asks for: keep the rejected alternative on the record, and be refused for
+    // having kept it.
     let holds_something_up = graph
         .edges_from(&node.id)
-        .any(|e| e.kind == EdgeKind::Supports || e.kind.is_attack())
+        .any(|e| e.kind == EdgeKind::Supports)
+        || graph
+            .edges_from(&node.id)
+            .any(|e| e.kind.is_attack() && graph.is_argument_node(&e.to))
         || graph
             .edges_to(&node.id)
             .any(|e| e.kind == EdgeKind::DependsOn);
@@ -1940,6 +1948,52 @@ explanation exists — the respondent forged the entries\n---\n",
         assert!(
             lint(&g).iter().any(|v| v.gate == LEGAL_CONCLUSION),
             "the negator belongs to the clause before the dash, not the verdict after it"
+        );
+    }
+
+    /// Withdrawing a node that was holding nothing up must not block anything.
+    ///
+    /// A defender whose attack the argumentation DISCARDS is doing no work. Counting
+    /// that discarded edge as "holds something up" meant retiring the node newly blocked
+    /// a packet it had never held up — punishing exactly the machloket retention this
+    /// project asks for: keep the rejected alternative on the record, and be refused for
+    /// having kept it.
+    #[test]
+    fn withdrawing_a_redundant_node_blocks_nothing() {
+        let build = |attacked_kind: &str| {
+            let g = graph_of(
+                vec![
+                    node("---\nid: c1\ntype: claim\ntitle: The subject\n---\n"),
+                    node("---\nid: o1\ntype: observation\ntitle: a record\n---\n"),
+                    node(&format!(
+                        "---\nid: t1\ntype: {attacked_kind}\ntitle: the thing attacked\n\
+as_used: a\nnot_essence: b\nstipulated: c\n---\n"
+                    )),
+                    node("---\nid: n1\ntype: dissent\ntitle: a retired objection\n---\n"),
+                    node("---\nid: d1\ntype: dissent\ntitle: it was withdrawn\n---\n"),
+                ],
+                vec![
+                    Edge::new(NodeId::new("o1"), NodeId::new("c1"), EdgeKind::Supports),
+                    Edge::new(NodeId::new("n1"), NodeId::new("t1"), EdgeKind::Attacks),
+                    Edge::new(NodeId::new("d1"), NodeId::new("n1"), EdgeKind::Retracts),
+                ],
+            );
+            lint(&g)
+                .into_iter()
+                .filter(|v| v.gate == RETRACTED && v.subject == NodeId::new("n1"))
+                .count()
+        };
+
+        assert_eq!(
+            build("claim"),
+            1,
+            "positive control: a withdrawn node whose attack COUNTS is reported"
+        );
+        assert_eq!(
+            build("term"),
+            0,
+            "its attack on reference material was never honoured, so retiring it \
+holds nothing up and blocks nothing"
         );
     }
 

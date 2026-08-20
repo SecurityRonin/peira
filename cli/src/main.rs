@@ -513,7 +513,11 @@ fn run() -> Result<u8, String> {
                 for v in peira_court::sealed_prose_findings(&graph, &n.id) {
                     if !found
                         .iter()
-                        .any(|f| f.gate == v.gate && f.detail == v.detail)
+                        // Dedup by SUBJECT too. Ignoring it suppressed the second
+                        // claim sealing the same overstated word, while `status` and
+                        // `packet` both blocked it — a finding hidden because another
+                        // node happened to have the same problem first.
+                        .any(|f| f.gate == v.gate && f.subject == v.subject && f.detail == v.detail)
                     {
                         found.push(v);
                     }
