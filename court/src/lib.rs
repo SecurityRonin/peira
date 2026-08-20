@@ -256,7 +256,7 @@ fn defeat_block(graph: &Graph, claim: &Node) -> String {
         // finally reads is the sentence somebody lifted OUT of this section.
         let _ = writeln!(out, "  - {FALSIFIER_FRAME} {}", quote_authored(f));
     }
-    for e in graph.edges_to(&claim.id).filter(|e| e.kind.is_attack()) {
+    for e in graph.live_attacks_on(&claim.id) {
         if let Some(n) = graph.node(&e.from) {
             // A rival's title is ANOTHER AUTHOR'S ASSERTION, rendered verbatim. Blocking
             // this claim over it would punish the victim for prose they cannot edit —
@@ -352,8 +352,7 @@ fn foreign_title(n: &Node) -> String {
 pub fn withdrawn_attacks<'g>(graph: &'g Graph, id: &NodeId) -> Vec<&'g Node> {
     let withdrawn = graph.withdrawn();
     graph
-        .edges_to(id)
-        .filter(|e| e.kind.is_attack())
+        .live_attacks_on(id)
         .filter(|e| withdrawn.contains(&e.from))
         .filter_map(|e| graph.node(&e.from))
         .collect()
@@ -604,8 +603,11 @@ pub fn evidential_closure(graph: &Graph, id: &NodeId) -> BTreeSet<NodeId> {
         // Only defenders that are actually IN the extension count. One that is itself
         // defeated is doing no work, so demanding it be groomed would block a packet
         // over a node that changed nothing.
-        for a in graph.edges_to(&n).filter(|e| e.kind.is_attack()) {
-            for d in graph.edges_to(&a.from).filter(|e| e.kind.is_attack()) {
+        // LIVE attacks only, both hops. Following a discarded attack pulled in the
+        // stranger who happened to answer it, so two foreign ungroomed notes blocked an
+        // innocent claim's packet over an edge the argumentation never counted.
+        for a in graph.live_attacks_on(&n) {
+            for d in graph.live_attacks_on(&a.from) {
                 if graph.is_grounded(&d.from) {
                     stack.push(d.from.clone());
                 }

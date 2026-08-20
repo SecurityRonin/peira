@@ -182,6 +182,26 @@ impl Graph {
         out
     }
 
+    /// The attacks on `id` that the argumentation actually honours.
+    ///
+    /// ONE definition of "does this edge compete", because six places asked it and only
+    /// `attackers()` filtered out reference material. So a `term` carrying `contradicts:`
+    /// was DISCARDED from the grounded relation while still making its victim contested
+    /// under 四句, still satisfying the falsifier gate, and still drawing the packet's
+    /// standing line to say "every attack on it is itself defeated" — of an attack that
+    /// was never counted rather than answered.
+    ///
+    /// The algebra matches at every call site: to be contested, to be defeated, and to
+    /// have something that could count against you are the same question about the same
+    /// relation. WITHDRAWAL is deliberately not folded in — a withdrawn attacker is
+    /// disclosed as removed rather than answered, and that distinction belongs to the
+    /// packet, not to the relation.
+    pub fn live_attacks_on<'g>(&'g self, id: &'g NodeId) -> impl Iterator<Item = &'g Edge> + 'g {
+        self.edges_to(id).filter(move |e| {
+            e.kind.is_attack() && self.is_argument_node(&e.from) && self.is_argument_node(&e.to)
+        })
+    }
+
     /// Whether `id` names a node that can argue at all.
     ///
     /// A missing node is NOT an argument: a dangling attack edge must not silently

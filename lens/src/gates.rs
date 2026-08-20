@@ -370,7 +370,10 @@ pub fn four_corners_addressed(graph: &Graph, node: &Node) -> GateResult {
     if !under_promotion(graph, node) {
         return GateResult::NotApplicable;
     }
-    let attacked = graph.edges_to(&node.id).any(|e| e.kind.is_attack());
+    // The LIVE relation: an attack the argumentation discards does not make a claim
+    // contested, and counting it blocked the victim over one line in a term author's
+    // frontmatter.
+    let attacked = graph.live_attacks_on(&node.id).next().is_some();
     let contested = attacked || node.field("contested") == Some("true");
     if !contested {
         return GateResult::NotApplicable;
@@ -599,7 +602,7 @@ pub fn falsifier_declared(graph: &Graph, node: &Node) -> GateResult {
     if !node.field_list("falsifier").is_empty() {
         return GateResult::Pass;
     }
-    if graph.edges_to(&node.id).any(|e| e.kind.is_attack()) {
+    if graph.live_attacks_on(&node.id).next().is_some() {
         return GateResult::Pass;
     }
     block(
@@ -623,6 +626,64 @@ mod tests {
 
     fn node(src: &str) -> Node {
         parse_node(src).expect("fixture parses")
+    }
+
+    /// An edge the argumentation discards has no effects anywhere else either.
+    ///
+    /// A `term` carrying `contradicts:` is dropped from the grounded relation, because
+    /// reference material does not compete. Six other places asked the raw question and
+    /// counted it anyway — so the same void edge made its victim contested under 四句,
+    /// satisfied the falsifier gate, and let a packet's standing line say "every attack
+    /// on it is itself defeated" about an attack that was never counted.
+    ///
+    /// The victim cannot edit the term author's frontmatter, which makes this the
+    /// "punished for prose they cannot fix" class as well.
+    #[test]
+    fn a_discarded_attack_has_no_effects() {
+        let build = |kind: &str| {
+            let mut g = Graph::new();
+            g.insert_node(node(
+                "---\nid: c1\ntype: claim\ntitle: The hive catalogued the file\n\
+quantifier: singular\naspect: function\ncausal_rung: association\n---\n",
+            ));
+            g.insert_node(node(&format!(
+                "---\nid: x1\ntype: {kind}\ntitle: something that opposes it\n\
+as_used: a\nnot_essence: b\nstipulated: c\n---\n"
+            )));
+            g.insert_edge(Edge::new(
+                NodeId::new("x1"),
+                NodeId::new("c1"),
+                EdgeKind::Contradicts,
+            ));
+            let n = g.node(&NodeId::new("c1")).expect("c1").clone();
+            (
+                four_corners_addressed(&g, &n),
+                falsifier_declared(&g, &n),
+                g.live_attacks_on(&NodeId::new("c1")).count(),
+            )
+        };
+
+        let (corners, falsifier, live) = build("claim");
+        assert_eq!(live, 1, "positive control: a claim competes");
+        assert!(
+            matches!(corners, GateResult::Block(_)),
+            "a contested claim owes all four corners"
+        );
+        assert!(
+            matches!(falsifier, GateResult::Pass),
+            "and a live attack is something that could count against it"
+        );
+
+        let (corners, falsifier, live) = build("term");
+        assert_eq!(live, 0, "reference material does not compete");
+        assert!(
+            !matches!(corners, GateResult::Block(_)),
+            "so it does not make the claim contested"
+        );
+        assert!(
+            !matches!(falsifier, GateResult::Pass),
+            "and it does not satisfy the demand for something that could defeat the claim"
+        );
     }
 
     /// The pramāṇa ceiling binds a declared prerequisite too.
