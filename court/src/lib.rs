@@ -164,7 +164,12 @@ impl Verification {
 /// bounded fixture's digest is unchanged — but one that does would render differently,
 /// and an old packet would report `DigestMismatch` over a renderer change rather than
 /// an alteration. That is the silent case this constant exists to remove.
-pub const PACKET_FORMAT: u32 = 4;
+///
+/// **5** — the standing line no longer says "every attack on it is itself defeated". It
+/// says "every attack THE ARGUMENTATION ADMITS", and names any edge discarded for coming
+/// from a node that cannot argue. The old sentence was false in a packet that rendered a
+/// refuting controlled run three lines above it.
+pub const PACKET_FORMAT: u32 = 5;
 
 /// The prefix carried by every STATED falsifier in a packet's defeat section.
 ///
@@ -426,9 +431,42 @@ relying on it.",
         )
     };
 
+    // DISCARDED attacks, which are not the same as defeated ones. An edge from
+    // something that cannot argue — a `run`, a `term` — is dropped from the relation,
+    // and the packet went on printing it under "Contradicting" three lines above a
+    // standing line asserting every attack was ANSWERED. A refuting controlled run,
+    // rendered and dismissed in the same artifact.
+    //
+    // peira cannot weigh it: the argumentation does not admit it. What it can do is stop
+    // claiming otherwise, which is this project's answer everywhere it cannot establish
+    // something.
+    let discarded: Vec<&Node> = graph
+        .edges_to(id)
+        .filter(|e| e.kind.is_attack())
+        .filter(|e| !graph.is_argument_node(&e.from))
+        .filter_map(|e| graph.node(&e.from))
+        .collect();
+    let discarded_note = if discarded.is_empty() {
+        String::new()
+    } else {
+        format!(
+            "\n\n{} edge(s) attacking this claim come from nodes that cannot argue and were \
+DISCARDED from the grounded extension, not answered: {}. They are rendered above because \
+the record holds them; nothing here weighs them. See `peira lint` for the finding against \
+each.",
+            discarded.len(),
+            discarded
+                .iter()
+                .map(|n| format!("[{}] ({})", n.id, n.kind))
+                .collect::<Vec<_>>()
+                .join(", ")
+        )
+    };
+
     if withdrawn_attacks.is_empty() {
         return format!(
-            "Survives in the grounded extension; every attack on it is itself defeated.{history}"
+            "Survives in the grounded extension; every attack the argumentation admits is \
+itself defeated.{history}{discarded_note}"
         );
     }
     {
@@ -1819,6 +1857,52 @@ aspect: function\n---\n",
             ),
             "the attacker's title is quoted without the note that frames it:\n{}",
             p.body
+        );
+    }
+
+    /// A packet does not claim an attack was answered when it was DISCARDED.
+    ///
+    /// An edge from a node that cannot argue — a `run`, a `term` — is dropped from the
+    /// grounded relation. The packet went on rendering it under "Contradicting" three
+    /// lines above a standing line asserting every attack was itself defeated: a
+    /// refuting controlled run, printed and dismissed in the same artifact.
+    ///
+    /// peira cannot weigh it, because the argumentation does not admit it. What it can
+    /// do is stop claiming otherwise.
+    #[test]
+    fn a_discarded_attack_is_named_not_called_defeated() {
+        let mut g = clean_graph();
+        g.insert_node(node(
+            "---\nid: run1\ntype: run\ntitle: A run producing the entry with no file present\n---\n",
+        ));
+        g.insert_edge(Edge::new(
+            NodeId::new("run1"),
+            NodeId::new("c1"),
+            EdgeKind::Contradicts,
+        ));
+        let p = freeze(&g, &NodeId::new("c1")).expect("the run does not compete, so c1 freezes");
+
+        assert!(
+            p.body.contains("run1"),
+            "the refuting run is on the record and must be rendered:\n{}",
+            p.body
+        );
+        assert!(
+            p.body.contains("DISCARDED"),
+            "and the packet must say it was discarded rather than answered:\n{}",
+            p.body
+        );
+        assert!(
+            !p.body.contains("every attack on it is itself defeated"),
+            "the old sentence was false in exactly this packet:\n{}",
+            p.body
+        );
+
+        // With nothing discarded, the line says what it always said.
+        let clean = freeze(&clean_graph(), &NodeId::new("c1")).expect("clean claim freezes");
+        assert!(
+            !clean.body.contains("DISCARDED"),
+            "control: nothing to disclose when nothing was thrown away"
         );
     }
 
