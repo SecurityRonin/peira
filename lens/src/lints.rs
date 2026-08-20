@@ -84,9 +84,7 @@ pub fn overstatements_in(text: &str, subject: &NodeId) -> Vec<Violation> {
     OVERSTATEMENTS
         .iter()
         .filter(|(word, _)| {
-            contains_phrase(&haystack, word)
-                && !clause_negated(&haystack, word)
-                && !is_a_verification_operation(&haystack)
+            contains_phrase(&haystack, word) && !every_occurrence_is_excused(&haystack, word)
         })
         .map(|(word, instead)| {
             violation(
@@ -361,10 +359,12 @@ fn sentence_is_reported_or_refused(haystack: &str, at: usize) -> bool {
     // A hand-back is read over the WHOLE clause, not just the part before the word: the
     // formula sits AFTER the issue it declines — "whether the respondent is liable is a
     // matter for the court" — so looking only backwards from `liable` would miss it.
-    let clause_end = haystack[at..]
-        .find(['.', '!', '?', '\n', ';'])
-        .map_or(haystack.len(), |i| at + i);
-    let whole_clause = &haystack[clause_start(haystack, at)..clause_end];
+    // `clause_end`, not a second boundary set written by hand. This scan stopped only at
+    // `. ! ? ; \n` while `clause_start` also cuts at ` and `, ` but ` and an em dash, so a
+    // verdict laundered by appending the tool's own remedy: "The respondent is guilty of
+    // fraud and whether costs follow is a matter for the court" sealed. One boundary set,
+    // both directions.
+    let whole_clause = &haystack[clause_start(haystack, at)..clause_end(haystack, at)];
     ATTRIBUTIONS.iter().any(|a| region.contains(a))
         || HEDGE_OPENERS.iter().any(|h| region.contains(h))
         || HAND_BACKS.iter().any(|b| whole_clause.contains(b))
@@ -383,22 +383,41 @@ fn sentence_is_reported_or_refused(haystack: &str, at: usize) -> bool {
 /// A comma is not a clause boundary in English — it is punctuation inside one. The
 /// boundaries are the sentence terminators, the semicolon, and the coordinating
 /// conjunctions that genuinely start a new claim.
+/// The one boundary set, shared by both directions.
+const CLAUSE_BOUNDS: &[&str] = &[
+    "\n",
+    ".",
+    "!",
+    "?",
+    ";",
+    // An em dash starts a new clause as surely as a semicolon does.
+    "—",
+    " and ",
+    " but ",
+    " however ",
+    " while ",
+    " whereas ",
+];
+
+/// Where the clause containing byte offset `at` ENDS.
+///
+/// The twin of `clause_start`, and it exists because a second forward scan was written
+/// beside it with a SMALLER boundary set — stopping only at `. ! ? ; \n` while
+/// `clause_start` also cuts at ` and `, ` but ` and an em dash. A verdict then laundered
+/// by appending the tool's own remedy: "The respondent is guilty of fraud and whether
+/// costs follow is a matter for the court" sealed.
+///
+/// One definition per direction, sharing one boundary set.
+fn clause_end(haystack: &str, at: usize) -> usize {
+    CLAUSE_BOUNDS
+        .iter()
+        .filter_map(|b| haystack[at..].find(b).map(|i| at + i))
+        .min()
+        .unwrap_or(haystack.len())
+}
+
 fn clause_start(haystack: &str, at: usize) -> usize {
-    const BOUNDS: &[&str] = &[
-        "\n",
-        ".",
-        "!",
-        "?",
-        ";",
-        // An em dash starts a new clause as surely as a semicolon does.
-        "—",
-        " and ",
-        " but ",
-        " however ",
-        " while ",
-        " whereas ",
-    ];
-    BOUNDS
+    CLAUSE_BOUNDS
         .iter()
         .filter_map(|b| haystack[..at].rfind(b).map(|i| i + b.len()))
         .max()
@@ -414,6 +433,23 @@ fn clause_start(haystack: &str, at: usize) -> usize {
 /// unusable on exactly the material it exists for.
 ///
 /// Deliberately narrow: only where an integrity operation is the subject.
+/// Whether EVERY occurrence of `needle` is excused — negated, or reporting what a
+/// verification tool did.
+///
+/// One per-occurrence rule instead of two document-wide ones. The verification carve-out
+/// was applied to the WHOLE haystack, so a single "digest" anywhere in a node — or
+/// anywhere in a rendered packet body — switched the overstatement scan off entirely.
+/// Every acquisition note in forensics contains that word, so the check was off by
+/// default on exactly the material it exists for.
+fn every_occurrence_is_excused(haystack: &str, needle: &str) -> bool {
+    occurrences(haystack, needle).all(|at| {
+        clause_at_is_negated(haystack, at, needle.len())
+            || is_a_verification_operation(
+                &haystack[clause_start(haystack, at)..clause_end(haystack, at)],
+            )
+    })
+}
+
 fn is_a_verification_operation(clause: &str) -> bool {
     const OPERATIONS: &[&str] = &[
         "hash verification",
@@ -1092,8 +1128,7 @@ fn forbidden_verbs(node: &Node) -> Vec<Violation> {
                 .iter()
                 .filter(move |(word, _)| {
                     contains_phrase(&haystack, word)
-                        && !clause_negated(&haystack, word)
-                        && !is_a_verification_operation(&haystack)
+                        && !every_occurrence_is_excused(&haystack, word)
                 })
                 .map(move |(word, instead)| (*field, *word, *instead))
         })
@@ -1875,6 +1910,73 @@ not_essence: a record is not the file\nstipulated: the OS recorded this path\n--
         ] {
             assert!(fired(verdict) > 0, "let a real finding through: {verdict}");
         }
+    }
+
+    /// An exemption is per OCCURRENCE and per CLAUSE, never per document.
+    ///
+    /// `is_a_verification_operation` was handed the whole haystack — its parameter is
+    /// named `clause` — so one "digest" anywhere in a node, or anywhere in a rendered
+    /// packet body, switched the entire overstatement scan off. Every acquisition note
+    /// in forensics contains that word and this repository's own fixture renders
+    /// "SHA-256 digest H" into packets, so the check was off by default on exactly the
+    /// material it exists for.
+    ///
+    /// And the hand-back scan used a SMALLER forward boundary set than `clause_start`
+    /// uses backwards, so a verdict laundered by appending the tool's own remedy.
+    /// `CLAUSE_BOUNDS` is one set now, read in both directions.
+    #[test]
+    fn an_exemption_does_not_reach_beyond_its_clause() {
+        let fired = |title: &str, body: &str| {
+            let g = graph_of(
+                vec![node(&format!(
+                    "---\nid: n1\ntype: observation\ntitle: {title}\n---\n\n{body}\n"
+                ))],
+                vec![],
+            );
+            lint(&g)
+                .into_iter()
+                .filter(|v| v.gate == FORBIDDEN_VERB || v.gate == LEGAL_CONCLUSION)
+                .count()
+        };
+
+        // A1 — a verification word elsewhere must not excuse the verdict.
+        assert_eq!(
+            fired("The Amcache entry proves execution of the binary", ""),
+            1,
+            "positive control"
+        );
+        assert_eq!(
+            fired(
+                "The Amcache entry proves execution of the binary",
+                "The acquired image has SHA-256 digest H."
+            ),
+            1,
+            "an unrelated acquisition sentence must not disarm the scan"
+        );
+        assert_eq!(
+            fired("Hash verification confirmed the image digest", ""),
+            0,
+            "and a genuine verification report is still not an opinion"
+        );
+
+        // A2 — the forward boundary set must match the backward one.
+        assert_eq!(
+            fired(
+                "The respondent is guilty of fraud and whether costs follow is a matter \
+for the court",
+                ""
+            ),
+            1,
+            "a hand-back in a LATER clause does not cover the verdict in this one"
+        );
+        assert_eq!(
+            fired(
+                "Whether the respondent is liable is a matter for the court",
+                ""
+            ),
+            0,
+            "control: the genuine hand-back still passes"
+        );
     }
 
     /// A frame governs its own clause, and no further.
