@@ -355,7 +355,36 @@ fn sentence_is_reported_or_refused(haystack: &str, at: usize) -> bool {
     // A hedge opener is matched by CONTAINS rather than `starts_with` for the same
     // reason in the other direction: "In my opinion, it cannot be said that …" is the
     // same refusal, and requiring the sentence to begin with the formula refused it.
-    let region = &haystack[clause_start(haystack, at)..at];
+    // AN ATTRIBUTION REACHES ACROSS COORDINATION. "It is alleged that the respondent
+    // forged the ledger AND misappropriated the funds" is one allegation with two verbs,
+    // and cutting at ` and ` refused the second — the recital an expert is obliged to
+    // make. So the frame is looked for from the SENTENCE start, not the clause start.
+    //
+    // What stops it running away is `VOICE_RESUMPTION`, not punctuation: the author
+    // taking their own voice back is what ends a quotation, and that is a thing they
+    // WRITE. Everything the laundering findings used — "; my own analysis", ", but the
+    // respondent" — is a resumption marker, so those still fire.
+    const VOICE_RESUMPTION: &[&str] = &[
+        " but ",
+        " however ",
+        "my own",
+        "my analysis",
+        "my examination",
+        "in my opinion",
+        "in fact",
+        "in truth",
+        "i found",
+        "i conclude",
+    ];
+    let sentence_start = haystack[..at]
+        .rfind(['.', '!', '?', '\n'])
+        .map_or(0, |j| j + 1);
+    let framed = &haystack[sentence_start..at];
+    let region: &str = VOICE_RESUMPTION
+        .iter()
+        .filter_map(|m| framed.rfind(m).map(|i| i + m.len()))
+        .max()
+        .map_or(framed, |cut| &framed[cut..]);
     // A hand-back is read over the WHOLE clause, not just the part before the word: the
     // formula sits AFTER the issue it declines — "whether the respondent is liable is a
     // matter for the court" — so looking only backwards from `liable` would miss it.
@@ -419,9 +448,79 @@ fn clause_end(haystack: &str, at: usize) -> usize {
 fn clause_start(haystack: &str, at: usize) -> usize {
     CLAUSE_BOUNDS
         .iter()
-        .filter_map(|b| haystack[..at].rfind(b).map(|i| i + b.len()))
+        .filter_map(|b| {
+            let mut from = at;
+            while let Some(i) = haystack[..from].rfind(b) {
+                if is_a_real_boundary(haystack, i, b) {
+                    return Some(i + b.len());
+                }
+                from = i;
+            }
+            None
+        })
         .max()
         .unwrap_or(0)
+}
+
+/// Whether the boundary string at `i` actually ends a clause.
+///
+/// Two marks lie about it, and both were introduced by treating punctuation as syntax:
+///
+/// A FULL STOP inside an abbreviation or a decimal is not a sentence end. "There is no
+/// evidence in para. 4 that the respondent forged the ledger" lost its negator at
+/// `para.` and was refused as a verdict — a correct negative finding, in the citation
+/// style an expert report is written in.
+///
+/// A PAIRED EM DASH is a parenthetical, exactly like the comma this project already
+/// stopped cutting at. "The record does not — on the material provided — show the
+/// respondent is liable" severed the negator at the second dash. A SINGLE dash does
+/// begin a new clause, and still counts.
+fn is_a_real_boundary(haystack: &str, i: usize, b: &str) -> bool {
+    match b {
+        "." => {
+            const ABBREVIATIONS: &[&str] = &[
+                "para", "paras", "mr", "mrs", "ms", "dr", "prof", "no", "nos", "vol", "fig",
+                "figs", "cf", "ibid", "ltd", "inc", "v", "r", "ex", "art", "sched", "cl",
+            ];
+            // A decimal point: digits on both sides.
+            let before_digit = haystack[..i]
+                .chars()
+                .next_back()
+                .is_some_and(|c| c.is_ascii_digit());
+            let after_digit = haystack[i + 1..]
+                .chars()
+                .next()
+                .is_some_and(|c| c.is_ascii_digit());
+            if before_digit && after_digit {
+                return false;
+            }
+            let word = haystack[..i]
+                .rsplit(|c: char| !c.is_alphanumeric())
+                .next()
+                .unwrap_or_default()
+                .to_ascii_lowercase();
+            !ABBREVIATIONS.contains(&word.as_str())
+        }
+        "—" => {
+            // PARITY over the whole sentence, not this dash alone. Rejecting only the
+            // closing dash of a pair left the OPENING one as a boundary, which severs
+            // the clause just as badly.
+            //
+            // An even count means every dash is half of a parenthetical, and none of
+            // them starts a clause. An odd count means one dash is doing the other job —
+            // introducing a new clause — and that is the last one.
+            let start = haystack[..i]
+                .rfind(['.', '!', '?', '\n'])
+                .map_or(0, |j| j + 1);
+            let end = haystack[i..]
+                .find(['.', '!', '?', '\n'])
+                .map_or(haystack.len(), |j| i + j);
+            let sentence = &haystack[start..end];
+            let total = sentence.matches('—').count();
+            total % 2 == 1 && sentence.rfind('—').is_some_and(|last| start + last == i)
+        }
+        _ => true,
+    }
 }
 
 /// Whether `confirms` here is a cryptographic operation rather than an opinion.
@@ -1954,6 +2053,58 @@ not_essence: a record is not the file\nstipulated: the OS recorded this path\n--
             "The respondent is liable for the loss",
             "The evidence confirms the program was executed",
             "The respondent is liable; that is a matter for the court",
+        ] {
+            assert!(fired(verdict) > 0, "let a real finding through: {verdict}");
+        }
+    }
+
+    /// Punctuation is not syntax: an abbreviation, a decimal, and a paired dash.
+    ///
+    /// Three boundary marks lie about ending a clause, and all three were introduced by
+    /// treating punctuation as structure.
+    ///
+    /// A FULL STOP inside "para. 4" or "3.5" is not a sentence end — the citation style
+    /// an expert report is written in lost its negator and the correct negative finding
+    /// was refused. A PAIRED EM DASH is a parenthetical, exactly like the comma this
+    /// project already stopped cutting at; a SINGLE dash does start a clause and still
+    /// counts. And an ATTRIBUTION reaches across ` and `, because "it is alleged that X
+    /// and Y" is one allegation with two verbs — bounded not by punctuation but by the
+    /// author taking their own voice back, which is something they WRITE.
+    #[test]
+    fn punctuation_is_not_syntax() {
+        let fired = |title: &str| {
+            let g = graph_of(
+                vec![node(&format!(
+                    "---\nid: n1\ntype: observation\ntitle: {title}\n---\n"
+                ))],
+                vec![],
+            );
+            lint(&g)
+                .into_iter()
+                .filter(|v| v.gate == LEGAL_CONCLUSION || v.gate == FORBIDDEN_VERB)
+                .count()
+        };
+
+        for clean in [
+            // B1 — the abbreviation and the decimal
+            "There is no evidence in para. 4 that the respondent forged the ledger",
+            "There is no entry at offset 3.5 that proves execution",
+            // B3 — the paired dash
+            "The record does not — on the material provided — show the respondent is liable",
+            // B2 — one allegation, two verbs
+            "It is alleged that the respondent forged the ledger and misappropriated the funds",
+        ] {
+            assert_eq!(fired(clean), 0, "refused obligatory prose: {clean}");
+        }
+
+        for verdict in [
+            // the single dash DOES start a clause
+            "The record proves no innocent explanation exists — the respondent forged the entries",
+            // and the author resuming their own voice ends the quotation
+            "It is alleged that entries were altered; my own analysis shows the respondent \
+forged them",
+            "It is not possible to say when, but the respondent forged the ledger entry",
+            "The record shows the respondent is liable",
         ] {
             assert!(fired(verdict) > 0, "let a real finding through: {verdict}");
         }
