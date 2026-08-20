@@ -394,8 +394,14 @@ fn sentence_is_reported_or_refused(haystack: &str, at: usize) -> bool {
     // fraud and whether costs follow is a matter for the court" sealed. One boundary set,
     // both directions.
     let whole_clause = &haystack[clause_start(haystack, at)..clause_end(haystack, at)];
+    // The fronted-concession rule lives in `clause_at_is_negated`, where the negator
+    // scan is — that is the path a concession actually travels, and putting a second
+    // copy here would be the duplicate this round keeps finding.
+    let hedged = HEDGE_OPENERS
+        .iter()
+        .any(|h| after_fronted_concession(region).contains(h));
     ATTRIBUTIONS.iter().any(|a| region.contains(a))
-        || HEDGE_OPENERS.iter().any(|h| region.contains(h))
+        || hedged
         || HAND_BACKS.iter().any(|b| whole_clause.contains(b))
 }
 
@@ -563,6 +569,28 @@ fn is_a_verification_operation(clause: &str) -> bool {
     OPERATIONS.iter().any(|o| clause.contains(o))
 }
 
+/// A fronted concession closes at its comma, and what follows is the author's own.
+///
+/// "Although it was not possible to image the phone, the respondent forged the entries"
+/// declines one thing and asserts another — the concession is the SETUP for the
+/// assertion, not a hedge on it. A comma is not a clause boundary (B1/B3), so without
+/// this the whole sentence is one clause and the concession's negator covers the verdict
+/// after it.
+///
+/// ONE definition, because both paths that could exempt this sentence consult it — the
+/// negator scan and the hedge frame. Removing it from either one alone let the sentence
+/// through, which is how it was found: fixing one path and watching the other keep the
+/// exemption alive.
+fn after_fronted_concession(clause: &str) -> &str {
+    const SUBORDINATORS: &[&str] = &["although ", "though ", "whilst ", "whereas "];
+    let t = clause.trim_start();
+    if SUBORDINATORS.iter().any(|c| t.starts_with(c)) {
+        t.find(", ").map_or(clause, |i| &t[i + 2..])
+    } else {
+        clause
+    }
+}
+
 fn clause_at_is_negated(haystack: &str, at: usize, len: usize) -> bool {
     const OBJECT_NEGATORS: &[&str] = &["nothing", "no", "none", "neither"];
     // Somebody else's words, or a refusal to conclude. Both govern the whole sentence,
@@ -598,7 +626,7 @@ fn clause_at_is_negated(haystack: &str, at: usize, len: usize) -> bool {
     // sentence that has ended cannot govern the next one.
     let start = clause_start(haystack, at);
 
-    head[start..]
+    after_fronted_concession(&head[start..])
         .split(|c: char| !c.is_alphanumeric() && c != '\'' && c != '\u{2019}')
         .any(|w| NEGATORS.contains(&w))
 }
@@ -711,6 +739,20 @@ fn predicated_of_a_party(haystack: &str, word: &str) -> bool {
             "reimburse",
             "contribute",
             "account",
+            // NOUNS TOO. The list was verb-only, so "liable to prosecution" — and
+            // "liable to damages", "liable to a penalty" — read as the prone-to sense
+            // and laundered a legal conclusion through a carve-out written for
+            // "liable to change at shutdown".
+            "prosecution",
+            "damages",
+            "costs",
+            "a penalty",
+            "penalties",
+            "forfeiture",
+            "confiscation",
+            "seizure",
+            "arrest",
+            "suit",
         ];
         return occurrences(haystack, word).any(|at| {
             let prone = haystack[at..]
@@ -828,6 +870,16 @@ const IMPERATIVE_OPENERS: &[&str] = &[
 /// appendix are UTC"), or plain metadiscourse. One function, because the third entry
 /// point kept an inline copy that never learned about scope notes — directly under a
 /// comment saying a rule with three entry points needs one gate.
+/// Whether the quantifier word AT `at` is exempt.
+///
+/// The sentence-wide version let a bounded phrase excuse a genuine universal beside it:
+/// "Each of the four laptops was imaged, and every host on the estate ran the installer"
+/// passed, because `each of the` appeared SOMEWHERE. Same defect as the verification
+/// carve-out — an exemption earned by one occurrence spent on another.
+fn is_exempt_at(haystack: &str, at: usize) -> bool {
+    is_exempt_from_quantifier(&haystack[clause_start(haystack, at)..clause_end(haystack, at)])
+}
+
 fn is_exempt_from_quantifier(s: &str) -> bool {
     const BOUNDED: &[&str] = &[
         "none of the",
@@ -903,13 +955,13 @@ fn contradicted_quantifier(node: &Node) -> Vec<Violation> {
         // was implemented as four phrasings. "All timestamps in this report are UTC" is
         // the carve-out's own motivating example; binding the same note to an appendix
         // or a table was refused, though it is the narrower and more careful claim.
-        let in_a_claiming_sentence = |w: &str, hay: &str| {
-            contains_phrase(hay, w)
-                && hay
-                    .split(['.', '!', '?', '\n'])
-                    .filter(|s| contains_phrase(s, w))
-                    .any(|s| !is_exempt_from_quantifier(s))
-        };
+        // PER OCCURRENCE, not per sentence. Scanning the sentence let a bounded phrase
+        // excuse a genuine universal beside it — "Each of the four laptops was imaged,
+        // and every host on the estate ran the installer" passed because `each of the`
+        // appeared somewhere in it. An exemption earned by one occurrence was being
+        // spent on another, which is the verification carve-out's defect exactly.
+        let in_a_claiming_sentence =
+            |w: &str, hay: &str| occurrences(hay, w).any(|at| !is_exempt_at(hay, at));
         let found = STRONG
             .iter()
             .find(|w| in_a_claiming_sentence(w, &full))
@@ -917,8 +969,8 @@ fn contradicted_quantifier(node: &Node) -> Vec<Violation> {
             .or_else(|| {
                 WEAK.iter().find(|w| {
                     full.split(['.', '!', '?', '\n']).any(|s| {
-                        let s = s.trim_start();
-                        s.starts_with(*w) && !is_exempt_from_quantifier(s)
+                        let t = s.trim_start();
+                        t.starts_with(*w) && occurrences(s, w).any(|at| !is_exempt_at(&full, at))
                     })
                 })
             });
@@ -2056,6 +2108,93 @@ not_essence: a record is not the file\nstipulated: the OS recorded this path\n--
         ] {
             assert!(fired(verdict) > 0, "let a real finding through: {verdict}");
         }
+    }
+
+    /// Three more exemptions that reached past what earned them.
+    ///
+    /// A3 — a BOUNDED phrase excused a genuine universal beside it, because the check
+    /// scanned the sentence rather than the occurrence: "Each of the four laptops was
+    /// imaged, and every host on the estate ran the installer" passed. Same defect as
+    /// the verification carve-out, one lint over.
+    ///
+    /// A4 — the prone-to carve-out's OBLIGATION list was verb-only, so "liable to
+    /// prosecution" laundered a legal conclusion through a rule written for "liable to
+    /// change at shutdown".
+    ///
+    /// A5 — a fronted concession covered the clause it sets up: "Although it was not
+    /// possible to image the phone, the respondent forged the entries" declines one
+    /// thing and asserts another. BOTH exemption paths consulted the concession's
+    /// negator, so fixing one left the other holding the door — which is how the shared
+    /// `after_fronted_concession` came about.
+    #[test]
+    fn an_exemption_is_earned_by_the_occurrence_that_uses_it() {
+        let fired = |title: &str, quantifier: &str| {
+            let g = graph_of(
+                vec![node(&format!(
+                    "---\nid: n1\ntype: observation\ntitle: {title}\n{quantifier}---\n"
+                ))],
+                vec![],
+            );
+            lint(&g)
+                .into_iter()
+                .filter(|v| {
+                    v.gate == LEGAL_CONCLUSION
+                        || v.gate == FORBIDDEN_VERB
+                        || v.gate == DECLARATION_CONTRADICTED
+                })
+                .count()
+        };
+
+        // A3
+        assert!(
+            fired(
+                "Each of the four laptops was imaged, and every host on the estate ran \
+the installer",
+                "quantifier: singular\n"
+            ) > 0,
+            "a bounded phrase must not excuse a universal beside it"
+        );
+        assert_eq!(
+            fired(
+                "None of the recovered entries postdates the acquisition",
+                "quantifier: singular\n"
+            ),
+            0,
+            "control: the bounded phrase still exempts its own occurrence"
+        );
+
+        // A4
+        assert!(
+            fired(
+                "The respondent is liable to prosecution for the offence",
+                ""
+            ) > 0,
+            "`liable to prosecution` is the legal sense, not the prone-to one"
+        );
+        assert_eq!(
+            fired("These entries are liable to be overwritten", ""),
+            0,
+            "control: volatility prose still passes"
+        );
+
+        // A5
+        assert!(
+            fired(
+                "Although it was not possible to image the phone, the respondent forged \
+the entries",
+                ""
+            ) > 0,
+            "a fronted concession does not hedge the clause it sets up"
+        );
+        assert_eq!(
+            fired(
+                "Although the phone was imaged, it cannot be said that the entry confirms \
+execution",
+                ""
+            ),
+            0,
+            "control: a hedge in the MAIN clause still governs it"
+        );
     }
 
     /// Punctuation is not syntax: an abbreviation, a decimal, and a paired dash.
