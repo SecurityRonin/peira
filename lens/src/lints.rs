@@ -4,7 +4,7 @@
 //! whatever the domain: prose that overstates its evidence, references that go
 //! nowhere, grades nobody stands behind, and corroboration counted as independence.
 
-use crate::Violation;
+use crate::{carries_weight, Violation};
 use peira_core::{EdgeKind, Graph, Node, NodeId, NodeKind};
 use std::collections::BTreeSet;
 
@@ -1188,7 +1188,23 @@ never a silent no-op",
 
 /// Claims with nothing behind them.
 fn orphan_claims(graph: &Graph, node: &Node) -> Vec<Violation> {
-    if node.kind != NodeKind::Claim {
+    // A KIND TEST DOING SCOPING, which this codebase has removed three times and had
+    // grow back a fourth. Round 6 closed "an unexamined node manufactures standing" by
+    // examining defenders — and one relabel evaded it, because the lint that makes a
+    // bare defender FAIL keyed on `type: claim`. Spelled `type: hypothesis`, the same
+    // vacuous rebuttal defeated a live rival and answered to nothing.
+    //
+    // A hypothesis nothing leans on is a legitimate candidate with no support — that is
+    // what a hypothesis IS. A hypothesis being USED, as a weapon or as a support, is
+    // being asserted, and an assertion resting on nothing is the thing this lint exists
+    // to name. Whether a node carries weight is a property of the edges, not the kind.
+    let wielded = matches!(node.kind, NodeKind::Claim | NodeKind::Hypothesis)
+        && (node.kind == NodeKind::Claim
+            || carries_weight(graph, node)
+            || graph
+                .edges_from(&node.id)
+                .any(|e| e.kind.is_attack() && graph.is_argument_node(&e.to)));
+    if !wielded {
         return Vec::new();
     }
     let supported = graph
@@ -1924,6 +1940,62 @@ explanation exists — the respondent forged the entries\n---\n",
         assert!(
             lint(&g).iter().any(|v| v.gate == LEGAL_CONCLUSION),
             "the negator belongs to the clause before the dash, not the verdict after it"
+        );
+    }
+
+    /// A hypothesis being WIELDED is being asserted.
+    ///
+    /// Round 6 closed "an unexamined node manufactures standing" by examining defenders.
+    /// One relabel evaded it: the lint that makes a bare defender FAIL keyed on
+    /// `type: claim`, so the same vacuous rebuttal spelled `type: hypothesis` defeated a
+    /// live rival and answered to nothing. A kind test doing scoping — removed three
+    /// times from this codebase and grown back a fourth.
+    ///
+    /// The distinction that matters is use, not kind: a hypothesis nothing leans on is a
+    /// legitimate candidate with no support, which is what a hypothesis IS.
+    #[test]
+    fn a_hypothesis_used_as_a_weapon_answers_for_itself() {
+        let build = |kind: &str, attacks: bool| {
+            let mut nodes = vec![
+                node("---\nid: c1\ntype: claim\ntitle: The rival account\n---\n"),
+                node("---\nid: o1\ntype: observation\ntitle: a record\n---\n"),
+                node(&format!(
+                    "---\nid: h1\ntype: {kind}\ntitle: An account that does not fit\n---\n"
+                )),
+            ];
+            nodes.push(node("---\nid: pad\ntype: observation\ntitle: pad\n---\n"));
+            let mut edges = vec![Edge::new(
+                NodeId::new("o1"),
+                NodeId::new("c1"),
+                EdgeKind::Supports,
+            )];
+            if attacks {
+                edges.push(Edge::new(
+                    NodeId::new("h1"),
+                    NodeId::new("c1"),
+                    EdgeKind::Attacks,
+                ));
+            }
+            lint(&graph_of(nodes, edges))
+                .into_iter()
+                .filter(|v| v.gate == ORPHAN_CLAIM && v.subject == NodeId::new("h1"))
+                .count()
+        };
+
+        assert_eq!(
+            build("hypothesis", false),
+            0,
+            "a hypothesis nothing leans on is a candidate, not an orphan"
+        );
+        assert_eq!(
+            build("hypothesis", true),
+            1,
+            "one used to defeat something is being asserted, and rests on nothing"
+        );
+        assert_eq!(
+            build("claim", true),
+            1,
+            "control: the spelling that always fired still fires"
         );
     }
 
