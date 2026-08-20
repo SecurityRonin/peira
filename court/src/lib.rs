@@ -93,6 +93,16 @@ pub enum Verification {
     /// one of them is misconduct. The tool cannot tell them apart, so it reports the
     /// difference and names where it starts; the reader judges.
     DigestMismatch {
+        /// Whether the ONLY difference from the current rendering is the declared format
+        /// number — which proves an edit rather than staleness, because no older renderer
+        /// could emit a body byte-identical to a newer one's.
+        ///
+        /// Carried because `verify` computed this proof and then dropped it: the CLI
+        /// printed the same "the record moved, not that anyone altered it" exculpation
+        /// over the one case the tool can actually establish. A verdict discarded in
+        /// transit is this project's most-repeated defect, and here it was discarded
+        /// from the fix written to close it.
+        format_line_only: bool,
         /// What the packet carries.
         stored: String,
         /// What the vault produces now.
@@ -768,6 +778,7 @@ pub fn verify(graph: &Graph, packet: &Packet) -> Verification {
     // the stored artifact alone, and once it differs, a digest comparison is
     // guaranteed to differ too — reporting THAT would be true and useless, and would
     // read as an accusation.
+    let mut format_line_edit = false;
     let stored = declared_format(&packet.body);
     if stored != PACKET_FORMAT {
         // NORMALISE THE FORMAT LINE AND RE-COMPARE. If the body becomes byte-identical
@@ -794,7 +805,9 @@ pub fn verify(graph: &Graph, packet: &Packet) -> Verification {
                 body_matches,
             };
         }
-        // Fall through: the format line was edited on an otherwise-current packet.
+        // Fall through: the format line was edited on an otherwise-current packet, and
+        // `body_matches` is the PROOF of that — carried through so the caller can say so.
+        format_line_edit = true;
     }
 
     match freeze(graph, &packet.subject) {
@@ -815,6 +828,7 @@ pub fn verify(graph: &Graph, packet: &Packet) -> Verification {
                         .then(|| format!("the packet has {s} line(s); the vault now renders {f}"))
                 });
             Verification::DigestMismatch {
+                format_line_only: format_line_edit,
                 stored: packet.digest.clone(),
                 fresh: fresh.digest,
                 first_difference,
@@ -1701,6 +1715,59 @@ aspect: function\n---\n",
             "the attacker's title is quoted without the note that frames it:\n{}",
             p.body
         );
+    }
+
+    /// The proof that an edit happened must reach the caller that reports it.
+    ///
+    /// `verify` establishes the one tampering case this tool CAN establish: correcting
+    /// the format number alone makes the stored body byte-identical to what this build
+    /// renders, and no older renderer can emit a newer one's bytes. It computed that
+    /// proof and then dropped it, so the CLI printed "the record moved, not that anyone
+    /// altered it" over the case where it demonstrably was.
+    ///
+    /// A verdict discarded in transit is this codebase's most-repeated defect, and this
+    /// instance sat inside the fix written to close it.
+    #[test]
+    fn a_proved_format_edit_says_so() {
+        let g = clean_graph();
+        let p = freeze(&g, &NodeId::new("c1")).expect("clean claim should freeze");
+
+        let edited = Packet::from_stored(
+            p.subject.clone(),
+            p.body.replace(
+                &format!("Packet format: {PACKET_FORMAT}"),
+                "Packet format: 1",
+            ),
+        );
+        match verify(&g, &edited) {
+            Verification::DigestMismatch {
+                format_line_only, ..
+            } => assert!(
+                format_line_only,
+                "the format number is the only difference, which proves a hand edit"
+            ),
+            other => panic!("expected DigestMismatch, got {other:?}"),
+        }
+
+        // A GENUINE vault change must stay non-accusatory.
+        let mut grown = clean_graph();
+        grown.insert_node(node(
+            "---\nid: o9\ntype: observation\ntitle: a later corroborating record\naspect: function\n---\n",
+        ));
+        grown.insert_edge(
+            Edge::new(NodeId::new("o9"), NodeId::new("c1"), EdgeKind::Supports)
+                .graded_by(Grade::G2, "a-reviewer")
+                .via(Pramana::Perception),
+        );
+        match verify(&grown, &p) {
+            Verification::DigestMismatch {
+                format_line_only, ..
+            } => assert!(
+                !format_line_only,
+                "a vault that GREW is not an edited packet"
+            ),
+            other => panic!("expected DigestMismatch, got {other:?}"),
+        }
     }
 
     /// Every line of the defeat section must carry its own frame.

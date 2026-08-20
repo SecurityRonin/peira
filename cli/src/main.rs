@@ -410,10 +410,33 @@ fn cmd_verify(vault: &Path, packet: &Path) -> Result<u8, String> {
         // same verdict, and only one is misconduct. Report the difference, name where it
         // starts, and let the reader judge.
         Verification::DigestMismatch {
+            format_line_only,
             stored,
             fresh,
             first_difference,
         } => {
+            if format_line_only {
+                // THE ONE CASE THE TOOL CAN ESTABLISH. `verify` proved the format number
+                // is the sole difference: correcting it makes the stored body
+                // byte-identical to what this build renders, and no older renderer could
+                // produce a newer one's bytes. The generic exculpation below was printed
+                // over this too — the proof was computed and dropped in transit, in the
+                // fix written to close exactly that.
+                println!(
+                    "✗ {} was EDITED — its declared packet format was changed by hand",
+                    packet.display()
+                );
+                println!("  packet sha256 {stored}");
+                println!("  vault  sha256 {fresh}");
+                if let Some(d) = first_difference {
+                    println!("\n  first difference:\n  {d}");
+                }
+                println!(
+                    "\n  Correcting that one number makes the stored body byte-identical\n  to what this build renders, so it was not written by an older\n  renderer — an older \
+renderer cannot emit a newer one's bytes."
+                );
+                return Ok(exit::VIOLATIONS);
+            }
             println!(
                 "✗ {} no longer matches the vault — the record has changed since it froze",
                 packet.display()
