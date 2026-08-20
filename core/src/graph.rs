@@ -285,6 +285,100 @@ impl Graph {
 #[cfg(test)]
 mod tests {
 
+    /// Superseding something is not retracting it, and the two obey different laws.
+    ///
+    /// A RETRACTION can be lifted: if the node that retracted X is itself retracted, the
+    /// retraction does not bind and X stands again. That is a dialectical dispute about
+    /// whether the withdrawal was right, and the fixed point models it correctly.
+    ///
+    /// A SUPERSESSION is a version chain, and lifting is nonsense there. v2 supersedes
+    /// v1; v3 supersedes v2. v2 is now superseded — but v1 does not come back. It is
+    /// superseded by a superseded version, which is still superseded. Grouping the two
+    /// relations under one predicate applied retraction-lifting algebra to version
+    /// chains and REVIVED the twice-superseded original, with the packet asserting "the
+    /// withdrawal was lifted".
+    ///
+    /// A supersession stops binding only if its author was RETRACTED — withdrawn as
+    /// wrong, rather than merely replaced.
+    #[test]
+    fn a_supersession_chain_does_not_revive_the_original() {
+        use crate::{Edge, EdgeKind, NodeId};
+        let mk = |id: &str| {
+            crate::parse_node(&format!("---\nid: {id}\ntype: claim\ntitle: t\n---\n"))
+                .expect("fixture parses")
+        };
+        let build = |kind: EdgeKind| {
+            let mut g = Graph::new();
+            for id in ["v1", "v2", "v3"] {
+                g.insert_node(mk(id));
+            }
+            g.insert_edge(Edge::new(NodeId::new("v2"), NodeId::new("v1"), kind));
+            g.insert_edge(Edge::new(NodeId::new("v3"), NodeId::new("v2"), kind));
+            g.withdrawn()
+        };
+
+        for kind in [EdgeKind::Supersedes, EdgeKind::Sublates] {
+            let w = build(kind);
+            assert!(
+                w.contains(&NodeId::new("v2")),
+                "{kind:?}: v2 was replaced by v3 and is not current"
+            );
+            assert!(
+                w.contains(&NodeId::new("v1")),
+                "{kind:?}: v1 stays replaced — superseded by a superseded version is \
+still superseded, and reviving it is how a retired conclusion returns"
+            );
+            assert!(
+                !w.contains(&NodeId::new("v3")),
+                "{kind:?}: v3 is the current version"
+            );
+        }
+
+        // The lifting law still holds where it belongs: a RETRACTION whose author is
+        // itself retracted does not bind.
+        let mut g = Graph::new();
+        for id in ["c1", "d1", "d2"] {
+            g.insert_node(mk(id));
+        }
+        g.insert_edge(Edge::new(
+            NodeId::new("d1"),
+            NodeId::new("c1"),
+            EdgeKind::Retracts,
+        ));
+        g.insert_edge(Edge::new(
+            NodeId::new("d2"),
+            NodeId::new("d1"),
+            EdgeKind::Retracts,
+        ));
+        let w = g.withdrawn();
+        assert!(
+            !w.contains(&NodeId::new("c1")),
+            "control: a retracted retraction is lifted, and c1 stands"
+        );
+
+        // And a supersession made by a RETRACTED author does stop binding — the author
+        // was withdrawn as wrong, not merely replaced.
+        let mut g = Graph::new();
+        for id in ["v1", "v2", "d1"] {
+            g.insert_node(mk(id));
+        }
+        g.insert_edge(Edge::new(
+            NodeId::new("v2"),
+            NodeId::new("v1"),
+            EdgeKind::Supersedes,
+        ));
+        g.insert_edge(Edge::new(
+            NodeId::new("d1"),
+            NodeId::new("v2"),
+            EdgeKind::Retracts,
+        ));
+        let w = g.withdrawn();
+        assert!(
+            !w.contains(&NodeId::new("v1")),
+            "the version that replaced v1 was itself withdrawn as wrong, so v1 stands"
+        );
+    }
+
     /// Reference material does not compete.
     ///
     /// `NodeKind::is_argument` says so in as many words — "a `Term` or `Criterion` is
