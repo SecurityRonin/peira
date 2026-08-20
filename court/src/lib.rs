@@ -876,8 +876,18 @@ pub fn verify(graph: &Graph, packet: &Packet) -> Verification {
             &format!("Packet format: {stored}"),
             &format!("Packet format: {PACKET_FORMAT}"),
         );
-        let body_matches = freeze(graph, &packet.subject).is_ok_and(|fresh| {
-            hash_bytes(Algorithm::Sha256, normalised.as_bytes()) == fresh.digest
+        // `render_body`, NOT `freeze`. The proof is a question about BYTES — does
+        // correcting the format number alone make the stored body identical to what this
+        // build renders — and it has no gate dependency. Routing it through `freeze`
+        // meant one unrelated blocking finding anywhere in the closure degraded a
+        // PROVABLE hand edit to "no verdict", exit 2, with prose implying the body
+        // differs beyond the format line when it does not.
+        //
+        // The claim's gates decide whether a NEW packet may be frozen. They say nothing
+        // about what an existing one's bytes are.
+        let body_matches = render_body(graph, &packet.subject).is_some_and(|fresh| {
+            hash_bytes(Algorithm::Sha256, normalised.as_bytes())
+                == hash_bytes(Algorithm::Sha256, fresh.as_bytes())
         });
 
         if !body_matches {
@@ -887,8 +897,21 @@ pub fn verify(graph: &Graph, packet: &Packet) -> Verification {
                 body_matches,
             };
         }
-        // Fall through: the format line was edited on an otherwise-current packet, and
-        // `body_matches` is the PROOF of that — carried through so the caller can say so.
+        // PROVED, and reported here rather than fallen through. The path below asks
+        // `freeze`, which fails when any gate blocks — so a proven hand edit came back
+        // as "the claim no longer qualifies", losing the one verdict this tool can
+        // actually establish. Gates decide whether a NEW packet may be frozen; they have
+        // no bearing on what an existing one's bytes are.
+        if let Some(fresh) = render_body(graph, &packet.subject) {
+            return Verification::DigestMismatch {
+                format_line_only: true,
+                stored: packet.digest.clone(),
+                fresh: hash_bytes(Algorithm::Sha256, fresh.as_bytes()),
+                first_difference: Some(format!(
+                    "stored: Packet format: {stored}\n  fresh:  Packet format: {PACKET_FORMAT}"
+                )),
+            };
+        }
         format_line_edit = true;
     }
 
@@ -1796,6 +1819,57 @@ aspect: function\n---\n",
             ),
             "the attacker's title is quoted without the note that frames it:\n{}",
             p.body
+        );
+    }
+
+    /// The format-edit proof is about BYTES, and gates have no say in it.
+    ///
+    /// `verify` established the proof by calling `freeze`, so ONE unrelated blocking
+    /// finding anywhere in the closure degraded a provable hand edit to "no verdict",
+    /// exit 2 — with prose implying the body differs beyond the format line when it does
+    /// not. The claim's gates decide whether a NEW packet may be frozen; they say
+    /// nothing about what an existing one's bytes are.
+    #[test]
+    fn the_format_proof_survives_an_unrelated_blocking_finding() {
+        let mut g = clean_graph();
+        let p = freeze(&g, &NodeId::new("c1")).expect("clean claim should freeze");
+        let edited = Packet::from_stored(
+            p.subject.clone(),
+            p.body.replace(
+                &format!("Packet format: {PACKET_FORMAT}"),
+                "Packet format: 1",
+            ),
+        );
+        assert!(
+            matches!(
+                verify(&g, &edited),
+                Verification::DigestMismatch {
+                    format_line_only: true,
+                    ..
+                }
+            ),
+            "control: on a clean vault the edit is proved"
+        );
+
+        // A blocker that changes NO rendered byte: `privilege:` is not in the packet.
+        g.insert_node(node(
+            "---\nid: o1\ntype: observation\ntitle: InventoryApplicationFile entry present\n\
+aspect: function\nprivilege: litigation-privileged\n---\n",
+        ));
+        assert!(
+            freeze(&g, &NodeId::new("c1")).is_err(),
+            "control: the vault now blocks a NEW packet"
+        );
+        assert!(
+            matches!(
+                verify(&g, &edited),
+                Verification::DigestMismatch {
+                    format_line_only: true,
+                    ..
+                }
+            ),
+            "the stored packet's bytes did not change, so the proof still holds — and it \
+must not be lost to a `freeze` that now fails for an unrelated reason"
         );
     }
 
