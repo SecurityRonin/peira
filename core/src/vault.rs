@@ -113,7 +113,13 @@ fn edge_from_spec(from: &NodeId, spec: &str, kind: EdgeKind) -> Edge {
                     edge = edge.proposing(g);
                 }
             }
-            "by" => grader = Some(value.to_owned()),
+            // AN EMPTY VALUE IS NOT A GRADER. `by=` with nothing after it built a grade
+            // "settled" by the empty string: the ungraded-support and unreviewed-grade
+            // lints both stayed silent, and the packet printed "Credited: , albert".
+            // The invariant this breaks is the one the type exists for — a grade cannot
+            // be built without its grader — and the emptiest possible input walked
+            // straight through it.
+            "by" if !value.trim().is_empty() => grader = Some(value.trim().to_owned()),
             "via" => {
                 if let Some(p) = Pramana::from_str_opt(value) {
                     edge = edge.via(p);
@@ -452,6 +458,33 @@ measured_by: [i1]\n---\n",
             1,
             "an edge to an empty id points at nothing, and must be reported as such"
         );
+    }
+
+    /// An empty `by=` is not a grader.
+    ///
+    /// `by=` with nothing after it built a grade "settled" by the empty string: both the
+    /// ungraded-support and unreviewed-grade lints stayed silent, and the packet printed
+    /// "Credited: , albert". The invariant this breaks is the one the type exists for.
+    #[test]
+    fn an_empty_grader_settles_nothing() {
+        let e = edge_from_spec(
+            &NodeId::new("o1"),
+            "c1 grade=G2 by= via=perception",
+            EdgeKind::Supports,
+        );
+        assert_eq!(e.grader(), None, "the empty string is not a reviewer");
+        assert_eq!(
+            e.grade(),
+            None,
+            "and a grade cannot be settled without one — the whole point of the pair"
+        );
+
+        let e = edge_from_spec(
+            &NodeId::new("o1"),
+            "c1 grade=G2 by=albert via=perception",
+            EdgeKind::Supports,
+        );
+        assert_eq!(e.grader(), Some("albert"), "control");
     }
 
     #[test]
