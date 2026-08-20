@@ -368,7 +368,9 @@ fn foreign_title(n: &Node) -> String {
 pub fn withdrawn_attacks<'g>(graph: &'g Graph, id: &NodeId) -> Vec<&'g Node> {
     let withdrawn = graph.withdrawn();
     graph
-        .live_attacks_on(id)
+        // The RAW relation: this function exists to report the withdrawn ones, so
+        // filtering them out first would make it always empty.
+        .attacks_on(id)
         .filter(|e| withdrawn.contains(&e.from))
         .filter_map(|e| graph.node(&e.from))
         .collect()

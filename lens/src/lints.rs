@@ -1233,12 +1233,33 @@ fn orphan_claims(graph: &Graph, node: &Node) -> Vec<Violation> {
     // what a hypothesis IS. A hypothesis being USED, as a weapon or as a support, is
     // being asserted, and an assertion resting on nothing is the thing this lint exists
     // to name. Whether a node carries weight is a property of the edges, not the kind.
-    let wielded = matches!(node.kind, NodeKind::Claim | NodeKind::Hypothesis)
-        && (node.kind == NodeKind::Claim
-            || carries_weight(graph, node)
-            || graph
-                .edges_from(&node.id)
-                .any(|e| e.kind.is_attack() && graph.is_argument_node(&e.to)));
+    // A SMALLER KIND TEST IS STILL A KIND TEST. The previous version replaced
+    // `node.kind != Claim` with `matches!(node.kind, Claim | Hypothesis)` — in the commit
+    // whose message says weight is a property of the edges — so the same vacuous
+    // rebuttal spelled `type: dissent` or `type: observation` restored a defeated claim
+    // and drew nothing. `is_argument` admits four kinds; this admitted two.
+    //
+    // The question is USE, not kind: a node that attacks something, or that something
+    // leans on, is being asserted. An OBSERVATION is the one exception, and for a
+    // reason rather than by category — it is primitive evidence, the leaf a chain ends
+    // at, so demanding it rest on something else is the regress D2 is about. But an
+    // observation WIELDED as a weapon is making an argument, and answers for it.
+    let wields_an_attack = graph
+        .edges_from(&node.id)
+        .any(|e| e.kind.is_attack() && graph.is_argument_node(&e.to));
+    // OBSERVATIONS AND DISSENTS ARE LEAVES. Primitive evidence is where a chain ENDS;
+    // demanding it rest on something else is the infinite regress. So merely carrying
+    // weight is not enough for them — an observation supporting a claim is doing exactly
+    // its job. Wielding an ATTACK is different: that is making an argument, and an
+    // argument resting on nothing is what this lint names.
+    //
+    // A hypothesis sits between: something leaning on it makes it inferential rather
+    // than primitive, so `carries_weight` counts there as round 6 established.
+    let wielded = match node.kind {
+        NodeKind::Claim => true,
+        NodeKind::Hypothesis => wields_an_attack || carries_weight(graph, node),
+        _ => wields_an_attack,
+    };
     if !wielded {
         return Vec::new();
     }
@@ -2125,6 +2146,72 @@ as_used: a\nnot_essence: b\nstipulated: c\n---\n"
             0,
             "its attack on reference material was never honoured, so retiring it \
 holds nothing up and blocks nothing"
+        );
+    }
+
+    /// A smaller kind test is still a kind test.
+    ///
+    /// The previous fix replaced `node.kind != Claim` with
+    /// `matches!(node.kind, Claim | Hypothesis)` — in the commit whose own message says
+    /// weight is a property of the edges — so the same vacuous rebuttal spelled
+    /// `type: dissent` or `type: observation` restored a defeated claim and drew nothing.
+    /// `is_argument` admits four kinds; that admitted two.
+    ///
+    /// The exemption that remains is stated as a REASON, not a category: an observation
+    /// or dissent is primitive evidence, the leaf a chain ends at, so merely being leaned
+    /// on cannot oblige it to rest on something else — that is the regress. Wielding an
+    /// ATTACK is different: it is making an argument.
+    #[test]
+    fn a_bare_attacker_answers_for_itself_whatever_it_is_labelled() {
+        let orphans = |kind: &str, attacks: bool| {
+            let mut nodes = vec![
+                node("---\nid: c1\ntype: claim\ntitle: The subject\n---\n"),
+                node("---\nid: o1\ntype: observation\ntitle: a record\n---\n"),
+                node(&format!(
+                    "---\nid: x1\ntype: {kind}\ntitle: an account that does not fit\n---\n"
+                )),
+            ];
+            nodes.push(node("---\nid: pad\ntype: observation\ntitle: pad\n---\n"));
+            let mut edges = vec![Edge::new(
+                NodeId::new("o1"),
+                NodeId::new("c1"),
+                EdgeKind::Supports,
+            )];
+            if attacks {
+                edges.push(Edge::new(
+                    NodeId::new("x1"),
+                    NodeId::new("c1"),
+                    EdgeKind::Attacks,
+                ));
+            } else {
+                edges.push(Edge::new(
+                    NodeId::new("x1"),
+                    NodeId::new("c1"),
+                    EdgeKind::Supports,
+                ));
+            }
+            lint(&graph_of(nodes, edges))
+                .into_iter()
+                .filter(|v| v.gate == ORPHAN_CLAIM && v.subject == NodeId::new("x1"))
+                .count()
+        };
+
+        for kind in ["claim", "hypothesis", "dissent", "observation"] {
+            assert_eq!(
+                orphans(kind, true),
+                1,
+                "{kind}: a bare node wielding an attack is making an argument on nothing"
+            );
+        }
+        assert_eq!(
+            orphans("observation", false),
+            0,
+            "an observation SUPPORTING a claim is a leaf doing its job, not an orphan"
+        );
+        assert_eq!(
+            orphans("dissent", false),
+            0,
+            "and so is a dissent that attacks nothing"
         );
     }
 

@@ -809,6 +809,82 @@ warrant: The table records what ran.\nquantifier: singular\ncausal_rung: associa
         );
     }
 
+    /// A WITHDRAWN attack is not an attack the gates should honour.
+    ///
+    /// `attackers()` has always dropped a withdrawn attacker — a node the record retires
+    /// is not a participant in the dispute. `live_attacks_on` did not, and a comment
+    /// called that deliberate: "a withdrawn attacker is disclosed as removed rather than
+    /// answered, and that distinction belongs to the packet". Right about the packet,
+    /// wrong about the gates. A retired rival still made its victim contested under 四句,
+    /// and still SATISFIED the demand for something that could count against the claim —
+    /// so a claim recording nothing that could defeat it passed the falsifier gate on
+    /// the strength of an argument the graph had already retired.
+    #[test]
+    fn a_withdrawn_attack_neither_contests_nor_satisfies() {
+        let build = |withdraw: bool| {
+            let mut g = Graph::new();
+            g.insert_node(node(
+                "---\nid: c1\ntype: claim\ntitle: The hive catalogued the file\n\
+quantifier: singular\naspect: function\ncausal_rung: association\n---\n",
+            ));
+            g.insert_node(node(
+                "---\nid: riv\ntype: claim\ntitle: An inventory sweep produced it\n---\n",
+            ));
+            g.insert_edge(Edge::new(
+                NodeId::new("riv"),
+                NodeId::new("c1"),
+                EdgeKind::Attacks,
+            ));
+            if withdraw {
+                g.insert_node(node(
+                    "---\nid: d1\ntype: dissent\ntitle: that rival was withdrawn\n---\n",
+                ));
+                g.insert_edge(Edge::new(
+                    NodeId::new("d1"),
+                    NodeId::new("riv"),
+                    EdgeKind::Retracts,
+                ));
+            }
+            let n = g.node(&NodeId::new("c1")).expect("c1").clone();
+            (
+                four_corners_addressed(&g, &n),
+                falsifier_declared(&g, &n),
+                g.live_attacks_on(&NodeId::new("c1")).count(),
+                g.attacks_on(&NodeId::new("c1")).count(),
+            )
+        };
+
+        let (corners, falsifier, live, raw) = build(false);
+        assert_eq!(
+            (live, raw),
+            (1, 1),
+            "positive control: a live rival competes"
+        );
+        assert!(
+            matches!(corners, GateResult::Block(_)),
+            "and contests the claim"
+        );
+        assert!(
+            matches!(falsifier, GateResult::Pass),
+            "and is something that could count against it"
+        );
+
+        let (corners, falsifier, live, raw) = build(true);
+        assert_eq!(live, 0, "a withdrawn rival is not in play");
+        assert_eq!(
+            raw, 1,
+            "but the raw relation still holds it — `standing_line` reports precisely these"
+        );
+        assert!(
+            !matches!(corners, GateResult::Block(_)),
+            "so it does not make the claim contested"
+        );
+        assert!(
+            !matches!(falsifier, GateResult::Pass),
+            "and it does not answer the demand for something that could defeat the claim"
+        );
+    }
+
     /// An edge the argumentation discards has no effects anywhere else either.
     ///
     /// A `term` carrying `contradicts:` is dropped from the grounded relation, because

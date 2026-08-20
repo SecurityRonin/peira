@@ -182,7 +182,7 @@ impl Graph {
         out
     }
 
-    /// The attacks on `id` that the argumentation actually honours.
+    /// Every attack on `id` from something that can argue, withdrawn or not.
     ///
     /// ONE definition of "does this edge compete", because six places asked it and only
     /// `attackers()` filtered out reference material. So a `term` carrying `contradicts:`
@@ -196,10 +196,30 @@ impl Graph {
     /// relation. WITHDRAWAL is deliberately not folded in — a withdrawn attacker is
     /// disclosed as removed rather than answered, and that distinction belongs to the
     /// packet, not to the relation.
-    pub fn live_attacks_on<'g>(&'g self, id: &'g NodeId) -> impl Iterator<Item = &'g Edge> + 'g {
+    pub fn attacks_on<'g>(&'g self, id: &'g NodeId) -> impl Iterator<Item = &'g Edge> + 'g {
         self.edges_to(id).filter(move |e| {
             e.kind.is_attack() && self.is_argument_node(&e.from) && self.is_argument_node(&e.to)
         })
+    }
+
+    /// The attacks on `id` that are still IN PLAY — argument-bearing, and not withdrawn.
+    ///
+    /// `attackers()` has always dropped a withdrawn attacker: a node the record retires
+    /// is not a participant in the dispute. `live_attacks_on` did not, and a round-7
+    /// comment called that deliberate on the grounds that "a withdrawn attacker is
+    /// disclosed as removed rather than answered, and that distinction belongs to the
+    /// packet". The reasoning was right about the PACKET and wrong about the GATES: a
+    /// withdrawn rival was still making its victim contested under 四句, and still
+    /// satisfying the demand for something that could count against the claim. A gate
+    /// was answered by an argument the graph had already retired.
+    ///
+    /// Two predicates, because two questions exist. `attacks_on` is the raw relation —
+    /// what `standing_line` needs, since it reports precisely the withdrawn ones.
+    /// `live_attacks_on` is what every GATE wants: is this claim actually opposed.
+    pub fn live_attacks_on<'g>(&'g self, id: &'g NodeId) -> impl Iterator<Item = &'g Edge> + 'g {
+        let withdrawn = self.withdrawn();
+        self.attacks_on(id)
+            .filter(move |e| !withdrawn.contains(&e.from))
     }
 
     /// Whether `id` names a node that can argue at all.
