@@ -593,6 +593,94 @@ mod tests {
         parse_node(src).expect("fixture parses")
     }
 
+    /// The pramāṇa ceiling binds a declared prerequisite too.
+    ///
+    /// `DependsOn` is documented as "the target must hold for the source to" — a
+    /// STRONGER relation than support. The ceiling swept `Supports` alone, so spelling
+    /// the edge `depends_on` carried a G4 on testimony past the cap that exists to stop
+    /// exactly that. The same one-direction reading that `ungraded_support` already
+    /// corrected, with the comment still sitting there: "the edge that makes a node
+    /// load-bearing can point either way, and only one direction was checked."
+    #[test]
+    fn the_ceiling_binds_a_declared_prerequisite() {
+        let verdict = |kind: EdgeKind| {
+            let mut g = Graph::new();
+            g.insert_node(node(
+                "---\nid: c1\ntype: claim\ntitle: The hive catalogued the file\n---\n",
+            ));
+            g.insert_node(node(
+                "---\nid: o3\ntype: observation\ntitle: an account of what happened\n---\n",
+            ));
+            // `c1 depends_on o3` points FROM the claim; `o3 supports c1` points TO it.
+            let e = if kind == EdgeKind::DependsOn {
+                Edge::new(NodeId::new("c1"), NodeId::new("o3"), kind)
+            } else {
+                Edge::new(NodeId::new("o3"), NodeId::new("c1"), kind)
+            };
+            g.insert_edge(e.graded_by(Grade::G4, "eve").via(Pramana::Testimony));
+            let n = g.node(&NodeId::new("c1")).expect("c1").clone();
+            grades_within_pramana_ceiling(&g, &n)
+        };
+
+        assert!(
+            matches!(verdict(EdgeKind::Supports), GateResult::Block(_)),
+            "positive control: G4 on testimony exceeds the ceiling when spelled `supports`"
+        );
+        assert!(
+            matches!(verdict(EdgeKind::DependsOn), GateResult::Block(_)),
+            "and spelling the SAME evidence `depends_on` must not carry it past the cap"
+        );
+    }
+
+    /// Four corners means four DIFFERENT corners.
+    ///
+    /// 四句 asks a contested claim to address A, not-A, both, and neither. The gate
+    /// counted entries, so `corners: [A, A, A, A]` satisfied it — the author addressed
+    /// one corner four times and the packet sealed.
+    #[test]
+    fn four_corners_means_four_distinct_corners() {
+        let verdict = |corners: &str| {
+            let mut g = Graph::new();
+            g.insert_node(node(&format!(
+                "---\nid: c1\ntype: claim\ntitle: The hive catalogued the file\n{corners}---\n"
+            )));
+            g.insert_node(node(
+                "---\nid: r1\ntype: claim\ntitle: a rival account\n---\n",
+            ));
+            g.insert_edge(Edge::new(
+                NodeId::new("r1"),
+                NodeId::new("c1"),
+                EdgeKind::Attacks,
+            ));
+            let n = g.node(&NodeId::new("c1")).expect("c1").clone();
+            four_corners_addressed(&g, &n)
+        };
+
+        let four = concat!(
+            "corners:\n",
+            "  - it was catalogued\n",
+            "  - it was not catalogued\n",
+            "  - catalogued under one mechanism and not another\n",
+            "  - the question does not arise\n"
+        );
+        let repeated = concat!(
+            "corners:\n",
+            "  - it was catalogued\n",
+            "  - it was catalogued\n",
+            "  - it was catalogued\n",
+            "  - it was catalogued\n"
+        );
+
+        assert!(
+            matches!(verdict(four), GateResult::Pass),
+            "positive control: four genuinely different corners pass"
+        );
+        assert!(
+            matches!(verdict(repeated), GateResult::Block(_)),
+            "one corner stated four times addresses one corner"
+        );
+    }
+
     /// A node kind is a self-declared string, not an exemption.
     ///
     /// `under_promotion` replaced a static node-kind scope with a load-bearing test and
