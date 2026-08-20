@@ -190,7 +190,10 @@ Confidence **MUST** be expressed in words tied to evidence, not as a bare percen
 
 ### Forbidden upgrades
 
-*(peira: `PEIR-LINT-FORBIDDEN-VERB` — note it scans a node's title and body only.)*
+*(peira: `PEIR-LINT-FORBIDDEN-VERB` — it scans a node's title and body, and separately reads the
+FINISHED packet body before sealing, so the warrant, the boundaries and a term's moments are
+covered too. The falsifier section is deliberately excluded: it names what would defeat the claim,
+and scanning it refused the disclosure the gates demand.)*
 
 | Overstatement | Correct form |
 |---|---|
@@ -205,7 +208,8 @@ Confidence **MUST** be expressed in words tied to evidence, not as a bare percen
 *"every"*, *"all"*, *"none"*, *"never"*, *"anywhere"* **MUST** be scoped to what was actually
 queried. *"No footprint anywhere"* is false when six sources were probed and others exist.
 *(peira: `PEIR-CLASS-EXTENSION-UNDECLARED` — which reaches a verdict only when the claim declares
-`quantifier:`; an undeclared one currently vanishes with architecture defect 1.)*
+`quantifier:`. An undeclared one no longer vanishes: it reaches no verdict, and no verdict blocks
+as `PEIR-GATE-UNASSESSED`.)*
 
 ### Extreme values
 

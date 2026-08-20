@@ -121,7 +121,7 @@ to prevent.
 | A universal quantifier declares its extension | `PEIR-CLASS-EXTENSION-UNDECLARED` (白馬非馬) | **checked when declared** ⁴ |
 | A contested question addresses all four corners | `PEIR-CORNERS-UNADDRESSED` (四句) | **enforced** |
 | The rule licensing grounds → claim is written down | `PEIR-WARRANT-MISSING` (Toulmin) | **enforced** |
-| Evidence grade is capped by means of knowing | `PEIR-GRADE-EXCEEDS-PRAMANA` (pramāṇa) | **enforced, evadable** ¹ |
+| Evidence grade is capped by means of knowing | `PEIR-GRADE-EXCEEDS-PRAMANA` (pramāṇa) | **enforced** ¹ |
 | A causal claim earns its rung | `PEIR-CAUSAL-RUNG-UNREACHED` (Pearl) | **checked when declared** ⁴ |
 | A claim states where it holds | `PEIR-BOUNDARIES-MISSING` | **enforced** |
 | A claim states what would defeat it | `PEIR-FALSIFIER-MISSING` (Popper / premortem) | **enforced** |
@@ -150,9 +150,10 @@ to prevent.
 | **Extraordinary claims need extraordinary evidence** | — | **not mechanised** |
 | **The prosecutor's fallacy** | — | **not mechanised** |
 | **Custody and pedigree of an observation** | — | **not mechanised** |
-⁹ The lint reports a leak on the node that carries it. `freeze` filters violations to the claim's
-own id, so a privilege leak on a *supporting* node does not stop a packet — and the packet renders
-that supporter's id and title. Flagging is not exclusion; read the lint output before exporting.
+⁹ The lint reports a leak on the node that carries it, and `freeze` walks the claim's evidential
+closure — so a privilege leak on a *supporting* node DOES stop a packet. What it does not reach is
+a rival or limiter: their prose is withheld when flagged rather than adopted, because the subject
+cannot edit words another author wrote. Read the lint output before exporting.
 
 ¹³ `by=` is a free string and peira cannot check it: the gates are pure functions of the graph —
 no I/O — so they cannot consult the version control that would answer who wrote an edge. The packet
@@ -175,7 +176,9 @@ finite. Skipped entirely when the sentence contains any negator, so a careful ne
 ("not evidence that X is liable") passes; the cost is that "X is guilty, and nothing contradicts it"
 is missed. T3 instrument: our own table, not a decode of anyone's spec.
 
-¹ The ceiling binds only edges that declare a means of knowing; omitting the declaration evades it.
+¹ The ceiling reads `supports` and `depends_on` alike, so spelling an edge as a declared
+prerequisite does not carry a grade past the cap. Omitting `via=` no longer evades it either: an
+edge that declares a grade and no means of knowing reaches no verdict, and no verdict blocks.
 ² The lint reports; it rewrites nothing — the safe form travels in the violation's detail line. It
 scans a node's title, body and the three term moments; the warrant and boundaries are covered
 instead by the scan `freeze` runs over the FINISHED packet body, which is what makes "rendered but
@@ -185,8 +188,11 @@ refused *"evidence that the entry was forged and the transfer fraudulent"* — p
 `PEIR-FALSIFIER-MISSING` demands — for containing the words it was required to contain. The section
 is excluded from the scan; each line instead carries the prefix *"Would defeat this claim:"*, so a
 line lifted out of the packet keeps the sense the heading gave it.
-³ Fires only where one supporter is explicitly marked as duplicating another; it does not detect
-two supporters that share an instrument or a source.
+³ Fires where one supporter is explicitly marked as duplicating another, AND where two supporters
+name the same producing instrument — one tool is one line of evidence however the readings are
+labelled. An instrument declaring `role: verifying` is exempt, because a tool that checked the
+artifact did not produce either finding; absence of the field fails safe. It still does not detect
+two supporters that share a *source* without naming an instrument.
 ⁴ Reaches a verdict only when the claim declares the triggering field (`uses_term`, `quantifier`,
 `causal_rung`, `aspect`, an evaluative word or `evaluative: true`). With the field absent the gate
 returns `Unassessed`, which now BLOCKS as `PEIR-GATE-UNASSESSED` — silence no longer passes. A

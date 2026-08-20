@@ -31,7 +31,7 @@ enforced gates; the deterministic lint pack; grounded-extension computation; Cou
 packets with hash verification.
 
 **Out, for now:** the Governed and Sealed tiers (WORM storage and RFC 3161 timestamping
-are hooks, not implementations); the 13 catalogued-but-unenforced lenses; multi-user
+are hooks, not implementations); the 10 catalogued-but-unenforced lenses; multi-user
 review workflow; a web interface.
 
 **Out, permanently:** any path by which a model, or a hurried human, can assert that a

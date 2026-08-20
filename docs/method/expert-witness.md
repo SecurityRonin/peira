@@ -29,8 +29,11 @@ dropped for punchiness.
 peira mechanises the layer-1/layer-2 boundary as the causal ladder gate
 (`PEIR-CAUSAL-RUNG-UNREACHED`) and the substance/function gate (`PEIR-FUNCTION-AS-SUBSTANCE`) —
 noting that each reaches a verdict only when the claim declares `causal_rung:` or `aspect:`; a
-claim that declares neither is not examined by them. It does **not** detect layer-3 overreach —
-that remains a human obligation.
+claim that declares neither reaches no verdict and is BLOCKED, rather than passing unexamined.
+Layer-3 overreach is partly mechanised: `PEIR-LINT-LEGAL-CONCLUSION` catches the ultimate issue,
+which unlike overstatement is a closed vocabulary — a verdict word said of a party, outside a
+negation, an attribution or a quotation. Deciding what the tribunal decides is still a human
+obligation; only the vocabulary is checked.
 
 ---
 
@@ -131,13 +134,21 @@ vault and compares digests, so drift that reaches the rendered body announces it
 limit established by audit: fields the packet does not render (grades, graders, instrument links)
 change no digest. See [`../architecture.md`](../architecture.md), defect 8.
 
-**A known limit, found by an adversarial audit and confirmed in the source:** the rendered
-statement quotes the author-written term fields — `as_used`, `not_essence`, `stipulated` —
-verbatim, and the forbidden-verb lint scans only a node's title and body, never those fields. An
-overstatement placed in a term's stipulation therefore reaches the packet unaltered. See
-[`../architecture.md`](../architecture.md), defect 5. The generation is a structural defence, not a
-complete one: read the rendered statement as your own prose before it leaves your hand, because in
-those three fields it is.
+**A limit found by an adversarial audit, and since closed:** the rendered statement quotes the
+author-written term fields — `as_used`, `not_essence`, `stipulated` — verbatim, and the
+node-level lint deliberately skips them, because a term that names the disputed referent is
+describing it rather than asserting it. The scan `freeze` runs over the FINISHED packet body
+covers them, so an overstatement in a stipulation is refused and the field is named:
+
+```
+PEIR-LINT-FORBIDDEN-VERB  60.01: `stipulated:` says "proves" — and Court Mode renders
+                          that field verbatim into the packet
+```
+
+`peira lint` reports it too, so it is findable before you try to seal it. See
+[`../architecture.md`](../architecture.md), defect 5. The generation remains a structural defence
+rather than a complete one: read the rendered statement as your own prose before it leaves your
+hand, because in those three fields it is.
 
 ---
 

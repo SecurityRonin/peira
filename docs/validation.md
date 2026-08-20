@@ -28,7 +28,7 @@ is load-bearing.
 
 | Control | Setup | Required | Observed |
 |---|---|---|---|
-| **A** | over-claim vault | BLOCKS, non-zero exit, ≥5 lenses | 8 gates + 1 lint, exit 1 |
+| **A** | over-claim vault | BLOCKS, non-zero exit, ≥5 DISTINCT lenses | 8 distinct gates + 1 lint, exit 1 |
 | **B** | bounded vault | PASSES, exit 0 | exit 0, packet froze |
 | **B′** | rung gate neutered | that finding disappears | 1 → 0 → 1 across mutate/build/restore |
 | **C** | vault absent | distinguishable from A, ~0 s | exit 2, 2 ms |
@@ -39,15 +39,16 @@ Claim: `This Amcache entry proves execution of the suspicious binary`
 
 ```
 PEIR-CRITERION-UNDECLARED       [LIJI]       judged, with no standard declared
+PEIR-GATE-UNASSESSED            [ZHENGMING]  declares no key terms, so which words are load-bearing is unknown
 PEIR-FUNCTION-AS-SUBSTANCE      [TIYONG]     what it did, stated as what it is
 PEIR-CLASS-EXTENSION-UNDECLARED [BAIMA]      one token, quantified universally
 PEIR-CORNERS-UNADDRESSED        [CATUSKOTI]  contested, addresses 0 of 4 corners
 PEIR-WARRANT-MISSING            [TOULMIN]    states no warrant
 PEIR-CAUSAL-RUNG-UNREACHED      [RUNG]       counterfactual rung, observation only
 PEIR-BOUNDARIES-MISSING         [RUNG]       no boundary conditions
-PEIR-FALSIFIER-MISSING          [PREMORTEM]  nothing could ever count against it
-PEIR-LINT-FORBIDDEN-VERB        [LINT]       says "proves"
 exit=1
+
+PEIR-LINT-FORBIDDEN-VERB        [LINT]       says "proves"        (peira lint, exit=1)
 ```
 
 ### Control B — the bounded conclusion passes
@@ -130,7 +131,7 @@ version freely and the packet asserts a format the digest never covered.
 ## Reproducing
 
 ```bash
-cargo test --workspace --no-fail-fast          # 177 tests, incl. the acceptance suite
+cargo test --workspace --no-fail-fast          # 204 tests, incl. the acceptance suite
 cargo build -p peira-cli && tests/controls.sh target/debug/peira   # A, B and C
 ```
 
@@ -144,24 +145,29 @@ different test sets.
 
 ## Coverage
 
-**98.11% of lines**, over the workspace excluding the binary shell
-(`src/main.rs`, `src/bin/`) — measured with `cargo llvm-cov --workspace`, never
-`--lib`, which builds only each lib's own unit tests and so cannot see the
-integration suite.
+**98.06% of lines**, over the workspace excluding the binary shell
+(`src/main.rs`, `src/bin/`) — measured with CI's own invocation, never `--lib`,
+which builds only each lib's own unit tests and so cannot see the integration
+suite.
 
 ```
-core/src/edge.rs     100.00%      lens/src/gates.rs     99.63%
-core/src/graph.rs     99.44%      lens/src/lib.rs       99.15%
-core/src/node.rs      98.57%      lens/src/lints.rs     98.50%
-core/src/vault.rs     95.42%      court/src/lib.rs      95.75%
-index/src/lib.rs      93.69%      TOTAL                 98.11%
+core/src/edge.rs     100.00%      lens/src/gates.rs     98.07%
+core/src/graph.rs     99.70%      lens/src/lib.rs       97.76%
+core/src/node.rs      98.59%      lens/src/lints.rs     99.03%
+core/src/vault.rs     95.99%      court/src/lib.rs      96.62%
+index/src/lib.rs      94.67%      TOTAL                 98.06%
 ```
 
 **This is below the fleet's 100% standard, and the gap is stated rather than
-rounded away.** The 49 uncovered lines are, in order of count: SQLite and I/O
-error-propagation arms reached only by injecting filesystem or database failures;
+rounded away.** 100 of 5,154 lines are uncovered: SQLite and I/O
+error-propagation arms reached only by injecting filesystem or database failures,
 and `panic!` arms inside test helpers, which by construction never execute while
 the tests pass.
+
+Every figure above was re-measured after audit round 6 rather than carried
+forward. The previous version of this section read 98.11% and 49 uncovered lines
+and had drifted from the build — a derived number stated once and never
+re-derived is a claim about the day it was written.
 
 One line is deliberately unreachable and annotated rather than deleted:
 `graph.rs` returns a conservative answer if the characteristic function's fixed

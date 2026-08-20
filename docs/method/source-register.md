@@ -96,13 +96,17 @@ measured_by: [i-examplefeed]
 ---
 ```
 
-**Be clear about what is and is not enforced.** The loader builds the `measured_by:` edge and the
-instrument node parses like any other — and that is the whole of it. There is currently **no
-enforced check on instruments**: nothing requires an observation to declare `measured_by:`,
-nothing requires an instrument to record a positive or a negative control before its observations
-are relied on, and nothing counts refusals separately from zeros. The dangling-edge lint
-(`PEIR-LINT-DANGLING-EDGE`) will catch a `measured_by:` pointing at a node that does not exist,
-because it catches every dangling edge; no check is specific to instruments.
+**Be clear about what is and is not enforced.** Two checks are specific to instruments:
+
+| check | what it enforces |
+|---|---|
+| `PEIR-LINT-UNCONTROLLED-INSTRUMENT` | an instrument an observation names must declare a `positive_control:` — until something has shown the tool fires when it should, a clean result from it is uninterpreted |
+| `PEIR-LINT-FALSE-INDEPENDENCE` | two supporters measured by the same PRODUCING instrument are one line of evidence. Declaring `role: verifying` on the instrument exempts it — a tool that checked the artifact did not produce either finding — and absence of the field fails safe |
+
+Still **not** enforced: nothing requires an observation to declare `measured_by:` at all, nothing
+requires a NEGATIVE control, and nothing counts refusals separately from zeros. The dangling-edge
+lint (`PEIR-LINT-DANGLING-EDGE`) catches a `measured_by:` pointing at a node that does not exist,
+because it catches every dangling edge.
 
 What the vault gives you today is an **address** — a place where the register lives next to the
 evidence, in the same graph, queryable through the derived index (`peira index` stores every field
