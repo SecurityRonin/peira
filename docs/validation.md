@@ -89,7 +89,7 @@ what makes C meaningful rather than decorative.
 ## Tamper detection
 
 ```
-freeze                   sha256 660959c1c94985c59b566d10ddeb14a7c2e80421e0fc97a3110e579afc99a5bb
+freeze                   sha256 2a0f9b7065593b3183e8a23f118071e586609266fc0109e5c637c6bc87d25b5d
 verify (clean)           ✓ exit=0
 mutate cited observation (asserted present in the file)
 verify (tampered)        ✗ exit=1

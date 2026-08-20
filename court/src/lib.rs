@@ -158,7 +158,13 @@ impl Verification {
 ///
 /// **3** — stated falsifiers gained the `FALSIFIER_FRAME` prefix, so a defeat line
 /// keeps its conditional sense once quoted away from the heading.
-pub const PACKET_FORMAT: u32 = 3;
+///
+/// **4** — the Provenance section discloses work by a credited grader that the record
+/// has since withdrawn. A vault holding no such work renders byte-identically, so the
+/// bounded fixture's digest is unchanged — but one that does would render differently,
+/// and an old packet would report `DigestMismatch` over a renderer change rather than
+/// an alteration. That is the silent case this constant exists to remove.
+pub const PACKET_FORMAT: u32 = 4;
 
 /// The prefix carried by every STATED falsifier in a packet's defeat section.
 ///
@@ -444,9 +450,13 @@ merits: {names}. Read the retraction before relying on this.{history}",
     }
 }
 
-fn render_body(graph: &Graph, id: &NodeId) -> Option<String> {
-    let claim = graph.node(id)?;
-
+/// Who is credited with the grading, the limit on that credit, and what the record
+/// holds about the same hand.
+///
+/// Extracted when `render_body` outgrew its line budget — a coherent unit rather than an
+/// arbitrary cut: every line here answers one question, which is on whose judgement this
+/// packet rests and how far that can be checked.
+fn provenance_section(graph: &Graph, id: &NodeId) -> String {
     // WHO IS CREDITED, and the limit on that credit. `by=` is a free string: peira has
     // no way to check that the named reviewer settled the grade, because the gates are
     // pure functions of the graph and cannot consult the version control that would
@@ -473,9 +483,51 @@ fn render_body(graph: &Graph, id: &NodeId) -> Option<String> {
         .collect();
     graders.sort_unstable();
     graders.dedup();
+    // WHAT THE RECORD SAYS ABOUT THE HAND, not what anyone thinks of it. For each
+    // credited grader, the nodes this vault attributes to them that it has since
+    // withdrawn — derived from `author:` and the withdrawal fixed point, both already
+    // in the graph.
+    //
+    // A COUNT WITH THE IDS, never a score: no decay, no floor, no number between zero
+    // and one. Credibility that changes because time passed cannot be defended under
+    // cross-examination, and an ordinal judgement rendered as a float is the false
+    // precision this project forbids its own users. The reader is told what the record
+    // holds and judges it.
+    let withdrawn = graph.withdrawn();
+    let history: Vec<String> = graders
+        .iter()
+        .filter_map(|who| {
+            let mut retired: Vec<&str> = graph
+                .nodes()
+                .filter(|n| n.field("author") == Some(who.as_str()))
+                .filter(|n| withdrawn.contains(&n.id))
+                .map(|n| n.id.as_str())
+                .collect();
+            retired.sort_unstable();
+            (!retired.is_empty()).then(|| {
+                format!(
+                    "  - {who} has withdrawn work on record: {}",
+                    retired.join(", ")
+                )
+            })
+        })
+        .collect();
+
     let provenance = if graders.is_empty() {
         String::new()
     } else {
+        let history_block = if history.is_empty() {
+            String::new()
+        } else {
+            format!(
+                "\nThis vault also records work by the same hand that it has since withdrawn:\n\
+                 \n{}\n\
+                 \nThat is what the record holds, and nothing more: a withdrawal is not a\n\
+                 verdict on anything else the same person graded. It is disclosed because a\n\
+                 reader weighing this grade is entitled to it.\n",
+                history.join("\n")
+            )
+        };
         format!(
             "\n## Provenance of the grading\n\
              \n\
@@ -483,10 +535,18 @@ fn render_body(graph: &Graph, id: &NodeId) -> Option<String> {
              \n\
              These attributions are SELF-DECLARED and not authenticated. peira records who a\n\
              grade says it came from; it cannot establish that they settled it. Who wrote an\n\
-             edge is a question for the version-control history of the vault.\n",
-            graders.join(", ")
+             edge is a question for the version-control history of the vault.\n{}",
+            graders.join(", "),
+            history_block
         )
     };
+    provenance
+}
+
+fn render_body(graph: &Graph, id: &NodeId) -> Option<String> {
+    let claim = graph.node(id)?;
+
+    let provenance = provenance_section(graph, id);
 
     let standing = standing_line(graph, id);
 
