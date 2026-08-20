@@ -694,15 +694,6 @@ const IMPERATIVE_OPENERS: &[&str] = &[
 /// point kept an inline copy that never learned about scope notes — directly under a
 /// comment saying a rule with three entry points needs one gate.
 fn is_exempt_from_quantifier(s: &str) -> bool {
-    let t = s.trim_start();
-    // A quantifier that names its own domain has DECLARED its extension in the sentence:
-    // "None of the recovered entries postdates the acquisition", "Each of the four hives
-    // was examined". That is the bounded, scoped writing the discipline asks for, and
-    // refusing it punishes the author for being specific.
-    //
-    // And a PRONOMINAL use quantifies nothing: in "the entry would have been expected;
-    // none was present", `none` refers back to an antecedent — it is not a claim about
-    // a class. The tell is that a verb follows rather than a noun.
     const BOUNDED: &[&str] = &[
         "none of the",
         "each of the",
@@ -721,6 +712,15 @@ fn is_exempt_from_quantifier(s: &str) -> bool {
         "all was",
         "all were",
     ];
+    // A quantifier that names its own domain has DECLARED its extension in the sentence:
+    // "None of the recovered entries postdates the acquisition", "Each of the four hives
+    // was examined". That is the bounded, scoped writing the discipline asks for, and
+    // refusing it punishes the author for being specific.
+    //
+    // And a PRONOMINAL use quantifies nothing: in "the entry would have been expected;
+    // none was present", `none` refers back to an antecedent — it is not a claim about
+    // a class. The tell is that a verb follows rather than a noun.
+    let t = s.trim_start();
     if BOUNDED.iter().any(|b| t.contains(b)) || PRONOMINAL.iter().any(|b| t.contains(b)) {
         return true;
     }
