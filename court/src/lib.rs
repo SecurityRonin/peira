@@ -1765,6 +1765,57 @@ aspect: function\n---\n",
         );
     }
 
+    /// A packet discloses whether the record has withdrawn work by the same hand.
+    ///
+    /// The packet names who a grade says it came from. It did not say whether the vault
+    /// itself records withdrawn work authored by that person — a fact already sitting in
+    /// the graph, in `author:` fields and `retracts:` edges, and material to anyone
+    /// weighing the grade.
+    ///
+    /// A COUNT WITH THE IDS, never a score. No decay, no floor, no number between zero
+    /// and one: a reputation that changes because time passed is indefensible under
+    /// cross-examination, and an ordinal judgement rendered as a float is false
+    /// precision. The reader is given what the record says and draws their own
+    /// conclusion, which is this project's answer everywhere it cannot establish
+    /// something itself.
+    #[test]
+    fn the_packet_discloses_withdrawn_work_by_a_credited_grader() {
+        let mut g = clean_graph();
+        let p = freeze(&g, &NodeId::new("c1")).expect("clean claim should freeze");
+        assert!(
+            !p.body.contains("has withdrawn work"),
+            "control: nothing to disclose when the record withdraws nothing"
+        );
+
+        // A second finding by the same hand, which the record has since withdrawn.
+        g.insert_node(node(
+            "---\nid: c9\ntype: claim\ntitle: An earlier finding by the same reviewer\n\
+author: a-reviewer\n---\n",
+        ));
+        g.insert_node(node(
+            "---\nid: d9\ntype: dissent\ntitle: that finding was withdrawn\n---\n",
+        ));
+        g.insert_edge(Edge::new(
+            NodeId::new("d9"),
+            NodeId::new("c9"),
+            EdgeKind::Retracts,
+        ));
+
+        let p = freeze(&g, &NodeId::new("c1")).expect("the subject still freezes");
+        assert!(
+            p.body.contains("has withdrawn work"),
+            "the record holds withdrawn work by the credited grader and the packet is \
+silent about it:\n{}",
+            p.body
+        );
+        assert!(
+            p.body.contains("c9"),
+            "and it must NAME it, so the reader can check rather than take a count on \
+trust:\n{}",
+            p.body
+        );
+    }
+
     /// The proof that an edit happened must reach the caller that reports it.
     ///
     /// `verify` establishes the one tampering case this tool CAN establish: correcting
