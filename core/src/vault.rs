@@ -167,7 +167,17 @@ fn markdown_files(root: &Path) -> Result<Vec<PathBuf>, VaultError> {
             } else if path
                 .file_name()
                 .is_some_and(|n| n.eq_ignore_ascii_case("README.md"))
+                || is_a_frozen_packet(&path)
             {
+                // A FROZEN PACKET IS AN EXPORT, NOT A NODE. `peira init` scaffolds
+                // `90-packets/` and its README says "frozen Court Mode exports … verify
+                // against the vault" — and doing that made every subsequent command
+                // refuse the whole vault, `verify` included. Following the tool's own
+                // layout broke the tool.
+                //
+                // Recognised by CONTENT, not by directory: a packet is whatever begins
+                // with the line `freeze` writes, so a vault that keeps exports elsewhere
+                // works too, and a genuine node under `90-packets/` is still read.
                 // README.md IS NOT A NODE. `peira init` scaffolds one in each area as
                 // guidance, and the loader then refused the vault it had just created:
                 // "document does not begin with a `---` frontmatter fence", exit 2. The
@@ -186,6 +196,22 @@ fn markdown_files(root: &Path) -> Result<Vec<PathBuf>, VaultError> {
 }
 
 /// Load every markdown document under `root` into a graph.
+/// Whether this file is a packet `freeze` wrote, rather than a node.
+///
+/// The first line of a rendered packet is `# Citation packet — <id>`, which `cmd_verify`
+/// already relies on to find its subject. Reading only that line keeps the check cheap
+/// on a large vault.
+fn is_a_frozen_packet(path: &std::path::Path) -> bool {
+    use std::io::BufRead as _;
+    std::fs::File::open(path).ok().is_some_and(|f| {
+        std::io::BufReader::new(f)
+            .lines()
+            .next()
+            .and_then(Result::ok)
+            .is_some_and(|l| l.starts_with("# Citation packet — "))
+    })
+}
+
 pub fn load(root: &Path) -> Result<Graph, VaultError> {
     if !root.is_dir() {
         return Err(VaultError::NotADirectory(root.to_path_buf()));

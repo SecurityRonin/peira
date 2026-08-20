@@ -172,11 +172,40 @@ impl Graph {
             settled = next;
         }
 
+        // SUPERSESSION FIRST, then retraction re-run without the notes it replaced.
+        //
+        // A withdrawal note that has been REPLACED does not go on binding: if d2
+        // supersedes d1 and d2 does not itself withdraw c1, the current version of that
+        // note says nothing about c1, so c1 stands. The lint already suppressed the
+        // finding while `withdrawn()` still held c1 — two answers to one question.
+        //
+        // The order matters and is not iterative on purpose. A mutually recursive
+        // definition here oscillates, and an oscillating fixed point exiting on its loop
+        // bound is the parity defect this function was rewritten to remove. So:
+        //   1. the retraction fixed point, over retractions alone
+        //   2. supersessions bind unless their author was RETRACTED
+        //   3. the retraction fixed point AGAIN, dropping retractions whose author was
+        //      superseded
+        // Deterministic, two passes, no iteration.
+        let superseded: BTreeSet<NodeId> = self
+            .edges
+            .iter()
+            .filter(|e| matches!(e.kind, EdgeKind::Supersedes | EdgeKind::Sublates))
+            .filter(|e| {
+                !retracts
+                    .iter()
+                    .any(|(from, to)| *to == &e.from && settled.contains(*from))
+            })
+            .map(|e| e.to.clone())
+            .collect();
+
+        let in_force = |r: &NodeId| settled.contains(r) && !superseded.contains(r);
         let mut out: BTreeSet<NodeId> = retracts
             .iter()
-            .filter(|(from, _)| settled.contains(*from))
+            .filter(|(from, _)| in_force(from))
             .map(|(_, to)| (*to).clone())
             .collect();
+        out.extend(superseded.iter().cloned());
 
         // SUPERSESSION is a version chain, and lifting is nonsense there. Being replaced
         // by something that was itself later replaced does not make you current again —
@@ -188,18 +217,6 @@ impl Graph {
         // `Sublates` rides with `Supersedes`: its own docstring is "preserves the target
         // while SUPERSEDING it", and it was parsed, listed as a known kind, and read by
         // nothing until this predicate reached it.
-        for e in self
-            .edges
-            .iter()
-            .filter(|e| matches!(e.kind, EdgeKind::Supersedes | EdgeKind::Sublates))
-        {
-            let author_retracted = retracts
-                .iter()
-                .any(|(from, to)| *to == &e.from && settled.contains(*from));
-            if !author_retracted {
-                out.insert(e.to.clone());
-            }
-        }
         out
     }
 
@@ -358,6 +375,74 @@ impl Graph {
 
 #[cfg(test)]
 mod tests {
+
+    /// A withdrawal note that was REPLACED stops binding.
+    ///
+    /// If d2 supersedes d1 and d2 does not itself withdraw c1, then the current version
+    /// of that note says nothing about c1 — so c1 stands. The lint already suppressed
+    /// the finding while `withdrawn()` still held c1: two answers to one question, and
+    /// `freeze` used the wrong one.
+    ///
+    /// The order of the three passes is the whole design. A mutually recursive
+    /// definition oscillates, and an oscillating fixed point exiting on its loop bound
+    /// is the parity defect this function was rewritten to remove.
+    #[test]
+    fn a_superseded_withdrawal_note_stops_binding() {
+        use crate::{Edge, EdgeKind, NodeId};
+        let mk = |id: &str| {
+            crate::parse_node(&format!("---\nid: {id}\ntype: claim\ntitle: t\n---\n"))
+                .expect("fixture parses")
+        };
+        let build = |second: Option<EdgeKind>| {
+            let mut g = Graph::new();
+            for id in ["c1", "d1", "d2"] {
+                g.insert_node(mk(id));
+            }
+            g.insert_edge(Edge::new(
+                NodeId::new("d1"),
+                NodeId::new("c1"),
+                EdgeKind::Retracts,
+            ));
+            if let Some(k) = second {
+                g.insert_edge(Edge::new(NodeId::new("d2"), NodeId::new("d1"), k));
+            }
+            g.withdrawn().clone()
+        };
+
+        assert!(
+            build(None).contains(&NodeId::new("c1")),
+            "positive control: a note in force withdraws its target"
+        );
+        assert!(
+            !build(Some(EdgeKind::Retracts)).contains(&NodeId::new("c1")),
+            "a RETRACTED note does not bind — the lifting law"
+        );
+        assert!(
+            !build(Some(EdgeKind::Supersedes)).contains(&NodeId::new("c1")),
+            "and neither does a REPLACED one: the current version says nothing about c1"
+        );
+
+        // A supersession whose author was retracted does not bind either — the version
+        // that replaced v1 was itself withdrawn as wrong, so v1 stands.
+        let mut g = Graph::new();
+        for id in ["v1", "v2", "d9"] {
+            g.insert_node(mk(id));
+        }
+        g.insert_edge(Edge::new(
+            NodeId::new("v2"),
+            NodeId::new("v1"),
+            EdgeKind::Supersedes,
+        ));
+        g.insert_edge(Edge::new(
+            NodeId::new("d9"),
+            NodeId::new("v2"),
+            EdgeKind::Retracts,
+        ));
+        assert!(
+            !g.withdrawn().contains(&NodeId::new("v1")),
+            "the replacement was withdrawn as wrong, so what it replaced stands"
+        );
+    }
 
     /// The memo must never outlive the graph state it describes.
     ///
