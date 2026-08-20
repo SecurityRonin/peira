@@ -369,7 +369,13 @@ artifact is not execution; 是名「執行」— it is conventionally named exec
         failure_mode: "reporting what a thing DID as though it established what a thing IS",
         operation: "a substance claim needs at least one substance-aspect support; function \
 evidence alone cannot license it",
-        applies_to: ARGUMENTS,
+        // `&[]`, not ARGUMENTS. `Lens::examine` applies this BEFORE the gate runs, so a
+        // static kind list here is a kind test doing scoping — and TIYONG was the last
+        // enforced lens still carrying one. Relabelling a load-bearing substance claim
+        // `type: observation` stripped the 體用 obligation entirely and it froze. The
+        // gate already scopes itself by `under_promotion`, which asks whether the node
+        // carries weight rather than what it calls itself.
+        applies_to: &[],
         gates: &[Gate {
             code: gates::FUNCTION_AS_SUBSTANCE,
             check: gates::substance_not_from_function_alone,

@@ -256,9 +256,36 @@ stipulated (是名)",
 
 // ── 體用 ─────────────────────────────────────────────────────────────────────
 
+/// What a node says it speaks about — by field OR by edge.
+///
+/// `substance_of:` and `function_of:` are the edge grammar `EdgeKind` documents for 體用,
+/// and they were parsed, recorded and read by NOTHING. So the identical substance claim
+/// was examined when it wrote `aspect: substance` and froze when it wrote
+/// `substance_of:` — the same statement, the same lens, the outcome decided by which of
+/// two published spellings the author picked. Byte-for-byte the `Sublates` defect.
+///
+/// The field wins where both are present: it is the more specific declaration, and
+/// disagreement between them is the author's to resolve, not this gate's to arbitrate.
+fn declared_aspect(graph: &Graph, node: &Node) -> Option<&'static str> {
+    match node.field("aspect") {
+        Some("substance") => return Some("substance"),
+        Some("function") => return Some("function"),
+        _ => {}
+    }
+    let mut out = None;
+    for e in graph.edges_from(&node.id) {
+        match e.kind {
+            EdgeKind::SubstanceOf => return Some("substance"),
+            EdgeKind::FunctionOf => out = Some("function"),
+            _ => {}
+        }
+    }
+    out
+}
+
 /// A claim about what a thing *is* may not rest solely on what it *did*.
 pub fn substance_not_from_function_alone(graph: &Graph, node: &Node) -> GateResult {
-    if node.field("aspect") != Some("substance") {
+    if declared_aspect(graph, node) != Some("substance") {
         return GateResult::NotApplicable;
     }
     let support = supporters(graph, node);
@@ -274,7 +301,7 @@ pub fn substance_not_from_function_alone(graph: &Graph, node: &Node) -> GateResu
     // lost at a join.
     let silent: Vec<&str> = support
         .iter()
-        .filter(|s| s.field("aspect").is_none())
+        .filter(|s| declared_aspect(graph, s).is_none())
         .map(|s| s.id.as_str())
         .collect();
     if !silent.is_empty() {
@@ -290,7 +317,7 @@ its evidence bears on substance or only on function is unknown",
 
     let function_only = support
         .iter()
-        .all(|s| s.field("aspect") == Some("function"));
+        .all(|s| declared_aspect(graph, s) == Some("function"));
 
     if function_only {
         block(
@@ -626,6 +653,104 @@ mod tests {
 
     fn node(src: &str) -> Node {
         parse_node(src).expect("fixture parses")
+    }
+
+    /// 體用 is owed by whatever carries the weight, not by whatever it calls itself.
+    ///
+    /// TIYONG was the last ENFORCED lens still carrying a static `applies_to` kind list,
+    /// and `Lens::examine` applies that BEFORE the gate runs — so relabelling a
+    /// load-bearing substance claim `type: observation` stripped the obligation entirely
+    /// and the packet froze. The codebase's first recorded defect, still open for one
+    /// lens.
+    ///
+    /// And the aspect itself is declarable two ways. `substance_of:` is the edge grammar
+    /// `EdgeKind` documents for this lens, and it was parsed, recorded and read by
+    /// nothing, so the same statement was examined under one published spelling and
+    /// sealed under the other.
+    #[test]
+    fn the_aspect_obligation_follows_weight_and_either_spelling() {
+        let build = |kind: &str, decl: &str| {
+            let mut g = Graph::new();
+            g.insert_node(node(&format!(
+                "---\nid: sub\ntype: {kind}\ntitle: Amcache is an execution artifact\n\
+warrant: The table records what ran.\nquantifier: singular\ncausal_rung: association\n\
+{decl}---\n"
+            )));
+            g.insert_node(node(
+                "---\nid: c1\ntype: claim\ntitle: The downstream conclusion\n---\n",
+            ));
+            g.insert_node(node(
+                "---\nid: o1\ntype: observation\ntitle: the record\naspect: function\n---\n",
+            ));
+            g.insert_edge(Edge::new(
+                NodeId::new("sub"),
+                NodeId::new("c1"),
+                EdgeKind::Supports,
+            ));
+            g.insert_edge(Edge::new(
+                NodeId::new("o1"),
+                NodeId::new("sub"),
+                EdgeKind::Supports,
+            ));
+            // THROUGH THE AGGREGATION. `applies_to` is applied by `Lens::examine`
+            // BEFORE the gate runs, so calling the gate directly cannot see a static
+            // kind list at all — the first version of this test called it directly and
+            // stayed green when the list was restored, which is the very defect three
+            // other findings in this round are about.
+            crate::examine_graph(&g)
+                .into_iter()
+                .filter(|v| v.subject == NodeId::new("sub") && v.lens == "TIYONG")
+                .count()
+        };
+
+        for kind in ["claim", "hypothesis", "observation"] {
+            assert!(
+                build(kind, "aspect: substance\n") > 0,
+                "{kind}: a load-bearing substance claim owes 體用 whatever it is labelled"
+            );
+        }
+        // The EDGE spelling. `parse_node` does not build edges — only the vault loader
+        // does — so the edge is inserted directly here rather than written as
+        // frontmatter, which would silently assert nothing.
+        {
+            let mut g = Graph::new();
+            g.insert_node(node(
+                "---\nid: sub\ntype: claim\ntitle: Amcache is an execution artifact\n\
+warrant: The table records what ran.\nquantifier: singular\ncausal_rung: association\n---\n",
+            ));
+            g.insert_node(node(
+                "---\nid: c1\ntype: claim\ntitle: The downstream conclusion\n---\n",
+            ));
+            g.insert_node(node(
+                "---\nid: o1\ntype: observation\ntitle: the record\naspect: function\n---\n",
+            ));
+            g.insert_edge(Edge::new(
+                NodeId::new("sub"),
+                NodeId::new("c1"),
+                EdgeKind::Supports,
+            ));
+            g.insert_edge(Edge::new(
+                NodeId::new("o1"),
+                NodeId::new("sub"),
+                EdgeKind::Supports,
+            ));
+            g.insert_edge(Edge::new(
+                NodeId::new("sub"),
+                NodeId::new("o1"),
+                EdgeKind::SubstanceOf,
+            ));
+            assert!(
+                crate::examine_graph(&g)
+                    .into_iter()
+                    .any(|v| v.subject == NodeId::new("sub") && v.lens == "TIYONG"),
+                "the edge grammar the docs publish must reach the gate the docs promise"
+            );
+        }
+        assert_eq!(
+            build("claim", "aspect: function\n"),
+            0,
+            "control: a function claim owes this lens nothing"
+        );
     }
 
     /// An edge the argumentation discards has no effects anywhere else either.
