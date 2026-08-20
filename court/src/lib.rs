@@ -448,9 +448,18 @@ fn render_body(graph: &Graph, id: &NodeId) -> Option<String> {
     // Disclosure, as everywhere else peira cannot establish something. Naming the
     // reviewers is what makes it actionable: a reader who knows the matter can tell
     // whether the person credited plausibly did the work.
+    // BOTH DIRECTIONS, for the same reason the ceiling reads both: `X depends_on Y`
+    // points FROM the dependant, so a prerequisite's grader sits on an OUTGOING edge.
+    // Reading only incoming credited nobody for the strongest evidence relation there
+    // is — the packet named its graders and silently omitted one class of them.
     let mut graders: Vec<String> = graph
         .edges_to(id)
-        .filter(|e| matches!(e.kind, EdgeKind::Supports | EdgeKind::DependsOn))
+        .filter(|e| e.kind == EdgeKind::Supports)
+        .chain(
+            graph
+                .edges_from(id)
+                .filter(|e| e.kind == EdgeKind::DependsOn),
+        )
         .filter_map(|e| e.grader().map(std::string::ToString::to_string))
         .collect();
     graders.sort_unstable();

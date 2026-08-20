@@ -376,17 +376,39 @@ pub fn four_corners_addressed(graph: &Graph, node: &Node) -> GateResult {
         return GateResult::NotApplicable;
     }
     let corners = node.field_list("corners");
-    if corners.len() == 4 {
+    // DISTINCT. 四句 asks for A, not-A, both and neither — four different positions.
+    // Counting entries let one corner stated four times satisfy the gate, which is the
+    // shape of check that measures the aggregation point rather than the effective
+    // thing. Compared case- and whitespace-insensitively: an author who addressed one
+    // corner four times did not address four, however they capitalised it.
+    let distinct: std::collections::BTreeSet<String> = corners
+        .iter()
+        .map(|c| {
+            c.split_whitespace()
+                .collect::<Vec<_>>()
+                .join(" ")
+                .to_lowercase()
+        })
+        .collect();
+    if distinct.len() == 4 {
         GateResult::Pass
     } else {
         block(
             CORNERS_UNADDRESSED,
             "CATUSKOTI",
             node,
+            // The DISTINCT count, and the raw one when they differ. "addresses 4 of 4"
+            // over four identical entries would be the gate reporting the number it
+            // measured rather than the one it means.
             format!(
-                "contested claim \"{}\" addresses {} of 4 corners",
+                "contested claim \"{}\" addresses {} of 4 corners{}",
                 node.title,
-                corners.len()
+                distinct.len(),
+                if distinct.len() == corners.len() {
+                    String::new()
+                } else {
+                    format!(" ({} entries, {} distinct)", corners.len(), distinct.len())
+                }
             ),
             "state all four: A, not-A, both, neither — ruling one out with a reason counts \
 as addressing it",
@@ -426,9 +448,19 @@ pub fn grades_within_pramana_ceiling(graph: &Graph, node: &Node) -> GateResult {
     // EVIDENCE edges only. A rival's `contradicts` carrying a bad grade is the rival's
     // defect, and blocking the claim it attacks punishes the victim for someone else's
     // frontmatter — a finding must land on the node that can fix it.
+    // BOTH DIRECTIONS. `X depends_on Y` points FROM the dependant, so a prerequisite's
+    // grade lives on an outgoing edge — and `DependsOn` is the stronger relation of the
+    // two ("the target must hold for the source to"). Sweeping `Supports` alone let the
+    // same evidence carry a G4 on testimony past the cap by being spelled differently.
+    // `ungraded_support` already fixed this reading and says so in its own comment.
     let incoming: Vec<_> = graph
         .edges_to(&node.id)
         .filter(|e| e.kind == EdgeKind::Supports)
+        .chain(
+            graph
+                .edges_from(&node.id)
+                .filter(|e| e.kind == EdgeKind::DependsOn),
+        )
         .collect();
     if incoming.is_empty() {
         return GateResult::NotApplicable;
