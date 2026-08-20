@@ -1174,6 +1174,87 @@ otherwise the assertion below measures grooming, which is how this test passed b
         );
     }
 
+    /// A claim standing on a defender answers for that defender.
+    ///
+    /// `freeze` refuses a claim defeated in the grounded extension, so grounding is a
+    /// real barrier — but the closure that gets EXAMINED followed support, while
+    /// grounding is decided by the ATTACK relation the closure never visited. So any
+    /// live rival could be neutralised by one unexamined line: the node that decides
+    /// whether the packet freezes was held to no standard at all.
+    ///
+    /// DEFENDERS, not attackers. A node that defeats an attacker is holding this claim
+    /// up, exactly as a supporter does, and is the claim's own author's business.
+    /// An attacker is opposition — pulling it in would block the victim for someone
+    /// else's frontmatter, which is the defect fixed one test above this one.
+    #[test]
+    fn a_claim_answers_for_the_defender_it_stands_on() {
+        let corners = concat!(
+            "corners:\n",
+            "  - it was catalogued\n",
+            "  - it was not catalogued\n",
+            "  - catalogued under one mechanism and not another\n",
+            "  - the question does not arise\n"
+        );
+        let build = |defender: Option<&str>| {
+            let mut g = clean_graph();
+            g.insert_node(node(&format!(
+                "---\nid: c1\ntype: claim\ntitle: The hive catalogued the file at that path\n\
+warrant: A catalogue entry evidences that the path was recorded.\n\
+quantifier: singular\naspect: function\ncausal_rung: association\n\
+boundaries:\n  - Windows 10 1809 and later\n{corners}falsifier:\n\
+  - an entry shown to be written without the path ever being present\n---\n"
+            )));
+            // A groomed rival that genuinely defeats c1.
+            g.insert_node(node(&format!(
+                "---\nid: rival\ntype: claim\ntitle: An inventory sweep produced the record\n\
+warrant: Sweeps populate the same table without observing the path.\n\
+quantifier: singular\naspect: function\ncausal_rung: association\n\
+no_terms_of_art: true\nboundaries:\n  - Windows 10 1809 and later\n{corners}\
+falsifier:\n  - a sweep shown never to write this table\n---\n"
+            )));
+            g.insert_edge(Edge::new(
+                NodeId::new("rival"),
+                NodeId::new("c1"),
+                EdgeKind::Attacks,
+            ));
+            if let Some(src) = defender {
+                g.insert_node(node(src));
+                g.insert_edge(Edge::new(
+                    NodeId::new("def"),
+                    NodeId::new("rival"),
+                    EdgeKind::Attacks,
+                ));
+            }
+            freeze(&g, &NodeId::new("c1"))
+        };
+
+        assert!(
+            build(None).is_err(),
+            "control: with the rival unanswered, c1 is defeated and must not freeze"
+        );
+
+        let bare = build(Some(
+            "---\nid: def\ntype: claim\ntitle: The sweep account does not fit this host timeline\n---\n",
+        ));
+        assert!(
+            bare.is_err(),
+            "a ONE-LINE node decided that this packet freezes; it must answer for itself"
+        );
+
+        let groomed = build(Some(&format!(
+            "---\nid: def\ntype: claim\ntitle: The sweep account does not fit this host timeline\n\
+warrant: The sweep ran after the recorded write, so it cannot have produced it.\n\
+quantifier: singular\naspect: function\ncausal_rung: association\n\
+no_terms_of_art: true\nboundaries:\n  - Windows 10 1809 and later\n{corners}\
+falsifier:\n  - a sweep timestamp preceding the recorded write\n---\n"
+        )));
+        assert!(
+            groomed.is_ok(),
+            "and a defender that HAS answered for itself must let the packet through: {:?}",
+            groomed.as_ref().err()
+        );
+    }
+
     /// Another author's words must not decide this packet's fate — by any spelling.
     ///
     /// A rival's title is an assertion its own author wrote and the subject cannot
