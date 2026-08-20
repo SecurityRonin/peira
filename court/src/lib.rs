@@ -595,6 +595,28 @@ pub fn violations_for(graph: &Graph, id: &NodeId) -> Vec<Violation> {
         {
             stack.push(e.to.clone());
         }
+        // AND ALONG THE DEFENCE RELATION. `freeze` refuses a claim defeated in the
+        // grounded extension, so grounding decides whether a packet exists at all —
+        // yet the attack relation that decides grounding was never walked. Any live
+        // rival could be neutralised by one unexamined line, and the packet then said
+        // "every attack on it is itself defeated" on the strength of it.
+        //
+        // DEFENDERS ONLY, and the asymmetry is the whole point. A node that defeats an
+        // attacker is holding this claim up, exactly as a supporter does. An ATTACKER
+        // is opposition: pulling it in would refuse the subject for prose and
+        // frontmatter another author wrote and they cannot edit — the defect fixed in
+        // `foreign_title`. What holds this up is examined; what opposes it is not.
+        //
+        // Only defenders that are actually IN the extension count. One that is itself
+        // defeated is doing no work, so demanding it be groomed would block a packet
+        // over a node that changed nothing.
+        for a in graph.edges_to(&n).filter(|e| e.kind.is_attack()) {
+            for d in graph.edges_to(&a.from).filter(|e| e.kind.is_attack()) {
+                if graph.is_grounded(&d.from) {
+                    stack.push(d.from.clone());
+                }
+            }
+        }
         // Forwards to what a packet renders of it: the stipulated terms.
         for e in graph
             .edges_from(&n)
@@ -785,6 +807,30 @@ mod tests {
 
     fn node(src: &str) -> Node {
         parse_node(src).expect("fixture parses")
+    }
+
+    /// A defender that has answered for itself.
+    ///
+    /// Bare one-line nodes used to be adequate here because nothing examined a
+    /// defender — which is the defect `a_claim_answers_for_the_defender_it_stands_on`
+    /// closes. A fixture that would not survive the rule it is exercising tests
+    /// nothing, so this builds the grooming every such node now owes.
+    fn groomed(id: &str, title: &str) -> String {
+        format!(
+            "---\nid: {id}\ntype: claim\ntitle: {title}\nwarrant: Stated so the defender answers for itself, as any claim must.\nquantifier: singular\naspect: function\ncausal_rung: association\nno_terms_of_art: true\nboundaries:\n  - Windows 10 1809 and later\ncorners:\n  - it holds\n  - it does not hold\n  - it holds in part\n  - the question does not arise\nfalsifier:\n  - evidence that the account it rules out is the one that occurred\n---\n"
+        )
+    }
+
+    /// Evidence for `id`, graded and attributed, so it is not an orphan.
+    fn evidence_for(g: &mut Graph, obs: &str, id: &str) {
+        g.insert_node(node(&format!(
+            "---\nid: {obs}\ntype: observation\ntitle: the record supporting {id}\naspect: function\n---\n"
+        )));
+        g.insert_edge(
+            Edge::new(NodeId::new(obs), NodeId::new(id), EdgeKind::Supports)
+                .graded_by(Grade::G2, "a-reviewer")
+                .via(Pramana::Perception),
+        );
     }
 
     /// A claim that clears every enforced gate.
@@ -1224,6 +1270,16 @@ falsifier:\n  - a sweep shown never to write this table\n---\n"
                     NodeId::new("rival"),
                     EdgeKind::Attacks,
                 ));
+                // A defender rests on evidence like anything else. Given to BOTH arms,
+                // so the bare/groomed difference is the grooming and nothing else.
+                g.insert_node(node(
+                    "---\nid: o3\ntype: observation\ntitle: the sweep log postdates the recorded write\naspect: function\n---\n",
+                ));
+                g.insert_edge(
+                    Edge::new(NodeId::new("o3"), NodeId::new("def"), EdgeKind::Supports)
+                        .graded_by(Grade::G2, "a-reviewer")
+                        .via(Pramana::Perception),
+                );
             }
             freeze(&g, &NodeId::new("c1"))
         };
@@ -1278,9 +1334,11 @@ corners:\n  - it was catalogued\n  - it was not catalogued\n  - both mechanisms 
             // The rival must itself be answered, or c1 leaves the grounded extension and
             // freeze refuses for that instead — which would make this test measure
             // standing rather than prose.
-            g.insert_node(node(
-                "---\nid: rk\ntype: claim\ntitle: The rival account does not fit the host timeline\n---\n",
-            ));
+            g.insert_node(node(&groomed(
+                "rk",
+                "The rival account does not fit the host timeline",
+            )));
+            evidence_for(&mut g, "o-rk", "rk");
             g.insert_edge(Edge::new(
                 NodeId::new("rk"),
                 NodeId::new("rival"),
@@ -1510,10 +1568,11 @@ corners:\n  - it was catalogued\n  - it was not catalogued\n  - catalogued under
             "---\nid: c2\ntype: claim\ntitle: Catalogued without the path ever being present\n\
 aspect: function\n---\n",
         ));
-        g.insert_node(node(
-            "---\nid: c3\ntype: claim\ntitle: The write path requires the file on the volume\n\
-aspect: function\n---\n",
-        ));
+        g.insert_node(node(&groomed(
+            "c3",
+            "The write path requires the file on the volume",
+        )));
+        evidence_for(&mut g, "o-c3", "c3");
         g.insert_edge(Edge::new(
             NodeId::new("c2"),
             NodeId::new("c1"),
