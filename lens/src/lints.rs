@@ -258,13 +258,82 @@ fn occurrences<'a>(haystack: &'a str, needle: &'a str) -> impl Iterator<Item = u
     })
 }
 
+/// Frames that make what follows SOMEBODY ELSE'S assertion.
+///
+/// Reciting the allegation from the instructions is a CPR 35 duty; quoting the
+/// contention being rebutted is how a rebuttal is written. Both were read as the
+/// author's own verdict, so the tool refused the two sentences its own discipline
+/// requires. What follows an attribution is reported, not asserted.
+///
+/// A closed list, and it must stay closed: the frames are formulaic, while the
+/// assertions they introduce are not. An unrecognised frame merely means the sentence
+/// is judged as the author's own, which is the safe direction.
+const ATTRIBUTIONS: &[&str] = &[
+    "i am instructed that",
+    "i am told that",
+    "it is alleged that",
+    "it is averred that",
+    "it is contended that",
+    "the claimant alleges that",
+    "the claimant contends that",
+    "the respondent alleges that",
+    "the respondent contends that",
+    "the opposing report asserts that",
+    "the opposing report contends that",
+    "the opposing expert asserts that",
+    "the particulars of claim allege that",
+    "the pleading alleges that",
+];
+
+/// Openers that refuse to conclude, and govern the whole sentence after them.
+///
+/// "It has not been possible, on the material provided, to say that the entry confirms
+/// execution" is a refusal, and the clause carrying the verb holds no negator — the
+/// negation sits in the matrix two clauses back. Clause scope is right for ordinary
+/// prose and wrong for this shape, which is exactly the phrasing the discipline asks an
+/// expert to use when the evidence will not carry the point.
+const HEDGE_OPENERS: &[&str] = &[
+    "it has not been possible",
+    "it was not possible",
+    "it is not possible",
+    "it cannot be said",
+    "it could not be said",
+    "it could not be established",
+    "it cannot be established",
+    "it cannot be determined",
+    "it could not be determined",
+    "no view is expressed",
+    "no opinion is expressed",
+];
+
+/// The sentence containing `at`, and whether it is spoken by somebody else or refused.
+///
+/// Both questions are asked of the SENTENCE rather than the clause, because both frames
+/// govern everything after them: an attribution hands the whole statement to another
+/// speaker, and a hedge opener declines the whole statement.
+fn sentence_is_reported_or_refused(haystack: &str, at: usize) -> bool {
+    let start = ['.', '!', '?', '\n']
+        .iter()
+        .filter_map(|b| haystack[..at].rfind(*b).map(|i| i + b.len_utf8()))
+        .max()
+        .unwrap_or(0);
+    let sentence = haystack[start..at].trim_start();
+    ATTRIBUTIONS.iter().any(|a| sentence.contains(a))
+        || HEDGE_OPENERS.iter().any(|h| sentence.starts_with(h))
+}
+
 fn clause_at_is_negated(haystack: &str, at: usize, len: usize) -> bool {
+    const OBJECT_NEGATORS: &[&str] = &["nothing", "no", "none", "neither"];
+    // Somebody else's words, or a refusal to conclude. Both govern the whole sentence,
+    // so both are asked of the sentence rather than the clause.
+    if sentence_is_reported_or_refused(haystack, at) {
+        return true;
+    }
     // A negator can FOLLOW the word it governs, and only in the object position.
     // "proves nothing about execution" is a denial; refusing it punishes the exact
     // sentence the discipline asks for. Deliberately just the next word — scanning the
     // rest of the clause would excuse "proves that the file was not present", where the
     // negator governs the object clause and something is still claimed to be proved.
-    const OBJECT_NEGATORS: &[&str] = &["nothing", "no", "none", "neither"];
     // Only across SPACES. Any punctuation between is a clause boundary, and "The
     // defendant is liable; nothing further was examined" is a verdict followed by an
     // unrelated remark, not a denial.
@@ -282,8 +351,15 @@ fn clause_at_is_negated(haystack: &str, at: usize, len: usize) -> bool {
     // whole rendered packet as ONE clause, so a negator lines away suppresses a verdict
     // printed under its own heading — which is exactly how a legal conclusion on a
     // limiter survived the body scan.
+    // A FULL STOP IS A CLAUSE BOUNDARY, and its absence here was a defect of the same
+    // family as the first-occurrence one: "It could not be established that X. The entry
+    // proves execution" read the negator from the PREVIOUS SENTENCE and fell silent. A
+    // sentence that has ended cannot govern the next one.
     let start = [
         "\n",
+        ".",
+        "!",
+        "?",
         ",",
         ";",
         ":",
@@ -325,25 +401,50 @@ fn clause_has_party(haystack: &str, at: usize) -> bool {
         "mode",
         "id",
         "name",
+        "activity",
+        "software",
+        "process",
+        "data",
+        "input",
+        "context",
+        "token",
+        "credential",
+        "identifier",
     ];
     let start = ["\n", ",", ";", ":", " and ", " but "]
         .iter()
         .filter_map(|b| haystack[..at].rfind(b).map(|i| i + b.len()))
         .max()
         .unwrap_or(0);
-    haystack[start..at]
-        .match_indices(|c: char| c.is_alphanumeric())
-        .map(|(i, _)| i)
-        .filter_map(|i| {
-            let seg = &haystack[start + i..at];
-            let word = seg.split(|c: char| !c.is_alphanumeric()).next()?;
-            PARTIES
-                .contains(&word)
-                .then(|| (start + i + word.len(), word))
-        })
-        .any(|(end, _)| {
-            let rest = haystack[end..].trim_start();
-            !TECHNICAL.iter().any(|n| rest.starts_with(n))
+    // WHOLE WORDS. This walked every alphanumeric index and took the word starting
+    // there, so "the" contained "he" — a pronoun on the party list — and any sentence
+    // with an article plus an ultimate-issue word read as a verdict about a person.
+    // "The record admits an innocent explanation" is the example this file uses to
+    // explain the rule, and it was refused by it.
+    //
+    // A hyphen ends a word here: "third-party" names software, not a party, and
+    // "remote-access" is one compound noun rather than two words.
+    let clause = &haystack[start..at];
+    clause
+        .split(|c: char| !c.is_alphanumeric() && c != '\'')
+        .filter(|w| !w.is_empty())
+        .filter(|w| PARTIES.contains(w))
+        .any(|w| {
+            // A party word immediately followed by a technical noun is naming a thing:
+            // "user hive", "user profile", "user activity".
+            let Some(at_word) = clause.rfind(w) else {
+                return true;
+            };
+            let rest = clause[at_word + w.len()..].trim_start();
+            let next = rest
+                .split(|c: char| !c.is_alphanumeric())
+                .find(|t| !t.is_empty())
+                .unwrap_or_default();
+            // And a HYPHEN binds tighter than a space: "third-party software" is a
+            // compound naming a thing, whatever follows it.
+            let hyphenated =
+                clause[..at_word].ends_with('-') || clause[at_word + w.len()..].starts_with('-');
+            !hyphenated && !TECHNICAL.contains(&next)
         })
 }
 
@@ -399,6 +500,80 @@ fn predicated_of_a_party(haystack: &str, word: &str) -> bool {
 /// Extracted from [`declaration_contradicted`] when that function outgrew its line
 /// budget — split on the seam it already had, since the quantifier and causal halves
 /// share nothing but the node.
+const SCOPES: &[&str] = &[
+    "report",
+    "analysis",
+    "document",
+    "examination",
+    "appendix",
+    "annex",
+    "section",
+    "exhibit",
+    "table",
+    "schedule",
+    "chapter",
+    "paragraph",
+    "figure",
+];
+const METADISCOURSE: &[&str] = &["herein", "below", "above"];
+// ...or an INSTRUCTION. "Always image the disk before every acquisition" is a
+// procedure, and being universal is what makes it one rather than a suggestion.
+// An instruction says what to DO; a claim says what IS.
+//
+// Detected in the TEXT, not by node kind. A kind test has been removed from this
+// codebase three times, and skipping `Protocol` would let an author relabel a
+// universal claim and escape — a protocol's title renders into any packet it
+// supports. Same category-not-special-case shape as the metadiscourse carve-out
+// above.
+//
+// Fails SAFE: an instruction the list misses is merely flagged, and the author
+// sees why. A claim wrongly excused would not be.
+const DEONTIC: &[&str] = &[
+    " must ",
+    " must not",
+    " should ",
+    " shall ",
+    " ought to ",
+    " is required to ",
+];
+const IMPERATIVE_OPENERS: &[&str] = &[
+    "always ",
+    "never ",
+    "do not ",
+    "verify ",
+    "record ",
+    "image ",
+    "capture ",
+    "document ",
+    "acquire ",
+    "photograph ",
+    "seal ",
+    "hash ",
+    "ensure ",
+    "confirm ",
+    "label ",
+    "store ",
+    "avoid ",
+    "check ",
+];
+
+/// A sentence that is not a claim about the world.
+///
+/// Three ways a universal can be found and ONE gate that exempts it — an instruction
+/// ("Verify the hash on all acquired images"), a scope note ("All timestamps in this
+/// appendix are UTC"), or plain metadiscourse. One function, because the third entry
+/// point kept an inline copy that never learned about scope notes — directly under a
+/// comment saying a rule with three entry points needs one gate.
+fn is_exempt_from_quantifier(s: &str) -> bool {
+    let t = s.trim_start();
+    IMPERATIVE_OPENERS.iter().any(|o| t.starts_with(o))
+        || DEONTIC.iter().any(|d| t.contains(d))
+        || SCOPES.iter().any(|w| {
+            t.contains(&format!("in this {w}")) || t.contains(&format!("throughout this {w}"))
+        })
+        || METADISCOURSE.iter().any(|m| t.contains(m))
+}
+
 fn contradicted_quantifier(node: &Node) -> Vec<Violation> {
     // STRONG universals are attributions wherever they appear — "every host was
     // compromised by the account holder" is a universal claim in a body as much as in a
@@ -431,72 +606,16 @@ fn contradicted_quantifier(node: &Node) -> Vec<Violation> {
         // "All systems in the estate show this pattern" is a claim. The distinction is a
         // category, not a special case: statements about the artefact are not statements
         // about the subject matter.
-        const METADISCOURSE: &[&str] = &[
-            "in this report",
-            "in this analysis",
-            "in this document",
-            "in this examination",
-            "throughout this report",
-            "herein",
-            "below",
-            "above",
-        ];
-        // ...or an INSTRUCTION. "Always image the disk before every acquisition" is a
-        // procedure, and being universal is what makes it one rather than a suggestion.
-        // An instruction says what to DO; a claim says what IS.
-        //
-        // Detected in the TEXT, not by node kind. A kind test has been removed from this
-        // codebase three times, and skipping `Protocol` would let an author relabel a
-        // universal claim and escape — a protocol's title renders into any packet it
-        // supports. Same category-not-special-case shape as the metadiscourse carve-out
-        // above.
-        //
-        // Fails SAFE: an instruction the list misses is merely flagged, and the author
-        // sees why. A claim wrongly excused would not be.
-        const DEONTIC: &[&str] = &[
-            " must ",
-            " must not",
-            " should ",
-            " shall ",
-            " ought to ",
-            " is required to ",
-        ];
-        const IMPERATIVE_OPENERS: &[&str] = &[
-            "always ",
-            "never ",
-            "do not ",
-            "verify ",
-            "record ",
-            "image ",
-            "capture ",
-            "document ",
-            "acquire ",
-            "photograph ",
-            "seal ",
-            "hash ",
-            "ensure ",
-            "confirm ",
-            "label ",
-            "store ",
-            "avoid ",
-            "check ",
-        ];
-        let is_instruction = |s: &str| {
-            let s = s.trim_start();
-            IMPERATIVE_OPENERS.iter().any(|o| s.starts_with(o))
-                || DEONTIC.iter().any(|d| s.contains(d))
-        };
-        // ONE place the exemption applies. There are three ways a universal can be
-        // found — strong word anywhere, weak word in the title, weak word opening a
-        // sentence — and guarding two of them left "Verify the hash on all acquired
-        // images" firing through the third. A rule with three entry points needs one
-        // gate, not three.
+        // METADISCOURSE is a CATEGORY — a note about where a statement binds — and it
+        // was implemented as four phrasings. "All timestamps in this report are UTC" is
+        // the carve-out's own motivating example; binding the same note to an appendix
+        // or a table was refused, though it is the narrower and more careful claim.
         let in_a_claiming_sentence = |w: &str, hay: &str| {
             contains_phrase(hay, w)
                 && hay
                     .split(['.', '\n'])
                     .filter(|s| contains_phrase(s, w))
-                    .any(|s| !is_instruction(s) && !METADISCOURSE.iter().any(|m| s.contains(m)))
+                    .any(|s| !is_exempt_from_quantifier(s))
         };
         let found = STRONG
             .iter()
@@ -506,9 +625,7 @@ fn contradicted_quantifier(node: &Node) -> Vec<Violation> {
                 WEAK.iter().find(|w| {
                     full.split(['.', '\n']).any(|s| {
                         let s = s.trim_start();
-                        s.starts_with(*w)
-                            && !METADISCOURSE.iter().any(|m| s.contains(m))
-                            && !is_instruction(s)
+                        s.starts_with(*w) && !is_exempt_from_quantifier(s)
                     })
                 })
             });
@@ -1551,6 +1668,45 @@ confirms execution."
             fired("It could not be established that the entry confirms execution."),
             0,
             "the same shape, and the phrasing the discipline asks for"
+        );
+    }
+
+    /// A sentence that has ended cannot govern the next one.
+    ///
+    /// Found by probing the carve-outs added for the false positives above, not by
+    /// either audit lineage: the clause boundaries listed commas, semicolons and
+    /// conjunctions and no FULL STOP, so a negator in the previous sentence silenced a
+    /// verdict in this one. Same family as the first-occurrence defect — a negation
+    /// reaching further than it governs.
+    #[test]
+    fn a_negator_does_not_reach_across_a_full_stop() {
+        let fired = |title: &str| {
+            let g = graph_of(
+                vec![node(&format!(
+                    "---\nid: n1\ntype: observation\ntitle: {title}\n---\n"
+                ))],
+                vec![],
+            );
+            lint(&g)
+                .into_iter()
+                .filter(|v| v.gate == FORBIDDEN_VERB)
+                .count()
+        };
+
+        assert_eq!(
+            fired("The record is not conclusive. The entry proves execution"),
+            1,
+            "the hedge belongs to the previous sentence; this one is a flat assertion"
+        );
+        assert_eq!(
+            fired("It could not be established that X. The entry proves execution"),
+            1,
+            "and a recognised hedge OPENER governs its own sentence, not the one after it"
+        );
+        assert_eq!(
+            fired("The entry does not prove execution"),
+            0,
+            "control: negation inside the clause still works"
         );
     }
 
