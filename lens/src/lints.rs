@@ -1758,23 +1758,49 @@ is not corroboration",
 
 /// Run every lint over the graph.
 #[must_use]
+/// The lint pack, as DATA rather than a hand-written call list.
+///
+/// Fifteen `out.extend(...)` lines used to sit in `lint()`, and deleting any ONE of them
+/// left the whole suite green — rustc would warn the function was now unused, and
+/// nothing else would. A confidentiality control (`privilege_leak`) could be unwired in
+/// a one-line diff that reads like tidying.
+///
+/// A table cannot be unwired without removing a row that NAMES the code it produces, and
+/// `every_published_lint_is_wired_in` pins the rows against the published constants. The
+/// wiring is the thing that kept being lost, so the wiring is what gets written down.
+type GraphLint = fn(&Graph) -> Vec<Violation>;
+type NodeLint = fn(&Graph, &Node) -> Vec<Violation>;
+
+const GRAPH_LINTS: &[(&str, GraphLint)] = &[
+    (DANGLING_EDGE, dangling_edges),
+    (NON_ARGUMENT_ATTACK, non_argument_attacks),
+    (UNREVIEWED_GRADE, unreviewed_grades),
+    (SELF_GRADED, self_graded),
+];
+
+const NODE_LINTS: &[(&str, NodeLint)] = &[
+    (FORBIDDEN_VERB, |_, n| forbidden_verbs(n)),
+    (ORPHAN_CLAIM, orphan_claims),
+    (PRIVILEGE_LEAK, |_, n| privilege_leak(n)),
+    (FALSE_INDEPENDENCE, false_independence),
+    (WINDOW_EDGE_AS_ONSET, window_edge_as_onset),
+    (UNGROUNDED_CHAIN, ungrounded_chains),
+    (RETRACTED, retracted),
+    (UNGRADED_SUPPORT, ungraded_support),
+    (UNCONTROLLED_INSTRUMENT, uncontrolled_instrument),
+    (LEGAL_CONCLUSION, |_, n| legal_conclusions(n)),
+    (DECLARATION_CONTRADICTED, |_, n| declaration_contradicted(n)),
+];
+
 pub fn lint(graph: &Graph) -> Vec<Violation> {
-    let mut out = dangling_edges(graph);
-    out.extend(non_argument_attacks(graph));
-    out.extend(unreviewed_grades(graph));
-    out.extend(self_graded(graph));
+    let mut out = Vec::new();
+    for (_, f) in GRAPH_LINTS {
+        out.extend(f(graph));
+    }
     for node in graph.nodes() {
-        out.extend(forbidden_verbs(node));
-        out.extend(orphan_claims(graph, node));
-        out.extend(privilege_leak(node));
-        out.extend(false_independence(graph, node));
-        out.extend(window_edge_as_onset(graph, node));
-        out.extend(ungrounded_chains(graph, node));
-        out.extend(retracted(graph, node));
-        out.extend(ungraded_support(graph, node));
-        out.extend(uncontrolled_instrument(graph, node));
-        out.extend(legal_conclusions(node));
-        out.extend(declaration_contradicted(node));
+        for (_, f) in NODE_LINTS {
+            out.extend(f(graph, node));
+        }
     }
     out
 }
@@ -2146,6 +2172,60 @@ as_used: a\nnot_essence: b\nstipulated: c\n---\n"
             0,
             "its attack on reference material was never honoured, so retiring it \
 holds nothing up and blocks nothing"
+        );
+    }
+
+    /// Every published lint code is wired into the pack.
+    ///
+    /// The pack used to be fifteen `out.extend(...)` lines, and deleting any ONE left
+    /// the whole suite green. Four of them were demonstrated in audit round 8:
+    /// `unreviewed_grades`, `privilege_leak`, `dangling_edges` and the sealed-prose loop
+    /// could each be unwired in a one-line diff that reads like tidying — rustc would
+    /// warn the function was unused and nothing else would notice. A confidentiality
+    /// control among them.
+    ///
+    /// Fixing the four instances was not the fix. This pins the WIRING against the
+    /// published constants: a code the crate publishes and the pack does not run is a
+    /// rule the vault believes it has.
+    #[test]
+    fn every_published_lint_is_wired_in() {
+        // The published surface, written down independently of the tables — a list
+        // derived FROM the tables could not detect a row being deleted from them.
+        const PUBLISHED: &[&str] = &[
+            FORBIDDEN_VERB,
+            DANGLING_EDGE,
+            ORPHAN_CLAIM,
+            UNREVIEWED_GRADE,
+            PRIVILEGE_LEAK,
+            FALSE_INDEPENDENCE,
+            SELF_GRADED,
+            WINDOW_EDGE_AS_ONSET,
+            UNGROUNDED_CHAIN,
+            RETRACTED,
+            UNCONTROLLED_INSTRUMENT,
+            NON_ARGUMENT_ATTACK,
+            UNGRADED_SUPPORT,
+            LEGAL_CONCLUSION,
+            DECLARATION_CONTRADICTED,
+        ];
+
+        let mut wired: Vec<&str> = GRAPH_LINTS.iter().map(|(c, _)| *c).collect();
+        wired.extend(NODE_LINTS.iter().map(|(c, _)| *c));
+
+        for code in PUBLISHED {
+            assert!(
+                wired.contains(code),
+                "`{code}` is published by this crate and run by nothing — a rule the \
+vault believes it has"
+            );
+        }
+        assert_eq!(
+            wired.len(),
+            PUBLISHED.len(),
+            "the pack runs {} lints and {} codes are published; a row without a constant \
+is as wrong as a constant without a row",
+            wired.len(),
+            PUBLISHED.len()
         );
     }
 
