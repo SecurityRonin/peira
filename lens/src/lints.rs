@@ -1427,6 +1427,175 @@ not_essence: a record is not the file\nstipulated: the OS recorded this path\n--
         );
     }
 
+    /// A party word must be a WORD, not a substring.
+    ///
+    /// `clause_has_party` walked every alphanumeric index and took the word starting
+    /// there, so "the" contained "he" — a pronoun on the party list. Any sentence
+    /// carrying an article and an ultimate-issue word read as a verdict about a person,
+    /// including this file's own documented example of what must never fire: "an
+    /// innocent explanation" is a thing, and the comment beside `NEEDS_A_PERSON` says so.
+    #[test]
+    fn a_party_word_must_be_a_whole_word() {
+        let fired = |title: &str| {
+            let g = graph_of(
+                vec![node(&format!(
+                    "---\nid: n1\ntype: observation\ntitle: {title}\n---\n"
+                ))],
+                vec![],
+            );
+            lint(&g)
+                .into_iter()
+                .filter(|v| v.gate == LEGAL_CONCLUSION)
+                .count()
+        };
+
+        assert_eq!(
+            fired("The respondent is liable for the loss"),
+            1,
+            "positive control: a verdict about a party still fires"
+        );
+        assert_eq!(
+            fired("The record admits an innocent explanation"),
+            0,
+            "`the` is not `he` — and this is the file's own example of a thing, not a person"
+        );
+        assert_eq!(
+            fired("The user activity admits an innocent explanation"),
+            0,
+            "nor does an activity become a person"
+        );
+        assert_eq!(
+            fired("Third-party remote-access software admits an innocent explanation"),
+            0,
+            "a hyphenated compound naming software is not a party"
+        );
+    }
+
+    /// Attributed speech is not the author's assertion.
+    ///
+    /// Reciting the allegation from the instructions is a CPR 35 duty, and quoting the
+    /// contention being rebutted is how a rebuttal is written. Both were read as the
+    /// expert's own verdict — the tool refusing the two sentences its own discipline
+    /// requires.
+    #[test]
+    fn attributed_speech_is_not_the_authors_verdict() {
+        let fired = |body: &str| {
+            let g = graph_of(
+                vec![node(&format!(
+                    "---\nid: n1\ntype: observation\ntitle: A record was examined\n---\n\n{body}\n"
+                ))],
+                vec![],
+            );
+            lint(&g)
+                .into_iter()
+                .filter(|v| v.gate == LEGAL_CONCLUSION || v.gate == FORBIDDEN_VERB)
+                .count()
+        };
+
+        assert_eq!(
+            fired("The respondent forged the entry."),
+            1,
+            "positive control: an unattributed verdict is the author's own"
+        );
+        assert_eq!(
+            fired("I am instructed that the respondent forged the entry."),
+            0,
+            "reciting the instructions is a duty, not a finding"
+        );
+        assert_eq!(
+            fired("The opposing report asserts that the entry proves execution."),
+            0,
+            "quoting the contention being rebutted is how a rebuttal is written"
+        );
+        assert_eq!(
+            fired("It is alleged that the respondent forged the entry."),
+            0,
+            "an allegation recited is not an allegation adopted"
+        );
+    }
+
+    /// A hedge may be longer than the clause its verb sits in.
+    ///
+    /// "It has not been possible, on the material provided, to say that the entry
+    /// confirms execution" is a refusal to conclude, and the clause carrying "confirms"
+    /// holds no negator — the negation is in the matrix two clauses back.
+    #[test]
+    fn a_sentence_level_hedge_negates_what_follows_it() {
+        let fired = |body: &str| {
+            let g = graph_of(
+                vec![node(&format!(
+                    "---\nid: n1\ntype: observation\ntitle: A record was examined\n---\n\n{body}\n"
+                ))],
+                vec![],
+            );
+            lint(&g)
+                .into_iter()
+                .filter(|v| v.gate == FORBIDDEN_VERB)
+                .count()
+        };
+
+        assert_eq!(
+            fired("The entry confirms execution."),
+            1,
+            "positive control"
+        );
+        assert_eq!(
+            fired(
+                "It has not been possible, on the material provided, to say that the entry \
+confirms execution."
+            ),
+            0,
+            "a refusal to conclude, and the negation sits two clauses from the verb"
+        );
+        assert_eq!(
+            fired("It could not be established that the entry confirms execution."),
+            0,
+            "the same shape, and the phrasing the discipline asks for"
+        );
+    }
+
+    /// Metadiscourse is a category, not four phrasings.
+    ///
+    /// The carve-out exists so "All timestamps in this report are UTC" is read as a
+    /// scope note rather than a universal claim about the world. It listed whole-document
+    /// words only, so binding the same note to an appendix or a table refused it.
+    #[test]
+    fn a_scope_note_may_name_the_part_it_binds() {
+        let fired = |title: &str| {
+            let g = graph_of(
+                vec![node(&format!(
+                    "---\nid: c1\ntype: claim\ntitle: {title}\nquantifier: singular\n---\n"
+                ))],
+                vec![],
+            );
+            lint(&g)
+                .into_iter()
+                .filter(|v| v.gate == "PEIR-LINT-DECLARATION-CONTRADICTED")
+                .count()
+        };
+
+        assert_eq!(
+            fired("All hosts on the estate ran the installer"),
+            1,
+            "positive control: a real universal against a singular declaration"
+        );
+        assert_eq!(
+            fired("All timestamps in this report are stated in UTC"),
+            0,
+            "the carve-out's own motivating example"
+        );
+        assert_eq!(
+            fired("All timestamps in this appendix are stated in UTC"),
+            0,
+            "and the same note bound to a part of the document"
+        );
+        assert_eq!(
+            fired("All figures in this table are stated to the cent"),
+            0,
+            "or to a table"
+        );
+    }
+
     /// A retraction that has itself been retracted does not bind.
     ///
     /// `Graph::withdrawn()` is a fixed point precisely because retractions can be
