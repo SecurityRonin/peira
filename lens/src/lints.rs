@@ -473,8 +473,36 @@ fn predicated_of_a_party(haystack: &str, word: &str) -> bool {
     // including a real verdict. An occurrence is exempt only where IT is the passive,
     // prone-to construction; any other occurrence is judged on its own.
     if word == "liable" {
+        // "liable TO <verb>" is the prone-to sense — ordinary English about how evidence
+        // behaves ("liable to change at shutdown", "liable to be overwritten"). Matching
+        // the literal "liable to be " alone caught the passive and refused the active
+        // form of the same meaning, and a pronoun subject made it worse: "they are
+        // liable to change", said of registry values, read as a verdict about people.
+        //
+        // The LEGAL sense is the closed set — "liable to pay", "liable to indemnify" —
+        // while the ordinary verbs it must not swallow are an open class. Denying the
+        // small closed set is the right way round; listing the open one is not.
+        const OBLIGATION: &[&str] = &[
+            "pay",
+            "repay",
+            "refund",
+            "compensate",
+            "indemnify",
+            "reimburse",
+            "contribute",
+            "account",
+        ];
         return occurrences(haystack, word).any(|at| {
-            !haystack[at..].starts_with("liable to be ") && clause_has_party(haystack, at)
+            let prone = haystack[at..]
+                .strip_prefix("liable to ")
+                .is_some_and(|rest| {
+                    let verb = rest
+                        .split(|c: char| !c.is_alphanumeric())
+                        .find(|t| !t.is_empty())
+                        .unwrap_or_default();
+                    !OBLIGATION.contains(&verb)
+                });
+            !prone && clause_has_party(haystack, at)
         });
     }
     // ANY occurrence said of a party makes it a verdict — the same reason
@@ -761,7 +789,7 @@ pub fn subject_withdrawn(graph: &Graph, id: &NodeId) -> Option<Violation> {
     }
     graph
         .edges_to(id)
-        .find(|e| matches!(e.kind, EdgeKind::Retracts | EdgeKind::Supersedes))
+        .find(|e| e.kind.supersedes_target())
         .map(|e| {
             violation(
                 RETRACTED,
@@ -1128,21 +1156,28 @@ fn retracted(graph: &Graph, node: &Node) -> Vec<Violation> {
 
     graph
         .edges_to(&node.id)
-        .filter(|e| matches!(e.kind, EdgeKind::Retracts | EdgeKind::Supersedes))
+        .filter(|e| e.kind.supersedes_target())
         .filter(|e| !withdrawn.contains(&e.from))
         .map(|e| {
-            let (verb, remedy) = if e.kind == EdgeKind::Retracts {
-                (
+            // Name the RIGHT verb. A sublation preserves what it replaces, so telling
+            // an author their claim was "superseded" would misdescribe the record they
+            // are being sent to read.
+            let (verb, remedy) = match e.kind {
+                EdgeKind::Retracts => (
                     "retracted",
                     "cite the retraction, or delete the claim — a packet frozen over a \
 withdrawn claim is a conclusion the record itself retired",
-                )
-            } else {
-                (
+                ),
+                EdgeKind::Sublates => (
+                    "sublated",
+                    "cite the synthesis instead; it preserves this claim's content and \
+replaces it as the current statement",
+                ),
+                _ => (
                     "superseded",
                     "cite the superseding version instead; the retired one is history, \
 not a finding",
-                )
+                ),
             };
             violation(
                 RETRACTED,
@@ -1668,6 +1703,93 @@ confirms execution."
             fired("It could not be established that the entry confirms execution."),
             0,
             "the same shape, and the phrasing the discipline asks for"
+        );
+    }
+
+    /// `sublates` is a spelling of "supersedes", and it was read by nothing.
+    ///
+    /// Its own docstring is "preserves the target while SUPERSEDING it". `Supersedes`
+    /// drives the withdrawal fixed point, the standing line and this lint; `Sublates`
+    /// was parsed, listed as a known kind, and consumed nowhere — so the identical
+    /// statement sealed in silence under one spelling and was refused under the other.
+    #[test]
+    fn sublation_retires_a_claim_like_supersession() {
+        let build = |kind: EdgeKind| {
+            let g = graph_of(
+                vec![
+                    node("---\nid: c1\ntype: claim\ntitle: The original finding\n---\n"),
+                    node("---\nid: c2\ntype: claim\ntitle: The synthesis\n---\n"),
+                    node("---\nid: o1\ntype: observation\ntitle: a record\n---\n"),
+                ],
+                vec![
+                    Edge::new(NodeId::new("c1"), NodeId::new("o1"), EdgeKind::Supports),
+                    Edge::new(NodeId::new("c2"), NodeId::new("c1"), kind),
+                ],
+            );
+            lint(&g)
+                .into_iter()
+                .filter(|v| v.gate == RETRACTED)
+                .collect::<Vec<_>>()
+        };
+
+        let superseded = build(EdgeKind::Supersedes);
+        assert_eq!(superseded.len(), 1, "positive control");
+
+        let sublated = build(EdgeKind::Sublates);
+        assert_eq!(
+            sublated.len(),
+            1,
+            "the same lifecycle claim, spelled the other way"
+        );
+        assert!(
+            sublated[0].detail.contains("sublated"),
+            "and named for what it is — a sublation preserves what it replaces, so \
+calling it superseded misdescribes the record: {}",
+            sublated[0].detail
+        );
+    }
+
+    /// "liable to change" is how evidence behaves, not what a party owes.
+    ///
+    /// The exemption matched the literal "liable to be " and so refused the active form
+    /// of the same meaning. A pronoun subject made it worse: "they are liable to
+    /// change", said of registry values, read as a verdict about people. The LEGAL
+    /// sense is a closed set; the ordinary verbs are an open class, so the closed one
+    /// is what gets listed.
+    #[test]
+    fn liable_to_change_is_volatility_not_a_verdict() {
+        let fired = |title: &str| {
+            let g = graph_of(
+                vec![node(&format!(
+                    "---\nid: n1\ntype: observation\ntitle: {title}\n---\n"
+                ))],
+                vec![],
+            );
+            lint(&g)
+                .into_iter()
+                .filter(|v| v.gate == LEGAL_CONCLUSION)
+                .count()
+        };
+
+        assert_eq!(
+            fired("The respondent is liable for the loss"),
+            1,
+            "positive control: the bare legal sense"
+        );
+        assert_eq!(
+            fired("The respondent is liable to pay damages"),
+            1,
+            "and the obligation sense, which is what the closed list keeps"
+        );
+        assert_eq!(
+            fired("Registry values are cached; they are liable to change at shutdown"),
+            0,
+            "said of registry values, however the pronoun reads"
+        );
+        assert_eq!(
+            fired("These entries are liable to be overwritten"),
+            0,
+            "the passive form that always worked"
         );
     }
 

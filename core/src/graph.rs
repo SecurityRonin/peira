@@ -1,7 +1,7 @@
 //! The argumentation graph and its grounded extension.
 
 use crate::{
-    edge::{Edge, EdgeKind},
+    edge::Edge,
     node::{Node, NodeId},
 };
 use std::collections::{BTreeMap, BTreeSet};
@@ -119,7 +119,13 @@ impl Graph {
         let retracts: Vec<(&NodeId, &NodeId)> = self
             .edges
             .iter()
-            .filter(|e| matches!(e.kind, EdgeKind::Retracts | EdgeKind::Supersedes))
+            // `Sublates` too — its own docstring is "preserves the target while
+            // SUPERSEDING it", which is the lifecycle claim `Supersedes` makes. It was
+            // parsed, listed as a known kind, and read by nothing, so the identical
+            // statement froze silently under one spelling and was refused under the
+            // other. When you forbid a thing, sweep for the other grammars that
+            // express it.
+            .filter(|e| e.kind.supersedes_target())
             .map(|e| (&e.from, &e.to))
             .collect();
         if retracts.is_empty() {

@@ -385,12 +385,12 @@ fn standing_line(graph: &Graph, id: &NodeId) -> String {
     // claim never doubted.
     let lifted: Vec<String> = graph
         .edges_to(id)
-        .filter(|e| matches!(e.kind, EdgeKind::Retracts | EdgeKind::Supersedes))
+        .filter(|r| r.kind.supersedes_target())
         .filter(|e| withdrawn.contains(&e.from))
         .map(|e| {
             let by = graph
                 .edges_to(&e.from)
-                .filter(|r| matches!(r.kind, EdgeKind::Retracts | EdgeKind::Supersedes))
+                .filter(|r| r.kind.supersedes_target())
                 .map(|r| r.from.to_string())
                 .collect::<Vec<_>>()
                 .join(", ");

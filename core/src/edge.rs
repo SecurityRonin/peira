@@ -132,6 +132,20 @@ impl EdgeKind {
             EdgeKind::Contradicts | EdgeKind::Attacks | EdgeKind::Negates
         )
     }
+
+    /// Whether this kind says the target has been replaced by something newer.
+    ///
+    /// `Retracts` withdraws it; `Supersedes` replaces it; `Sublates` — "preserves the
+    /// target while superseding it" — replaces it while keeping its content in the
+    /// synthesis. All three mean the target is no longer the current statement, and
+    /// naming only two let the third seal a retired claim in silence.
+    #[must_use]
+    pub fn supersedes_target(self) -> bool {
+        matches!(
+            self,
+            EdgeKind::Retracts | EdgeKind::Supersedes | EdgeKind::Sublates
+        )
+    }
 }
 
 impl fmt::Display for EdgeKind {
