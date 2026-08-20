@@ -1756,8 +1756,6 @@ is not corroboration",
     out
 }
 
-/// Run every lint over the graph.
-#[must_use]
 /// The lint pack, as DATA rather than a hand-written call list.
 ///
 /// Fifteen `out.extend(...)` lines used to sit in `lint()`, and deleting any ONE of them
@@ -1792,6 +1790,8 @@ const NODE_LINTS: &[(&str, NodeLint)] = &[
     (DECLARATION_CONTRADICTED, |_, n| declaration_contradicted(n)),
 ];
 
+/// Run every lint over the graph.
+#[must_use]
 pub fn lint(graph: &Graph) -> Vec<Violation> {
     let mut out = Vec::new();
     for (_, f) in GRAPH_LINTS {
