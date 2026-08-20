@@ -9,3 +9,23 @@ Entries below this line are written by release-plz from conventional-commit
 messages on `main`. Do not hand-edit released sections.
 
 ## [Unreleased]
+
+## [0.1.0](https://github.com/SecurityRonin/peira/releases/tag/peira-index-v0.1.0) - 2026-08-20
+
+### Added
+
+- *(lens)* GREEN — enforce the falsifier, promoting PREMORTEM
+- *(index)* the derived half of the hybrid substrate
+
+### Documentation
+
+- the discipline peira mechanises, so the tool stands alone
+- skills, README, ADRs, CI — and a false MSRV caught by its own gate
+
+### Fixed
+
+- *(cli,docs)* the front door opens, and twelve doc claims match the binary
+
+### Other
+
+- [**breaking**] rename the suite to peira
