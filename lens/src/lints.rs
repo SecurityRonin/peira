@@ -1612,18 +1612,47 @@ fn false_independence(graph: &Graph, node: &Node) -> Vec<Violation> {
             // `role: verifying` is an accountable act on the record, the same shape as
             // `no_terms_of_art:` — a claim the author makes and can be held to, rather
             // than a silence that buys an exemption.
+            // THE LINEAGE, not the identity. Two supporters measured by different tools
+            // that share an upstream are one line of evidence for anything the shared
+            // layer gets wrong — two checkers vendoring the same dependency are not
+            // independent for that layer, however differently they read.
+            //
+            // The walk starts at the supporter, follows `measured_by` to its
+            // instruments, and then follows `measured_by` and `depends_on` BETWEEN
+            // instruments. Restricted to instrument nodes on purpose: `depends_on` from
+            // a claim is a prerequisite, an entirely different relation, and following
+            // it here would make every claim sharing a premise "dependent".
             let instruments_of = |id: &NodeId| -> BTreeSet<NodeId> {
-                graph
+                let mut seen: BTreeSet<NodeId> = BTreeSet::new();
+                let mut stack: Vec<NodeId> = graph
                     .edges_from(id)
                     .filter(|e| e.kind == EdgeKind::MeasuredBy)
-                    .filter(|e| {
-                        graph
-                            .node(&e.to)
-                            .and_then(|n| n.field("role"))
-                            .is_none_or(|r| !r.trim().eq_ignore_ascii_case("verifying"))
-                    })
                     .map(|e| e.to.clone())
-                    .collect()
+                    .collect();
+                while let Some(n) = stack.pop() {
+                    let Some(node) = graph.node(&n) else { continue };
+                    if node.kind != NodeKind::Instrument {
+                        continue;
+                    }
+                    // A VERIFYING tool did not produce the finding, so it is not a shared
+                    // line — and neither is anything it alone depends on.
+                    if node
+                        .field("role")
+                        .is_some_and(|r| r.trim().eq_ignore_ascii_case("verifying"))
+                    {
+                        continue;
+                    }
+                    if !seen.insert(n.clone()) {
+                        continue;
+                    }
+                    for e in graph
+                        .edges_from(&n)
+                        .filter(|e| matches!(e.kind, EdgeKind::MeasuredBy | EdgeKind::DependsOn))
+                    {
+                        stack.push(e.to.clone());
+                    }
+                }
+                seen
             };
             let shared: Vec<NodeId> = instruments_of(a)
                 .intersection(&instruments_of(b))
