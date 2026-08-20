@@ -1,7 +1,7 @@
 //! The argumentation graph and its grounded extension.
 
 use crate::{
-    edge::Edge,
+    edge::{Edge, EdgeKind},
     node::{Node, NodeId},
 };
 use std::collections::{BTreeMap, BTreeSet};
@@ -101,36 +101,27 @@ impl Graph {
     /// a claim `peira packet` refused. One question, asked once.
     #[must_use]
     pub fn withdrawn(&self) -> BTreeSet<NodeId> {
-        // GROUNDED over the retraction relation — the same skeptical machinery this file
-        // already uses for attacks, and for the same reason.
+        // TWO RELATIONS, TWO ALGEBRAS. Grouping them cost a live defect: applying
+        // retraction-lifting to a version chain revived a twice-superseded claim, and
+        // the packet announced its own rehabilitation.
         //
-        // The previous version recomputed the set from scratch each pass, so as it grew
+        // RETRACTION is dialectical and CAN be lifted. If the node that retracted X is
+        // itself retracted, the withdrawal was disputed and X stands again. Grounded
+        // over the retraction relation — the same skeptical machinery this file uses for
+        // attacks, and for the same reason.
+        //
+        // An earlier version recomputed the set from scratch each pass, so as it grew
         // FEWER retractions stayed active and the set shrank: the opposite of monotone.
         // A retraction cycle oscillated forever, the loop exited on its bound, and the
-        // answer was whichever phase the PARITY of the vault's total retraction count
-        // landed on. Adding an unrelated bookkeeping note flipped a defeated claim to
-        // standing. The comment claiming "a set that only grows, so it terminates" was
-        // false, and it was the argument for correctness rather than a description of it.
-        //
-        // A retraction binds only if its author is DEFINITELY undefeated. Where
-        // retractions dispute each other and none settles, none of them binds — a
-        // contested withdrawal must not silently suppress an attack, which is this
-        // project's rule about never making the graph quietly smaller.
+        // answer was whichever phase the PARITY of the vault's retraction count landed
+        // on. A retraction binds only if its author is DEFINITELY undefeated; where
+        // retractions dispute each other and none settles, none of them binds.
         let retracts: Vec<(&NodeId, &NodeId)> = self
             .edges
             .iter()
-            // `Sublates` too — its own docstring is "preserves the target while
-            // SUPERSEDING it", which is the lifecycle claim `Supersedes` makes. It was
-            // parsed, listed as a known kind, and read by nothing, so the identical
-            // statement froze silently under one spelling and was refused under the
-            // other. When you forbid a thing, sweep for the other grammars that
-            // express it.
-            .filter(|e| e.kind.supersedes_target())
+            .filter(|e| e.kind == EdgeKind::Retracts)
             .map(|e| (&e.from, &e.to))
             .collect();
-        if retracts.is_empty() {
-            return BTreeSet::new();
-        }
 
         let retractors_of = |x: &NodeId| -> Vec<&NodeId> {
             retracts
@@ -141,8 +132,7 @@ impl Graph {
         };
 
         // Least fixed point of "every retraction against x is itself retracted by
-        // something settled". Monotone by construction: `settled` only ever grows, and
-        // the sequence stabilises within one step per participant.
+        // something settled". Monotone by construction: `settled` only ever grows.
         let participants: BTreeSet<&NodeId> = retracts.iter().flat_map(|(f, t)| [*f, *t]).collect();
         let mut settled: BTreeSet<NodeId> = BTreeSet::new();
         loop {
@@ -161,12 +151,35 @@ impl Graph {
             settled = next;
         }
 
-        // Withdrawn: retracted by an author that is itself settled-undefeated.
-        retracts
+        let mut out: BTreeSet<NodeId> = retracts
             .iter()
             .filter(|(from, _)| settled.contains(*from))
             .map(|(_, to)| (*to).clone())
-            .collect()
+            .collect();
+
+        // SUPERSESSION is a version chain, and lifting is nonsense there. Being replaced
+        // by something that was itself later replaced does not make you current again —
+        // superseded by a superseded version is still superseded. So it is NOT a fixed
+        // point: one pass, and the only thing that stops a supersession binding is its
+        // author having been RETRACTED, which is a claim that the replacement was wrong
+        // rather than merely that it has since moved on.
+        //
+        // `Sublates` rides with `Supersedes`: its own docstring is "preserves the target
+        // while SUPERSEDING it", and it was parsed, listed as a known kind, and read by
+        // nothing until this predicate reached it.
+        for e in self
+            .edges
+            .iter()
+            .filter(|e| matches!(e.kind, EdgeKind::Supersedes | EdgeKind::Sublates))
+        {
+            let author_retracted = retracts
+                .iter()
+                .any(|(from, to)| *to == &e.from && settled.contains(*from));
+            if !author_retracted {
+                out.insert(e.to.clone());
+            }
+        }
+        out
     }
 
     /// Whether `id` names a node that can argue at all.
