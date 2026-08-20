@@ -2313,6 +2313,72 @@ confirms execution."
         );
     }
 
+    /// An oracle is independent only if its LINEAGE is.
+    ///
+    /// Two supporters measured by the same tool are one line of evidence, and that is
+    /// caught. Two supporters measured by DIFFERENT tools that share an upstream are
+    /// also one line — two checkers vendoring the same dependency are not independent
+    /// for the shared layer, however differently they read. The blind spot is inherited
+    /// with the ancestry.
+    ///
+    /// This is the half of the two-method rule the instrument register was built for and
+    /// never reached: it compared instruments by identity, so a shared PARENT was
+    /// invisible.
+    #[test]
+    fn independence_is_a_property_of_the_lineage() {
+        let build = |shared_parent: bool| {
+            let mut nodes = vec![
+                node("---\nid: c1\ntype: claim\ntitle: The path was recorded\n---\n"),
+                node("---\nid: o1\ntype: observation\ntitle: the hive entry\n---\n"),
+                node("---\nid: o2\ntype: observation\ntitle: the MFT record\n---\n"),
+                node("---\nid: t1\ntype: instrument\ntitle: hive parser\n---\n"),
+                node("---\nid: t2\ntype: instrument\ntitle: MFT parser\n---\n"),
+                node(
+                    "---\nid: lib\ntype: instrument\ntitle: the shared decoder both vendor\n---\n",
+                ),
+            ];
+            nodes.push(node("---\nid: pad\ntype: observation\ntitle: pad\n---\n"));
+            let mut edges = vec![
+                Edge::new(NodeId::new("o1"), NodeId::new("c1"), EdgeKind::Supports),
+                Edge::new(NodeId::new("o2"), NodeId::new("c1"), EdgeKind::Supports),
+                Edge::new(NodeId::new("o1"), NodeId::new("t1"), EdgeKind::MeasuredBy),
+                Edge::new(NodeId::new("o2"), NodeId::new("t2"), EdgeKind::MeasuredBy),
+            ];
+            if shared_parent {
+                edges.push(Edge::new(
+                    NodeId::new("t1"),
+                    NodeId::new("lib"),
+                    EdgeKind::DependsOn,
+                ));
+                edges.push(Edge::new(
+                    NodeId::new("t2"),
+                    NodeId::new("lib"),
+                    EdgeKind::DependsOn,
+                ));
+            }
+            lint(&graph_of(nodes, edges))
+                .into_iter()
+                .filter(|v| v.gate == FALSE_INDEPENDENCE)
+                .collect::<Vec<_>>()
+        };
+
+        assert!(
+            build(false).is_empty(),
+            "control: two genuinely separate tools are two lines of evidence"
+        );
+        let shared = build(true);
+        assert_eq!(
+            shared.len(),
+            1,
+            "two parsers vendoring one decoder are not independent for the shared layer"
+        );
+        assert!(
+            shared[0].detail.contains("lib"),
+            "and the finding must NAME the shared ancestor, or it cannot be checked: {}",
+            shared[0].detail
+        );
+    }
+
     /// Recording provenance must not cost an author their independence.
     ///
     /// Two observations from different sources, each verified with the same hash tool,
