@@ -267,9 +267,15 @@ stipulated (是名)",
 /// The field wins where both are present: it is the more specific declaration, and
 /// disagreement between them is the author's to resolve, not this gate's to arbitrate.
 fn declared_aspect(graph: &Graph, node: &Node) -> Option<&'static str> {
-    match node.field("aspect") {
-        Some("substance") => return Some("substance"),
-        Some("function") => return Some("function"),
+    // CASE AND TYPOS. `_ => {}` fell through to `None`, so `aspect: Substance` — one
+    // capital — silently switched 體用 off, and so did any misspelling. That is an
+    // unrecognised value disabling a check instead of being shown verbatim, which is
+    // this repository's own stated rule, and the identical defect was already fixed for
+    // `quantifier:` and `causal_rung:`. An unrecognised value is reported by
+    // `substance_not_from_function_alone`, which blocks and prints it.
+    match node.field("aspect").map(str::trim) {
+        Some(a) if a.eq_ignore_ascii_case("substance") => return Some("substance"),
+        Some(a) if a.eq_ignore_ascii_case("function") => return Some("function"),
         _ => {}
     }
     let mut out = None;
@@ -285,11 +291,38 @@ fn declared_aspect(graph: &Graph, node: &Node) -> Option<&'static str> {
 
 /// A claim about what a thing *is* may not rest solely on what it *did*.
 pub fn substance_not_from_function_alone(graph: &Graph, node: &Node) -> GateResult {
+    // AN UNRECOGNISED VALUE IS SHOWN, NEVER SWALLOWED. `aspect: subtance` used to fall
+    // through to `NotApplicable` and switch the lens off in silence — the same defect
+    // already fixed for `causal_rung:`, which blocks and prints the offending word.
+    if let Some(raw) = node.field("aspect") {
+        let t = raw.trim();
+        if !t.eq_ignore_ascii_case("substance") && !t.eq_ignore_ascii_case("function") {
+            return GateResult::Unassessed {
+                why: format!(
+                    "\"{}\" declares `aspect: {t}`, which is neither `substance` nor \
+`function` — so which of the two it speaks of is unknown",
+                    node.title
+                ),
+            };
+        }
+    }
     if declared_aspect(graph, node) != Some("substance") {
         return GateResult::NotApplicable;
     }
     let support = supporters(graph, node);
     if support.is_empty() {
+        // A LEAF HAS NOTHING TO CLASSIFY, and demanding it produce some is the regress:
+        // this gate asks SUPPORTERS to declare an aspect, and an observation that
+        // answered honestly then found the annotation itself blocking, with no way out
+        // that was not a lie. Primitive evidence is where a chain ends.
+        //
+        // A CLAIM resting on nothing is a different matter and stays Unassessed: it
+        // asserts what a thing IS on no evidence at all, which is unexamined rather than
+        // inapplicable. Stated as a reason, not a category — the distinction is whether
+        // the node is the evidence or rests on it.
+        if !matches!(node.kind, NodeKind::Claim | NodeKind::Hypothesis) {
+            return GateResult::NotApplicable;
+        }
         return GateResult::Unassessed {
             why: format!("\"{}\" has no supporting evidence to classify", node.title),
         };
@@ -806,6 +839,76 @@ warrant: The table records what ran.\nquantifier: singular\ncausal_rung: associa
             build("claim", "aspect: function\n"),
             0,
             "control: a function claim owes this lens nothing"
+        );
+    }
+
+    /// An unrecognised aspect is shown, and a leaf is not asked to classify itself.
+    ///
+    /// D1: `_ => {}` fell through to `None`, so `aspect: Substance` — one capital — and
+    /// any misspelling switched 體用 off in silence. An unrecognised value disabling a
+    /// check instead of being shown verbatim is this repository's own stated rule, and
+    /// the identical defect was already fixed for `quantifier:` and `causal_rung:`.
+    ///
+    /// D2: this gate asks SUPPORTERS to declare an aspect, and an observation that
+    /// answered honestly then found the annotation itself blocking — "has no supporting
+    /// evidence to classify" — with no exit that was not a lie. Primitive evidence is
+    /// where a chain ends. A CLAIM resting on nothing stays Unassessed: that is
+    /// unexamined, not inapplicable.
+    #[test]
+    fn the_aspect_gate_reads_the_value_and_spares_the_leaf() {
+        let with_supporter = |aspect: &str| {
+            let mut g = Graph::new();
+            g.insert_node(node(&format!(
+                "---\nid: sub\ntype: claim\ntitle: Amcache is an execution artifact\n\
+aspect: {aspect}\n---\n"
+            )));
+            g.insert_node(node(
+                "---\nid: ev\ntype: observation\ntitle: the table lists the path\n\
+aspect: function\n---\n",
+            ));
+            g.insert_edge(Edge::new(
+                NodeId::new("ev"),
+                NodeId::new("sub"),
+                EdgeKind::Supports,
+            ));
+            let n = g.node(&NodeId::new("sub")).expect("sub").clone();
+            substance_not_from_function_alone(&g, &n)
+        };
+
+        for spelling in ["substance", "Substance", "SUBSTANCE", "  substance  "] {
+            assert!(
+                matches!(with_supporter(spelling), GateResult::Block(_)),
+                "`aspect: {spelling}` must reach the gate — case is not a declaration"
+            );
+        }
+        match with_supporter("subtance") {
+            GateResult::Unassessed { why } => assert!(
+                why.contains("subtance"),
+                "an unrecognised value must be shown verbatim: {why}"
+            ),
+            other => panic!("a typo must not switch the lens off: {other:?}"),
+        }
+        assert!(
+            matches!(with_supporter("function"), GateResult::NotApplicable),
+            "control: a function claim owes this lens nothing"
+        );
+
+        // D2 — the leaf, and the claim, resting on nothing.
+        let alone = |kind: &str| {
+            let mut g = Graph::new();
+            g.insert_node(node(&format!(
+                "---\nid: n1\ntype: {kind}\ntitle: x is y\naspect: substance\n---\n"
+            )));
+            let n = g.node(&NodeId::new("n1")).expect("n1").clone();
+            substance_not_from_function_alone(&g, &n)
+        };
+        assert!(
+            matches!(alone("observation"), GateResult::NotApplicable),
+            "an observation IS the evidence; asking it to classify itself is the regress"
+        );
+        assert!(
+            matches!(alone("claim"), GateResult::Unassessed { .. }),
+            "but a claim asserting what a thing IS on no evidence is unexamined"
         );
     }
 
