@@ -164,6 +164,18 @@ fn markdown_files(root: &Path) -> Result<Vec<PathBuf>, VaultError> {
             }
             if path.is_dir() {
                 stack.push(path);
+            } else if path
+                .file_name()
+                .is_some_and(|n| n.eq_ignore_ascii_case("README.md"))
+            {
+                // README.md IS NOT A NODE. `peira init` scaffolds one in each area as
+                // guidance, and the loader then refused the vault it had just created:
+                // "document does not begin with a `---` frontmatter fence", exit 2. The
+                // quickstart in the project's own README was broken end to end.
+                //
+                // Skipping by NAME rather than by malformedness — a file that is meant
+                // to be a node and is malformed must still fail loudly, which is why
+                // this is a named convention and not a silent tolerance of bad input.
             } else if path.extension().is_some_and(|e| e == "md") {
                 out.push(path);
             }

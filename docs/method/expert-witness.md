@@ -135,10 +135,10 @@ limit established by audit: fields the packet does not render (grades, graders, 
 change no digest. See [`../architecture.md`](../architecture.md), defect 8.
 
 **A limit found by an adversarial audit, and since closed:** the rendered statement quotes the
-author-written term fields — `as_used`, `not_essence`, `stipulated` — verbatim, and the
-node-level lint deliberately skips them, because a term that names the disputed referent is
-describing it rather than asserting it. The scan `freeze` runs over the FINISHED packet body
-covers them, so an overstatement in a stipulation is refused and the field is named:
+author-written term fields — `as_used`, `not_essence`, `stipulated` — verbatim. The node-level
+lint scans exactly those three (`RENDERED_FIELDS`), and the scan `freeze` runs over the FINISHED
+packet body covers them again, so an overstatement in a stipulation is refused and the field is
+named:
 
 ```
 PEIR-LINT-FORBIDDEN-VERB  60.01: `stipulated:` says "proves" — and Court Mode renders

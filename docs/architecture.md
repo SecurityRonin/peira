@@ -14,7 +14,8 @@ falsified it — five criticals, reproduced against the binary. All five are fix
 rounds, each with a **seeded false finding as a negative control** (rejected 0-5 every time, every
 judge refuting it by execution), found and closed further defects. The sixth round (2026-08-19)
 ran six independent lenses plus an outside critic from another model family, deduplicated 63 raw
-findings to 33, and sustained 30 of them at a 3-of-5 threshold; all 30 are fixed.
+findings to 33 rows, and sustained all but five at a 3-of-5 threshold — four rejected on the
+merits and one seeded falsehood rejected 0-5. Every sustained finding is fixed.
 
 The defects that mattered most were not wrong rules. They were correct rules losing force at a
 join — a verdict discarded before the decision point, a check one caller could see and another
@@ -415,7 +416,7 @@ finders**, then direct reproduction:
 |---|---|---|---|
 | `Unassessed` dropped | 4 of 5 | yes | yes |
 | pramāṇa ceiling opt-in | 5 of 5 | yes | yes |
-| safe statement quotes authored prose | 3 of 5 | yes | mechanism confirmed in source; not yet run |
+| safe statement quotes authored prose | 3 of 5 | yes | reproduced, and FIXED — see defect 5 |
 
 ---
 

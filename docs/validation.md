@@ -28,7 +28,7 @@ is load-bearing.
 
 | Control | Setup | Required | Observed |
 |---|---|---|---|
-| **A** | over-claim vault | BLOCKS, non-zero exit, ≥5 DISTINCT lenses | 8 distinct gates + 1 lint, exit 1 |
+| **A** | over-claim vault | BLOCKS, non-zero exit, ≥5 DISTINCT lenses | 8 distinct gates + 2 lints, exit 1 |
 | **B** | bounded vault | PASSES, exit 0 | exit 0, packet froze |
 | **B′** | rung gate neutered | that finding disappears | 1 → 0 → 1 across mutate/build/restore |
 | **C** | vault absent | distinguishable from A, ~0 s | exit 2, 2 ms |
@@ -48,7 +48,9 @@ PEIR-CAUSAL-RUNG-UNREACHED      [RUNG]       counterfactual rung, observation on
 PEIR-BOUNDARIES-MISSING         [RUNG]       no boundary conditions
 exit=1
 
-PEIR-LINT-FORBIDDEN-VERB        [LINT]       says "proves"        (peira lint, exit=1)
+PEIR-LINT-FORBIDDEN-VERB        [LINT]  c-overclaim   says "proves"
+PEIR-LINT-ORPHAN-CLAIM          [LINT]  h-install     no supporting evidence
+exit=1                                                (peira lint)
 ```
 
 ### Control B — the bounded conclusion passes
@@ -69,7 +71,7 @@ reports green while testing nothing.
 
 ```
 baseline                 PEIR-CAUSAL-RUNG-UNREACHED findings: 1
-gate neutered            PEIR-CAUSAL-RUNG-UNREACHED findings: 0   (6 findings total)
+gate neutered            PEIR-CAUSAL-RUNG-UNREACHED findings: 0   (7 findings total)
 restored                 PEIR-CAUSAL-RUNG-UNREACHED findings: 1
 ```
 
@@ -131,7 +133,7 @@ version freely and the packet asserts a format the digest never covered.
 ## Reproducing
 
 ```bash
-cargo test --workspace --no-fail-fast          # 204 tests, incl. the acceptance suite
+cargo test --workspace --no-fail-fast          # 220 tests, incl. the acceptance suite
 cargo build -p peira-cli && tests/controls.sh target/debug/peira   # A, B and C
 ```
 
@@ -190,7 +192,7 @@ reports green while testing nothing.
 | Gate | Mutation | Observed |
 |---|---|---|
 | `cargo vet` | removed the `serde_yaml_ng` exemption | exit 255, *"1 unvetted dependencies"* → restored, exit 0 |
-| `tests/controls.sh` | `examine_graph` returns no violations | *"control A must exit 1; got 0"*, exit 1 → restored, exit 0 |
+| `tests/controls.sh` | `examine_graph` returns no violations | *"control A must exit 1 (violations); got 0"*, exit 1 → restored, exit 0 |
 | `fuzz_parse_node` | `reject_derived_fields` neutered | panic at the assertion in ~62k runs (≈9 s) → restored, 1.06 M runs clean |
 | gitleaks (`dir`) | planted a PAT in the working tree | exit 1 → clean tree, exit 0 |
 | gitleaks (`git`) | planted a PAT in a commit | exit 1 → clean history, exit 0 |

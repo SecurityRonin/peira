@@ -36,6 +36,12 @@ linked by a `duplicates` edge.
 
 - A tool's output is testimony about the artifact, and cannot buy a grade that direct
   perception would earn.
-- G4 can only be earned by the shape of the graph, never asserted on an edge.
+- ~~G4 can only be earned by the shape of the graph, never asserted on an edge.~~
+  **RETRACTED.** Both halves were false, and the retraction is recorded here rather than
+  quietly deleted. No graph operation computes convergence, so nothing EARNS a G4; and the
+  loader constructs a settled G4 edge directly from `grade=G4 by=…`, so the only G4 the
+  system can hold is an asserted one. What the ceiling actually does is refuse G4 to any
+  single edge that declares a pramāṇa — no pramāṇa's ceiling reaches it. See
+  [`../architecture.md`](../architecture.md).
 - An edge with no declared pramāṇa is *unassessed*, which the gates report separately and
   which never counts as a pass.

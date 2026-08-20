@@ -28,9 +28,14 @@ $ peira gates vault/
 ## Install
 
 ```bash
-cargo install peira-cli
+cargo install --git https://github.com/SecurityRonin/peira peira-cli
 peira init vault/
+peira gates vault/
 ```
+
+`peira-cli` is not on crates.io yet, so install it from the repository. `init`
+scaffolds a vault with one deliberately over-stated example claim, so the third
+command has something to report the first time you run it.
 
 ## The idea
 

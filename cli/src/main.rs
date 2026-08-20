@@ -212,6 +212,30 @@ fn cmd_init(path: &Path) -> Result<u8, String> {
                 .map_err(|e| format!("{}: {e}", marker.display()))?;
         }
     }
+    // A WORKED EXAMPLE, so the next command has something to examine. `init` scaffolded
+    // empty directories and the quickstart's very next step reported an empty vault —
+    // six audit rounds of semantic work behind a front door that did not open.
+    let example = path.join("70-inquiry").join("example-claim.md");
+    if !example.exists() {
+        std::fs::write(
+            &example,
+            "---\nid: example-claim\ntype: claim\n\
+title: The Amcache entry proves the program was executed\n\
+causal_rung: counterfactual\n---\n\n\
+Delete this file once you have your own claims. It is deliberately over-stated, so\n\
+`peira gates` has something to report the first time you run it.\n",
+        )
+        .map_err(|e| format!("{}: {e}", example.display()))?;
+        let obs = path.join("70-inquiry").join("example-observation.md");
+        std::fs::write(
+            &obs,
+            "---\nid: example-observation\ntype: observation\n\
+title: An InventoryApplicationFile entry names the path\naspect: function\n\
+supports: [\"example-claim\"]\n---\n",
+        )
+        .map_err(|e| format!("{}: {e}", obs.display()))?;
+    }
+
     println!("Scaffolded a vault at {}", path.display());
     for (dir, _) in AREAS {
         println!("  {dir}/");

@@ -102,9 +102,10 @@ The second discipline this directory exists to carry, stated in full in
 knowledge base first, and every deliverable is a build artifact regenerated from it. A correction
 applied only to a deliverable does not fix an error — it forks it. peira is the mechanical form of
 this rule: the vault is the source, `peira packet` is the generator, and `peira verify` re-derives
-and compares digests. Two limits the audits established: supersession is recorded without being
-honoured, and the digest covers only the packet's rendered projection — see the coverage map
-below.
+and compares digests. Supersession IS honoured — a claim the record supersedes or retracts is
+refused, and a superseded version stays superseded even when its successor is itself replaced.
+One limit the audits established stands: the digest covers only the packet's rendered projection
+— see the coverage map below.
 
 ---
 
@@ -193,9 +194,11 @@ name the same producing instrument — one tool is one line of evidence however 
 labelled. An instrument declaring `role: verifying` is exempt, because a tool that checked the
 artifact did not produce either finding; absence of the field fails safe. It still does not detect
 two supporters that share a *source* without naming an instrument.
-⁴ Reaches a verdict only when the claim declares the triggering field (`uses_term`, `quantifier`,
-`causal_rung`, `aspect`, an evaluative word or `evaluative: true`). With the field absent the gate
-returns `Unassessed`, which now BLOCKS as `PEIR-GATE-UNASSESSED` — silence no longer passes. A
+⁴ Reaches a verdict only when the claim declares the triggering field. For `uses_term`,
+`quantifier` and `causal_rung`, absence yields `Unassessed`, which BLOCKS as
+`PEIR-GATE-UNASSESSED` — silence does not pass. **`aspect:` is the exception and is stated rather
+than glossed over:** a claim declaring no `aspect:` is `NotApplicable` to 體用 and passes it
+silently, so that lens is opt-in on the subject's own side. A
 field declared *falsely* is a different matter and is reported by
 `PEIR-LINT-DECLARATION-CONTRADICTED`, which compares the declaration against the claim's own words.
 ⁵ Fires only on a *proposed* grade with no reviewer. An edge carrying no grade at all is caught
@@ -205,8 +208,11 @@ there is nothing to compare and the lint reports nothing.
 ⁷ The digest covers the packet's rendered body only. Grades, graders, pramāṇas and `measured_by:`
 links are not rendered, so they change without disturbing it — architecture defect 8.
 ⁸ The loader drops an unknown edge attribute, an invalid `grade=` and a misspelt `via=` without a
-diagnostic; a typo removes the pramāṇa ceiling or the review semantics instead of going red —
-architecture defect 9.
+diagnostic. The CONSEQUENCES named in earlier versions of this note no longer follow: a misspelt
+`via=` leaves the edge with no declared means of knowing, which blocks as
+`PEIR-GATE-UNASSESSED [PRAMANA]`, and a mangled `grade=` leaves it ungraded, which
+`PEIR-LINT-UNGRADED-SUPPORT` reports. What remains is that the loader is silent about the TYPO
+itself — it says the edge is unexamined, not that a word was misspelt. Architecture defect 9.
 
 ## The ten that are catalogued and enforce nothing
 
