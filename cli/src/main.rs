@@ -6,7 +6,7 @@
 //! nodes and edges all day and never assert that anything is accepted.
 
 use clap::{Parser, Subcommand};
-use peira_core::{Graph, NodeId};
+use peira_core::{Graph, NodeId, NodeKind};
 use peira_court::Verification;
 use peira_lens::{examine_graph, lints, Violation, CATALOG};
 use std::{
@@ -471,7 +471,22 @@ fn run() -> Result<u8, String> {
         Command::Index { vault, out } => cmd_index(&vault, &out),
         Command::Lint { vault } => {
             let graph = load(&vault)?;
-            Ok(report(&lints::lint(&graph), "lint"))
+            // AND what a packet would seal. The node-level pack deliberately skips a
+            // term's moments — mention is not use — but a packet quotes them verbatim,
+            // so `peira lint` reported nothing over a term `peira packet` refused. The
+            // command an author runs to FIND problems was silent about the one they had.
+            let mut found = lints::lint(&graph);
+            for n in graph.nodes().filter(|n| n.kind == NodeKind::Claim) {
+                for v in peira_court::sealed_prose_findings(&graph, &n.id) {
+                    if !found
+                        .iter()
+                        .any(|f| f.gate == v.gate && f.detail == v.detail)
+                    {
+                        found.push(v);
+                    }
+                }
+            }
+            Ok(report(&found, "lint"))
         }
         Command::Gates { vault, node } => cmd_gates(&vault, node),
         Command::Status { vault, id } => cmd_status(&vault, &id),

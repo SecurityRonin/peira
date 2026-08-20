@@ -627,6 +627,34 @@ pub fn evidential_closure(graph: &Graph, id: &NodeId) -> BTreeSet<NodeId> {
     closure
 }
 
+/// The part of a rendered packet that ASSERTS, with the disclosure section removed.
+///
+/// One function because the exclusion existed twice, in `freeze` and in
+/// `violations_for`, and two copies of a rule about which text counts is how the two
+/// commands come to disagree about what they scanned.
+fn asserted_text(body: &str) -> String {
+    body.split("\n## ")
+        .filter(|s| !s.starts_with("What would defeat this"))
+        .collect::<Vec<_>>()
+        .join("\n## ")
+}
+
+/// Overstatement in the prose a packet would SEAL, which no node-level lint reaches.
+///
+/// The term moments — `as_used`, `not_essence`, `stipulated` — are quoted verbatim into
+/// the safe statement, and the node-level lint deliberately skips them because MENTION
+/// IS NOT USE: a term that names the disputed referent is describing, not asserting.
+/// But a packet does not quote it in a frame; it seals it.
+///
+/// Public because `peira lint` reported nothing over a term that `peira packet` refused,
+/// so the command an author runs to find problems was silent about the one they had.
+#[must_use]
+pub fn sealed_prose_findings(graph: &Graph, id: &NodeId) -> Vec<Violation> {
+    render_body(graph, id).map_or_else(Vec::new, |body| {
+        lints::prose_findings_in(&asserted_text(&body), id)
+    })
+}
+
 /// Everything standing in the way of freezing a packet for `id`.
 ///
 /// Public because the CLI must ask the SAME question rather than re-deriving a
@@ -666,12 +694,7 @@ pub fn violations_for(graph: &Graph, id: &NodeId) -> Vec<Violation> {
     // caller contradicts.
     if let Some(body) = render_body(graph, id) {
         // Same exclusion as in `freeze`: the falsifier section discloses, it does not assert.
-        let asserted: String = body
-            .split("\n## ")
-            .filter(|s| !s.starts_with("What would defeat this"))
-            .collect::<Vec<_>>()
-            .join("\n## ");
-        found.extend(lints::prose_findings_in(&asserted, id));
+        found.extend(lints::prose_findings_in(&asserted_text(&body), id));
     }
     found
 }
@@ -718,12 +741,7 @@ pub fn freeze(graph: &Graph, id: &NodeId) -> Result<Packet, PacketError> {
     // unexamined. What changed is that the sentence can no longer be mistaken for a
     // finding by a reader who meets it alone — `FALSIFIER_FRAME` rides on the line
     // itself rather than on the heading above it. Unscanned, but not unframed.
-    let asserted: String = body
-        .split("\n## ")
-        .filter(|s| !s.starts_with("What would defeat this"))
-        .collect::<Vec<_>>()
-        .join("\n## ");
-    let overstated = lints::prose_findings_in(&asserted, id);
+    let overstated = lints::prose_findings_in(&asserted_text(&body), id);
     if !overstated.is_empty() {
         return Err(PacketError::Blocked {
             id: id.clone(),
@@ -1237,6 +1255,41 @@ otherwise the assertion below measures grooming, which is how this test passed b
         assert!(
             msg.contains("RETRACTED"),
             "and it must refuse for the WITHDRAWAL, not for some unrelated finding: {msg}"
+        );
+    }
+
+    /// What a packet seals must be findable before you try to seal it.
+    ///
+    /// A term's moments are quoted verbatim into the safe statement, and the node-level
+    /// lint skips them on purpose — mention is not use. So `peira lint` reported nothing
+    /// over a term whose stipulation carried the pleading's own allegation, and `peira
+    /// packet` then refused: the command an author runs to FIND problems was silent
+    /// about the one they had.
+    #[test]
+    fn a_term_that_would_seal_a_verdict_is_findable_by_lint() {
+        let mut g = clean_graph();
+        g.insert_node(node(
+            "---\nid: 60.03\ntype: term\ntitle: the disputed entry\nas_used: ledger entry 47, which the claimant alleges the respondent forged\nnot_essence: the Amcache record is not the ledger\nstipulated: entry 47 as it appears in the produced ledger\n---\n",
+        ));
+        g.insert_edge(Edge::new(
+            NodeId::new("c1"),
+            NodeId::new("60.03"),
+            EdgeKind::UsesTerm,
+        ));
+
+        let sealed = sealed_prose_findings(&g, &NodeId::new("c1"));
+        assert!(
+            sealed.iter().any(|v| v.detail.contains("forged")),
+            "the scan must reach the prose the packet would seal: {sealed:?}"
+        );
+        assert!(
+            freeze(&g, &NodeId::new("c1")).is_err(),
+            "control: and the packet must still refuse it"
+        );
+
+        assert!(
+            sealed_prose_findings(&clean_graph(), &NodeId::new("c1")).is_empty(),
+            "control: a clean claim reports nothing, so this is not simply always firing"
         );
     }
 
