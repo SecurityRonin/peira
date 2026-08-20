@@ -773,6 +773,33 @@ pub fn violations_for(graph: &Graph, id: &NodeId) -> Vec<Violation> {
     found
 }
 
+/// Why `id` cannot be frozen, or `None` if nothing stands in the way.
+///
+/// ONE function for the whole question, because `freeze` asked it in TWO checks and
+/// every other caller carried only the first. `peira gates --node` reported "nothing to
+/// report", exit 0, over a claim `peira packet` refuses as DEFEATED — the fourth
+/// recurrence of that pair disagreeing, and the first three were each fixed by widening
+/// the finding SET while the grounding verdict stayed behind.
+///
+/// A defeat is not a `Violation` and cannot be made one: the type is `#[non_exhaustive]`
+/// and lives in another crate, which is the type system correctly refusing to let court
+/// invent findings. So the answer is a `PacketError` — exactly what `freeze` returns —
+/// and every caller reports it in its own words.
+#[must_use]
+pub fn refusal_for(graph: &Graph, id: &NodeId) -> Option<PacketError> {
+    let violations = violations_for(graph, id);
+    if !violations.is_empty() {
+        return Some(PacketError::Blocked {
+            id: id.clone(),
+            violations,
+        });
+    }
+    if !graph.is_grounded(id) {
+        return Some(PacketError::Defeated(id.clone()));
+    }
+    None
+}
+
 /// Freeze a packet for `id`.
 ///
 /// # Errors
@@ -790,15 +817,8 @@ pub fn freeze(graph: &Graph, id: &NodeId) -> Result<Packet, PacketError> {
         });
     }
 
-    let violations = violations_for(graph, id);
-    if !violations.is_empty() {
-        return Err(PacketError::Blocked {
-            id: id.clone(),
-            violations,
-        });
-    }
-    if !graph.is_grounded(id) {
-        return Err(PacketError::Defeated(id.clone()));
+    if let Some(refusal) = refusal_for(graph, id) {
+        return Err(refusal);
     }
 
     let body = render_body(graph, id).ok_or_else(|| PacketError::NoSuchClaim(id.clone()))?;

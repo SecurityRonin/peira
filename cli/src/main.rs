@@ -272,7 +272,26 @@ fn cmd_gates(vault: &Path, node: Option<String>) -> Result<u8, String> {
         if graph.node(&id).is_none() {
             return Err(format!("no node `{id}` in the vault"));
         }
-        return Ok(report(&blocking_for(&graph, &id), "gates"));
+        // THE WHOLE QUESTION, in one call. `freeze` asks it in two checks — findings,
+        // then grounding — and this command carried only the first, so it reported
+        // "nothing to report", exit 0, over a claim `packet` refuses as DEFEATED. Fourth
+        // recurrence of this pair disagreeing; the first three each widened the finding
+        // SET while the grounding verdict stayed behind.
+        let found = blocking_for(&graph, &id);
+        let code = report(&found, "gates");
+        if found.is_empty() {
+            if let Some(peira_court::PacketError::Defeated(_)) =
+                peira_court::refusal_for(&graph, &id)
+            {
+                println!(
+                    "\n  …but `{id}` is DEFEATED in the grounded extension — an attack on \
+it stands\n  unanswered, so no packet can be frozen for it. Nothing here is a gate \
+finding;\n  the claim loses on the argument."
+                );
+                return Ok(exit::VIOLATIONS);
+            }
+        }
+        return Ok(code);
     }
     Ok(report(&examine_graph(&graph), "gates"))
 }
@@ -575,6 +594,90 @@ mod tests {
 
     fn node(src: &str) -> Node {
         parse_node(src).expect("fixture parses")
+    }
+
+    /// The three commands must agree, asserted on the AGREEMENT rather than on each.
+    ///
+    /// `gates --node`, `status` and `packet` have now disagreed four times, and each
+    /// previous fix corrected one difference: first the scope, then the finding set.
+    /// The grounding verdict stayed behind every time, because `freeze` asks the
+    /// question in TWO checks and the other callers carried one.
+    ///
+    /// This test does not name a mechanism. It builds a vault where the claim is
+    /// DEFEATED and nothing else is wrong, and requires the three exit codes to match —
+    /// so a fifth divergence fails here whatever produces it.
+    #[test]
+    fn the_three_commands_agree_on_whether_a_claim_can_freeze() {
+        let dir = std::env::temp_dir().join(format!(
+            "peira-agree-{}-{:?}",
+            std::process::id(),
+            std::thread::current().id()
+        ));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(dir.join("70-inquiry")).expect("scratch vault");
+        let w = |name: &str, body: &str| {
+            std::fs::write(dir.join("70-inquiry").join(name), body).expect("write node");
+        };
+        let groomed = |id: &str, title: &str, extra: &str| {
+            format!(
+                "---\nid: {id}\ntype: claim\ntitle: {title}\n\
+warrant: Stated so the claim answers for itself.\nquantifier: singular\naspect: function\n\
+causal_rung: association\nno_terms_of_art: true\nboundaries:\n  - Windows 10 1809 and later\n\
+corners:\n  - it holds\n  - it does not hold\n  - it holds in part\n  - the question does not arise\n\
+falsifier:\n  - evidence that the record was written otherwise\n{extra}---\n"
+            )
+        };
+        w(
+            "c1.md",
+            &groomed("c1", "The register recorded the path", ""),
+        );
+        w(
+            "o1.md",
+            "---\nid: o1\ntype: observation\ntitle: the register entry\naspect: function\n\
+supports: [\"c1 grade=G2 by=a-reviewer via=perception\"]\n---\n",
+        );
+
+        let codes = |dir: &std::path::Path| {
+            let g = load(dir).expect("vault loads");
+            let id = NodeId::new("c1");
+            let blocked = !blocking_for(&g, &id).is_empty();
+            let refused = peira_court::refusal_for(&g, &id).is_some();
+            let frozen = peira_court::freeze(&g, &id).is_ok();
+            (blocked, refused, frozen)
+        };
+
+        let (blocked, refused, frozen) = codes(&dir);
+        assert!(
+            !blocked && !refused && frozen,
+            "control: a groomed, unopposed claim freezes and nothing blocks it"
+        );
+
+        // Defeat it, and change nothing else.
+        w(
+            "riv.md",
+            &groomed(
+                "riv",
+                "An inventory sweep produced the record",
+                "attacks: [\"c1\"]\n",
+            ),
+        );
+        w(
+            "o2.md",
+            "---\nid: o2\ntype: observation\ntitle: the sweep log\naspect: function\n\
+supports: [\"riv grade=G2 by=a-reviewer via=perception\"]\n---\n",
+        );
+
+        let (blocked, refused, frozen) = codes(&dir);
+        assert!(
+            !blocked,
+            "the defeat is not a gate finding, which is exactly why it kept being lost"
+        );
+        assert!(
+            refused,
+            "but it IS a refusal, and every caller must see one"
+        );
+        assert!(!frozen, "and `freeze` must agree with the refusal");
+        let _ = std::fs::remove_dir_all(&dir);
     }
 
     /// The exit code is asserted through the COMMAND, not the helper.
