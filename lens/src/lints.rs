@@ -322,6 +322,39 @@ fn sentence_is_reported_or_refused(haystack: &str, at: usize) -> bool {
         || HEDGE_OPENERS.iter().any(|h| sentence.starts_with(h))
 }
 
+/// Where the clause containing byte offset `at` begins.
+///
+/// ONE definition, because two existed and disagreed in both directions.
+/// `clause_negated` treated `.`/`!`/`?` as boundaries and `clause_has_party` did not, so
+/// a party named in a previous sentence leaked forward; and both treated a bare COMMA as
+/// a boundary, which severs a parenthetical from what it modifies:
+///
+///   "The defendant is, on this evidence, guilty of fraud."   party lost, verdict sealed
+///   "There is no evidence, in the material examined, that …" negator lost, denial refused
+///
+/// A comma is not a clause boundary in English — it is punctuation inside one. The
+/// boundaries are the sentence terminators, the semicolon, and the coordinating
+/// conjunctions that genuinely start a new claim.
+fn clause_start(haystack: &str, at: usize) -> usize {
+    const BOUNDS: &[&str] = &[
+        "\n",
+        ".",
+        "!",
+        "?",
+        ";",
+        " and ",
+        " but ",
+        " however ",
+        " while ",
+        " whereas ",
+    ];
+    BOUNDS
+        .iter()
+        .filter_map(|b| haystack[..at].rfind(b).map(|i| i + b.len()))
+        .max()
+        .unwrap_or(0)
+}
+
 fn clause_at_is_negated(haystack: &str, at: usize, len: usize) -> bool {
     const OBJECT_NEGATORS: &[&str] = &["nothing", "no", "none", "neither"];
     // Somebody else's words, or a refusal to conclude. Both govern the whole sentence,
@@ -355,24 +388,7 @@ fn clause_at_is_negated(haystack: &str, at: usize, len: usize) -> bool {
     // family as the first-occurrence one: "It could not be established that X. The entry
     // proves execution" read the negator from the PREVIOUS SENTENCE and fell silent. A
     // sentence that has ended cannot govern the next one.
-    let start = [
-        "\n",
-        ".",
-        "!",
-        "?",
-        ",",
-        ";",
-        ":",
-        " and ",
-        " but ",
-        " however ",
-        " while ",
-        " whereas ",
-    ]
-    .iter()
-    .filter_map(|b| head.rfind(b).map(|i| i + b.len()))
-    .max()
-    .unwrap_or(0);
+    let start = clause_start(haystack, at);
 
     head[start..]
         .split(|c: char| !c.is_alphanumeric() && c != '\'')
@@ -411,11 +427,7 @@ fn clause_has_party(haystack: &str, at: usize) -> bool {
         "credential",
         "identifier",
     ];
-    let start = ["\n", ",", ";", ":", " and ", " but "]
-        .iter()
-        .filter_map(|b| haystack[..at].rfind(b).map(|i| i + b.len()))
-        .max()
-        .unwrap_or(0);
+    let start = clause_start(haystack, at);
     // WHOLE WORDS. This walked every alphanumeric index and took the word starting
     // there, so "the" contained "he" — a pronoun on the party list — and any sentence
     // with an article plus an ultimate-issue word read as a verdict about a person.
@@ -1614,6 +1626,50 @@ not_essence: a record is not the file\nstipulated: the OS recorded this path\n--
             found[0].detail.contains("term") && found[0].detail.contains("DISCARDED"),
             "and it must say what was dropped and why: {}",
             found[0].detail
+        );
+    }
+
+    /// One definition of where a clause begins, and a comma is not it.
+    ///
+    /// Two boundary lists existed and disagreed in BOTH directions: `clause_negated`
+    /// treated `.`/`!`/`?` as boundaries and `clause_has_party` did not, so a party
+    /// named in a previous sentence leaked forward — and both cut at a bare COMMA,
+    /// which severs a parenthetical from what it modifies. A comma is punctuation
+    /// inside a clause, not the start of one.
+    #[test]
+    fn a_parenthetical_does_not_sever_a_clause() {
+        let fired = |title: &str| {
+            let g = graph_of(
+                vec![node(&format!(
+                    "---\nid: n1\ntype: observation\ntitle: {title}\n---\n"
+                ))],
+                vec![],
+            );
+            lint(&g)
+                .into_iter()
+                .filter(|v| v.gate == LEGAL_CONCLUSION)
+                .count()
+        };
+
+        assert_eq!(
+            fired("The defendant is guilty of fraud"),
+            1,
+            "positive control"
+        );
+        assert_eq!(
+            fired("The defendant is, on this evidence, guilty of fraud"),
+            1,
+            "an aside between commas must not hide the subject the verdict is about"
+        );
+        assert_eq!(
+            fired("There is no evidence, in the material examined, that the respondent is liable"),
+            0,
+            "and the same aside must not sever the negator from what it governs"
+        );
+        assert_eq!(
+            fired("The respondent was interviewed. The record admits an innocent explanation"),
+            0,
+            "a party named in the PREVIOUS sentence does not make this one a verdict"
         );
     }
 
