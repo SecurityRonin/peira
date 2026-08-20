@@ -24,3 +24,10 @@ fuzz/artifacts/
 # fuzz run that starts from nothing spends its budget rediscovering YAML. Local
 # runs will drop coverage-increasing inputs alongside them — commit those only
 # when they are worth the review.
+
+# Audit-agent scratch output. These are written into the working directory by
+# external reviewers (codex, etc.) and are notes ABOUT the repo, not part of it.
+# One was committed by a `git add -A` during audit round 7 and removed in the next
+# commit; ignoring the pattern is cheaper than remembering.
+.audit*-codex.md
+.audit*.md
