@@ -553,6 +553,84 @@ mod tests {
         parse_node(src).expect("fixture parses")
     }
 
+    /// The exit code is asserted through the COMMAND, not the helper.
+    ///
+    /// `status_exit` had a test and it proved the pure function. Mutating the CALL SITE
+    /// — passing `true` for `grounded` — reintroduced the documented defect (prints
+    /// "contested — defeated", exits 0) with the whole suite green. Extracting a
+    /// testable helper moves the untested part from the function into the call, and the
+    /// test follows the function every time.
+    #[test]
+    fn cmd_status_exits_non_zero_on_a_defeated_claim() {
+        let dir = std::env::temp_dir().join("peira-cmd-status-exit-test");
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(dir.join("70-inquiry")).expect("scratch vault");
+        let write = |name: &str, body: &str| {
+            std::fs::write(dir.join("70-inquiry").join(name), body).expect("write node");
+        };
+        // GROOMED so that gates PASS. An ungroomed fixture exits non-zero for its own
+        // findings whatever the grounding is, and then `grounded` never reaches the
+        // assertion — the first version of this test measured grooming and stayed green
+        // under the mutation it exists to catch.
+        write(
+            "c1.md",
+            "---\nid: c1\ntype: claim\ntitle: The register recorded the path\n\
+warrant: The register records what it is given.\nquantifier: singular\naspect: function\n\
+causal_rung: association\nno_terms_of_art: true\n\
+boundaries:\n  - Windows 10 1809 and later\n\
+corners:\n  - it holds\n  - it does not hold\n  - it holds in part\n  - the question does not arise\n\
+falsifier:\n  - a register shown to record paths never supplied\n---\n",
+        );
+        write(
+            "o1.md",
+            "---\nid: o1\ntype: observation\ntitle: the register entry is present\n\
+aspect: function\nsupports: [\"c1 grade=G2 by=a-reviewer via=perception\"]\n---\n",
+        );
+
+        assert_eq!(
+            cmd_status(&dir, "c1").expect("status runs"),
+            exit::OK,
+            "control: with gates passing and nothing attacking it, status must be 0 — \
+otherwise the assertion below never depends on the grounding"
+        );
+
+        // Now defeat it: a live rival nothing answers.
+        write(
+            "r1.md",
+            "---\nid: r1\ntype: claim\ntitle: An inventory sweep produced the record\n\
+warrant: Sweeps populate the same table.\nquantifier: singular\naspect: function\n\
+causal_rung: association\nno_terms_of_art: true\n\
+boundaries:\n  - Windows 10 1809 and later\n\
+corners:\n  - it holds\n  - it does not hold\n  - it holds in part\n  - the question does not arise\n\
+falsifier:\n  - a sweep shown never to write this table\n\
+attacks: [\"c1\"]\n---\n",
+        );
+        write(
+            "o2.md",
+            "---\nid: o2\ntype: observation\ntitle: the sweep log\naspect: function\n\
+supports: [\"r1 grade=G2 by=a-reviewer via=perception\"]\n---\n",
+        );
+        let defeated = cmd_status(&dir, "c1").expect("status runs");
+        assert_eq!(
+            defeated,
+            exit::VIOLATIONS,
+            "a claim `packet` refuses must not report success from `status`"
+        );
+
+        // And a node that never competes is not defeated by being outside the extension.
+        write(
+            "t1.md",
+            "---\nid: t1\ntype: term\ntitle: a term\nas_used: a\nnot_essence: b\n\
+stipulated: c\n---\n",
+        );
+        assert_eq!(
+            cmd_status(&dir, "t1").expect("status runs"),
+            exit::OK,
+            "reference material does not compete, so being OUT is not a defeat"
+        );
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
     /// An empty vault is not a clean one.
     ///
     /// A directory holding no nodes reported "nothing to report", exit 0 —

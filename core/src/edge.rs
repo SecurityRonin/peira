@@ -357,6 +357,35 @@ impl Edge {
 #[cfg(test)]
 mod tests {
 
+    /// The GRADE grammar, for the same reason.
+    ///
+    /// Grade tokens had no table at all, so a double-rename of "G0" round-tripped
+    /// invisibly while every vault writing the old spelling silently settled nothing —
+    /// the loader drops an unparsable grade rather than refusing it.
+    #[test]
+    fn the_published_grade_grammar() {
+        use crate::Grade;
+        const GRAMMAR: &[(Grade, &str)] = &[
+            (Grade::G0, "G0"),
+            (Grade::G1, "G1"),
+            (Grade::G2, "G2"),
+            (Grade::G3, "G3"),
+            (Grade::G4, "G4"),
+        ];
+        for (grade, token) in GRAMMAR {
+            assert_eq!(
+                grade.as_str(),
+                *token,
+                "the token a vault must write changed"
+            );
+            assert_eq!(
+                Grade::from_str_opt(token),
+                Some(*grade),
+                "a vault writing `{token}` must still load as {grade:?}"
+            );
+        }
+    }
+
     /// The vault grammar, written down where a rename cannot follow it.
     ///
     /// `as_str` and `from_str` were checked only against each other, so renaming a
@@ -385,6 +414,12 @@ mod tests {
             (EdgeKind::JudgedBy, "judged_by"),
             (EdgeKind::UsesTerm, "uses_term"),
             (EdgeKind::MeasuredBy, "measured_by"),
+            (EdgeKind::Duplicates, "duplicates"),
+            (EdgeKind::IsA, "is_a"),
+            (EdgeKind::HasA, "has_a"),
+            (EdgeKind::InstanceOf, "instance_of"),
+            (EdgeKind::PartOf, "part_of"),
+            (EdgeKind::Examines, "examines"),
         ];
         for (kind, token) in GRAMMAR {
             assert_eq!(

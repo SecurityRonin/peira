@@ -1717,6 +1717,54 @@ aspect: function\n---\n",
         );
     }
 
+    /// A packet must not freeze over a claim the record withdraws — asserted at `freeze`.
+    ///
+    /// `subject_withdrawn` HAD a test, and it tested the predicate. Neutering the one
+    /// production call in `violations_for` left all 217 tests green while `freeze` sealed
+    /// a packet over a withdrawn claim, because the RETRACTED lint deliberately stays
+    /// quiet for a retired subject and grounded semantics keeps an unattacked withdrawn
+    /// claim IN.
+    ///
+    /// So the rule was real, correct, load-bearing and reachable by no test at all. This
+    /// one goes through `freeze`, which is the only place the answer matters.
+    #[test]
+    fn freeze_refuses_a_withdrawn_subject() {
+        let mut g = clean_graph();
+        assert!(
+            freeze(&g, &NodeId::new("c1")).is_ok(),
+            "control: the claim freezes before it is withdrawn"
+        );
+
+        g.insert_node(node(
+            "---\nid: d1\ntype: dissent\ntitle: the claim is withdrawn\n---\n",
+        ));
+        g.insert_edge(Edge::new(
+            NodeId::new("d1"),
+            NodeId::new("c1"),
+            EdgeKind::Retracts,
+        ));
+        let err = freeze(&g, &NodeId::new("c1"))
+            .expect_err("a packet may not freeze over a claim the record withdraws");
+        assert!(
+            err.to_string().contains("RETRACTED"),
+            "and it must refuse for the WITHDRAWAL: {err}"
+        );
+
+        // The lifting law still applies at this join too.
+        g.insert_node(node(
+            "---\nid: d2\ntype: dissent\ntitle: that withdrawal is itself withdrawn\n---\n",
+        ));
+        g.insert_edge(Edge::new(
+            NodeId::new("d2"),
+            NodeId::new("d1"),
+            EdgeKind::Retracts,
+        ));
+        assert!(
+            freeze(&g, &NodeId::new("c1")).is_ok(),
+            "the withdrawal was lifted, so the claim stands again"
+        );
+    }
+
     /// The proof that an edit happened must reach the caller that reports it.
     ///
     /// `verify` establishes the one tampering case this tool CAN establish: correcting
