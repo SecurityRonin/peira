@@ -436,6 +436,22 @@ measured_by: [i1]\n---\n",
     fn an_empty_spec_yields_an_edge_to_an_empty_id_which_lints_as_dangling() {
         let e = edge_from_spec(&NodeId::new("o1"), "", EdgeKind::Supports);
         assert_eq!(e.to, NodeId::new(""));
+
+        // THE HALF AFTER "which". The name promised the edge lints as dangling and
+        // nothing checked it, so a plausible hygiene filter — skip edges with an empty
+        // id — would have silently swallowed the very edge this test exists to catch,
+        // with the suite green and the name still making the promise.
+        let mut g = crate::Graph::new();
+        g.insert_node(
+            crate::parse_node("---\nid: o1\ntype: observation\ntitle: t\n---\n")
+                .expect("fixture parses"),
+        );
+        g.insert_edge(e);
+        assert_eq!(
+            g.dangling_edges().len(),
+            1,
+            "an edge to an empty id points at nothing, and must be reported as such"
+        );
     }
 
     #[test]

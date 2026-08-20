@@ -1240,6 +1240,32 @@ otherwise the assertion below measures grooming, which is how this test passed b
         );
     }
 
+    /// `status` and `packet` must not disagree, and nothing checked that they didn't.
+    ///
+    /// `violations_for` scans the RENDERED body, which is the only path that reaches
+    /// `warrant:` — a field no node-level lint reads. Deleting that scan left the whole
+    /// suite green while `peira status` reported `review_ready` over a claim `peira
+    /// packet` refused. The anti-drift property existed twice in production and zero
+    /// times in tests, which is how it could have been deleted by anyone tidying.
+    #[test]
+    fn a_finding_only_the_body_scan_reaches_still_blocks() {
+        let mut g = clean_graph();
+        g.insert_node(node(
+            "---\nid: c1\ntype: claim\ntitle: The hive catalogued the file at that path\nwarrant: This proves the program was executed by the suspect.\nquantifier: singular\naspect: function\ncausal_rung: association\nboundaries:\n  - Windows 10 1809 and later\nfalsifier:\n  - an entry shown to be written without the path ever being present\n---\n",
+        ));
+
+        let found = violations_for(&g, &NodeId::new("c1"));
+        assert!(
+            found.iter().any(|v| v.gate.contains("FORBIDDEN-VERB")),
+            "an overstatement in `warrant:` reaches the packet and nothing else scans \
+that field: {found:?}"
+        );
+        assert!(
+            freeze(&g, &NodeId::new("c1")).is_err(),
+            "and the packet must refuse it, not merely report it"
+        );
+    }
+
     /// A claim standing on a defender answers for that defender.
     ///
     /// `freeze` refuses a claim defeated in the grounded extension, so grounding is a
@@ -1646,9 +1672,19 @@ aspect: function\n---\n",
             .filter(|l| l.trim_start().starts_with("- "))
             .collect();
         assert!(!bullets.is_empty(), "no bullets to check:\n{section}");
+        // THE LITERAL, not the constant. Comparing the renderer against the constant it
+        // renders from is comparing a thing to itself: emptying `FALSIFIER_FRAME` to ""
+        // left this green, because `contains("")` is true of every line. The expectation
+        // has to be written down independently or it is not an expectation.
+        assert_eq!(
+            FALSIFIER_FRAME, "Would defeat this claim:",
+            "the frame is part of the packet's published vocabulary; changing it changes \
+what every stored packet means"
+        );
         for line in bullets {
             assert!(
-                line.contains(FALSIFIER_FRAME) || line.contains("on record as an attack"),
+                line.contains("Would defeat this claim:")
+                    || line.contains("on record as an attack"),
                 "this line reads as an assertion once quoted away from the heading:\n{line}"
             );
         }

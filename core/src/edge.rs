@@ -356,6 +356,49 @@ impl Edge {
 
 #[cfg(test)]
 mod tests {
+
+    /// The vault grammar, written down where a rename cannot follow it.
+    ///
+    /// `as_str` and `from_str` were checked only against each other, so renaming a
+    /// token in BOTH match arms round-tripped perfectly while every vault using the old
+    /// spelling silently lost its edges — the loader does not reject an unknown key, it
+    /// drops it. A round trip proves two functions agree; it says nothing about what
+    /// they agree ON.
+    ///
+    /// This table is the published grammar. Changing a token here is changing what
+    /// every existing vault means, and that should take an argument, not a rename.
+    #[test]
+    fn the_published_edge_grammar() {
+        use crate::EdgeKind;
+        const GRAMMAR: &[(EdgeKind, &str)] = &[
+            (EdgeKind::Supports, "supports"),
+            (EdgeKind::Contradicts, "contradicts"),
+            (EdgeKind::DependsOn, "depends_on"),
+            (EdgeKind::Limits, "limits"),
+            (EdgeKind::Retracts, "retracts"),
+            (EdgeKind::Supersedes, "supersedes"),
+            (EdgeKind::SubstanceOf, "substance_of"),
+            (EdgeKind::FunctionOf, "function_of"),
+            (EdgeKind::Negates, "negates"),
+            (EdgeKind::Sublates, "sublates"),
+            (EdgeKind::Attacks, "attacks"),
+            (EdgeKind::JudgedBy, "judged_by"),
+            (EdgeKind::UsesTerm, "uses_term"),
+            (EdgeKind::MeasuredBy, "measured_by"),
+        ];
+        for (kind, token) in GRAMMAR {
+            assert_eq!(
+                kind.as_str(),
+                *token,
+                "the token a vault must write for {kind:?} changed"
+            );
+            assert_eq!(
+                EdgeKind::from_str_opt(token),
+                Some(*kind),
+                "a vault writing `{token}` must still load as {kind:?}"
+            );
+        }
+    }
     use super::*;
 
     fn edge() -> Edge {

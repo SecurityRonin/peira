@@ -51,9 +51,13 @@ set -e
 # `pipefail` is off inside the substitution on purpose: control A's whole point is
 # that `gates` exits 1, so with pipefail the pipeline would inherit that 1 and
 # `set -e` would kill the script before the count is ever compared.
-n=$(set +o pipefail; "$BIN" gates tests/vaults/overclaim | grep -c 'PEIR-')
-[ "$n" -ge 5 ] || fail "control A must be blocked by at least 5 lenses; got $n"
-echo "control A: blocked by $n gates, exit $code"
+# DISTINCT codes, not lines. `grep -c` counts matching LINES, so a build whose gate
+# codes had all collapsed to one shipped code would report five and pass — the control
+# would be measuring the size of the output rather than the breadth of the examination.
+# The remedy is the same one the codebase applies to `corners.len()`: count what you mean.
+n=$(set +o pipefail; "$BIN" gates tests/vaults/overclaim | grep -o 'PEIR-[A-Z-]*' | sort -u | wc -l | tr -d ' ')
+[ "$n" -ge 5 ] || fail "control A must be blocked by at least 5 DISTINCT gates; got $n"
+echo "control A: blocked by $n distinct gates, exit $code"
 
 # --- Control B — the bounded conclusion must PASS ----------------------------
 "$BIN" gates tests/vaults/bounded

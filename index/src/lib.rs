@@ -265,6 +265,36 @@ mod tests {
             "expected at least five findings, got {}",
             blocked[0].1
         );
+
+        // ORDERING NEEDS SOMETHING TO ORDER. With one row, "most blocked" is satisfied
+        // by any ORDER BY at all — inverting it to ASC left this green. Assert the
+        // sequence is descending across every row, so the claim in the test's name is
+        // the thing being measured.
+        // ORDERING NEEDS SOMETHING TO ORDER. The overclaim vault holds exactly one
+        // blocked claim, so "most blocked" was satisfied by any ORDER BY at all —
+        // inverting it to ASC left this green. A second claim, deliberately groomed to
+        // draw FEWER findings, makes the sequence the thing under test.
+        let mut g = vault("overclaim");
+        g.insert_node(
+            peira_core::parse_node(
+                "---\nid: c-lighter\ntype: claim\ntitle: A narrower reading of the record\nwarrant: The register records what it is given.\nquantifier: singular\naspect: function\ncausal_rung: association\nno_terms_of_art: true\n---\n",
+            )
+            .expect("fixture parses"),
+        );
+        let path = std::env::temp_dir().join("peira-index-ordering.sqlite");
+        let _ = std::fs::remove_file(&path);
+        build(&g, &path).expect("index builds");
+        let conn = Connection::open(&path).expect("opens");
+        let blocked = blocked_claims(&conn).unwrap();
+
+        assert!(
+            blocked.len() >= 2,
+            "a one-row result cannot test an ordering: {blocked:?}"
+        );
+        assert!(
+            blocked.windows(2).all(|w| w[0].1 >= w[1].1),
+            "worst first, and it is not: {blocked:?}"
+        );
     }
 
     #[test]
@@ -274,6 +304,17 @@ mod tests {
         assert!(
             !defeated.iter().any(|id| id.as_str() == "c-bounded"),
             "the bounded claim survives; got {defeated:?}"
+        );
+
+        // AND A POSITIVE. Asserting only that something is absent passes for a query
+        // that returns nothing at all — `AND 1 = 0` in the selector left this green.
+        // A negative assertion needs a positive beside it or it is measuring silence.
+        let conn = built("overclaim", "grounded-positive");
+        let defeated = defeated_claims(&conn).unwrap();
+        assert!(
+            !defeated.is_empty(),
+            "the overclaim vault records a defeated claim; a selector matching nothing \
+would satisfy the assertion above and this one catches it"
         );
     }
 

@@ -1706,6 +1706,48 @@ confirms execution."
         );
     }
 
+    /// A packet may not freeze over a claim the record withdraws — and nothing tested it.
+    ///
+    /// `subject_withdrawn` has one production caller, in court, and no test anywhere.
+    /// Neutering it with `if true ||` left the entire suite green while a packet froze
+    /// over a claim the vault says was retracted. A rule with no failing test is a rule
+    /// you believe you have.
+    #[test]
+    fn a_withdrawn_subject_is_reported() {
+        let build = |lift: bool| {
+            let mut nodes = vec![
+                node("---\nid: c1\ntype: claim\ntitle: The original finding\n---\n"),
+                node("---\nid: d1\ntype: dissent\ntitle: it is withdrawn\n---\n"),
+            ];
+            let mut edges = vec![Edge::new(
+                NodeId::new("d1"),
+                NodeId::new("c1"),
+                EdgeKind::Retracts,
+            )];
+            if lift {
+                nodes.push(node(
+                    "---\nid: d2\ntype: dissent\ntitle: that withdrawal is itself withdrawn\n---\n",
+                ));
+                edges.push(Edge::new(
+                    NodeId::new("d2"),
+                    NodeId::new("d1"),
+                    EdgeKind::Retracts,
+                ));
+            }
+            let g = graph_of(nodes, edges);
+            subject_withdrawn(&g, &NodeId::new("c1")).is_some()
+        };
+
+        assert!(
+            build(false),
+            "the record withdraws c1, and a packet must not freeze"
+        );
+        assert!(
+            !build(true),
+            "the withdrawal was lifted, so c1 stands — the fixed point, not a direct edge"
+        );
+    }
+
     /// `sublates` is a spelling of "supersedes", and it was read by nothing.
     ///
     /// Its own docstring is "preserves the target while SUPERSEDING it". `Supersedes`
