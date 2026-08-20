@@ -270,7 +270,12 @@ fn occurrences<'a>(haystack: &'a str, needle: &'a str) -> impl Iterator<Item = u
 /// is judged as the author's own, which is the safe direction.
 const ATTRIBUTIONS: &[&str] = &[
     "i am instructed that",
+    "i have been instructed that",
+    "i am asked to assume that",
     "i am told that",
+    "it is the claimant's case that",
+    "it is the respondent's case that",
+    "it is the defendant's case that",
     "it is alleged that",
     "it is averred that",
     "it is contended that",
@@ -312,14 +317,23 @@ const HEDGE_OPENERS: &[&str] = &[
 /// govern everything after them: an attribution hands the whole statement to another
 /// speaker, and a hedge opener declines the whole statement.
 fn sentence_is_reported_or_refused(haystack: &str, at: usize) -> bool {
-    let start = ['.', '!', '?', '\n']
-        .iter()
-        .filter_map(|b| haystack[..at].rfind(*b).map(|i| i + b.len_utf8()))
-        .max()
-        .unwrap_or(0);
-    let sentence = haystack[start..at].trim_start();
-    ATTRIBUTIONS.iter().any(|a| sentence.contains(a))
-        || HEDGE_OPENERS.iter().any(|h| sentence.starts_with(h))
+    // THE FRAME GOVERNS ITS OWN CLAUSE, and no further. Reaching to the next full stop
+    // let the author resume their own voice after a semicolon or a conjunction and keep
+    // the exemption:
+    //
+    //   "It is alleged that …; my own analysis shows the respondent forged the entry"
+    //   "It is not possible to say precisely when, but the respondent forged the ledger"
+    //
+    // Both are the author asserting, in a sentence that opens by quoting or declining.
+    // Looking only inside the current clause makes the reach exactly as long as the
+    // grammar allows.
+    //
+    // A hedge opener is matched by CONTAINS rather than `starts_with` for the same
+    // reason in the other direction: "In my opinion, it cannot be said that …" is the
+    // same refusal, and requiring the sentence to begin with the formula refused it.
+    let region = &haystack[clause_start(haystack, at)..at];
+    ATTRIBUTIONS.iter().any(|a| region.contains(a))
+        || HEDGE_OPENERS.iter().any(|h| region.contains(h))
 }
 
 /// Where the clause containing byte offset `at` begins.
@@ -342,6 +356,8 @@ fn clause_start(haystack: &str, at: usize) -> usize {
         "!",
         "?",
         ";",
+        // An em dash starts a new clause as surely as a semicolon does.
+        "—",
         " and ",
         " but ",
         " however ",
@@ -372,7 +388,7 @@ fn clause_at_is_negated(haystack: &str, at: usize, len: usize) -> bool {
     // unrelated remark, not a denial.
     let next_word = haystack[at + len..]
         .trim_start_matches([' ', '\t'])
-        .split(|c: char| !c.is_alphanumeric() && c != '\'')
+        .split(|c: char| !c.is_alphanumeric() && c != '\'' && c != '\u{2019}')
         .next()
         .unwrap_or_default();
     if OBJECT_NEGATORS.contains(&next_word) {
@@ -391,7 +407,7 @@ fn clause_at_is_negated(haystack: &str, at: usize, len: usize) -> bool {
     let start = clause_start(haystack, at);
 
     head[start..]
-        .split(|c: char| !c.is_alphanumeric() && c != '\'')
+        .split(|c: char| !c.is_alphanumeric() && c != '\'' && c != '\u{2019}')
         .any(|w| NEGATORS.contains(&w))
 }
 
@@ -438,7 +454,7 @@ fn clause_has_party(haystack: &str, at: usize) -> bool {
     // "remote-access" is one compound noun rather than two words.
     let clause = &haystack[start..at];
     clause
-        .split(|c: char| !c.is_alphanumeric() && c != '\'')
+        .split(|c: char| !c.is_alphanumeric() && c != '\'' && c != '\u{2019}')
         .filter(|w| !w.is_empty())
         .filter(|w| PARTIES.contains(w))
         .any(|w| {
@@ -910,8 +926,26 @@ fn violation(
 /// the bare word only ever read an emphatic affirmative as a denial. "The metadata does
 /// show the respondent is liable" is as flat a verdict as the sentence without it.
 const NEGATORS: &[&str] = &[
-    "not", "never", "no", "nothing", "cannot", "doesn't", "don't", "isn't", "wasn't", "neither",
-    "nor", "without",
+    "not",
+    "never",
+    "no",
+    "nothing",
+    "cannot",
+    "doesn't",
+    "don't",
+    "isn't",
+    "wasn't",
+    "neither",
+    "nor",
+    "without",
+    // CURLY APOSTROPHES. This project's own house style is curly quotes in prose, so the
+    // spelling an author is told to use was the one that stopped negating: `wasn’t` was
+    // refused where `wasn't` passed. A checker that refuses the house style is one the
+    // house switches off.
+    "doesn\u{2019}t",
+    "don\u{2019}t",
+    "isn\u{2019}t",
+    "wasn\u{2019}t",
 ];
 
 /// Whether `haystack` contains `needle` as a whole-word phrase.
@@ -1626,6 +1660,109 @@ not_essence: a record is not the file\nstipulated: the OS recorded this path\n--
             found[0].detail.contains("term") && found[0].detail.contains("DISCARDED"),
             "and it must say what was dropped and why: {}",
             found[0].detail
+        );
+    }
+
+    /// A frame governs its own clause, and no further.
+    ///
+    /// An attribution or a hedge opener reaching to the next full stop let the author
+    /// resume their own voice after a semicolon or a conjunction and keep the exemption
+    /// — every carve-out added to stop a false positive is, by construction, a hole
+    /// somebody can write through, and this was the hole.
+    #[test]
+    fn a_frame_does_not_cover_the_authors_resumed_voice() {
+        let fired = |title: &str| {
+            let g = graph_of(
+                vec![node(&format!(
+                    "---\nid: n1\ntype: observation\ntitle: {title}\n---\n"
+                ))],
+                vec![],
+            );
+            lint(&g)
+                .into_iter()
+                .filter(|v| v.gate == LEGAL_CONCLUSION || v.gate == FORBIDDEN_VERB)
+                .count()
+        };
+
+        assert_eq!(
+            fired("It is alleged that the respondent forged the entry"),
+            0,
+            "control: reciting the allegation is a duty, not a finding"
+        );
+        assert_eq!(
+            fired(
+                "It is alleged that entries were altered; my own analysis shows the \
+respondent forged them"
+            ),
+            1,
+            "after the semicolon the author is speaking, and the frame does not reach"
+        );
+        assert_eq!(
+            fired("It is not possible to say when, but the respondent forged the ledger entry"),
+            1,
+            "nor past a `but` — the hedge declines, then the sentence asserts anyway"
+        );
+        assert_eq!(
+            fired("In my opinion, it cannot be said that the entry confirms execution"),
+            0,
+            "and a hedge need not OPEN the sentence to govern its clause"
+        );
+        assert_eq!(
+            fired("I have been instructed that the respondent forged the entry"),
+            0,
+            "the commonest CPR 35 recital form"
+        );
+    }
+
+    /// The house style must not be the spelling that breaks the checker.
+    ///
+    /// Curly quotes are this project's own written convention, and `wasn’t` stopped
+    /// negating while `wasn't` passed — so the careful author using the prescribed
+    /// punctuation was refused and the one ignoring it was not.
+    #[test]
+    fn a_curly_apostrophe_still_negates() {
+        let fired = |title: &str| {
+            let g = graph_of(
+                vec![node(&format!(
+                    "---\nid: n1\ntype: observation\ntitle: {title}\n---\n"
+                ))],
+                vec![],
+            );
+            lint(&g)
+                .into_iter()
+                .filter(|v| v.gate == LEGAL_CONCLUSION)
+                .count()
+        };
+        assert_eq!(
+            fired("The record wasn't evidence that the respondent is liable"),
+            0,
+            "control: the ASCII spelling always worked"
+        );
+        assert_eq!(
+            fired("The record wasn\u{2019}t evidence that the respondent is liable"),
+            0,
+            "and the curly one is the same sentence"
+        );
+        assert_eq!(
+            fired("The record is evidence that the respondent is liable"),
+            1,
+            "control: without the negator it is a verdict either way"
+        );
+    }
+
+    /// An em dash starts a new clause.
+    #[test]
+    fn an_em_dash_is_a_clause_boundary() {
+        let g = graph_of(
+            vec![node(
+                "---\nid: n1\ntype: observation\ntitle: The record proves no innocent \
+explanation exists — the respondent forged the entries\n---\n",
+            )],
+            vec![],
+        );
+        assert!(
+            lint(&g).iter().any(|v| v.gate == LEGAL_CONCLUSION),
+            "the negator belongs to the clause before the dash, not the verdict after it"
         );
     }
 
