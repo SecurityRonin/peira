@@ -11,6 +11,17 @@ use std::collections::{BTreeMap, BTreeSet};
 pub struct Graph {
     nodes: BTreeMap<NodeId, Node>,
     edges: Vec<Edge>,
+    /// The withdrawal fixed point, computed once per graph state.
+    ///
+    /// `withdrawn()` is a least fixed point over the retraction relation, and ten call
+    /// sites asked for it — several of them PER NODE, and one of those (`live_attacks_on`)
+    /// added per call today. `peira lint` on a retraction chain went 0.77s at 50 nodes,
+    /// 10.2s at 100, and did not finish 200 in under two minutes: a fixed point inside a
+    /// per-node loop is cubic before the loop is even nested.
+    ///
+    /// Exactly the shape of the adjacency-index fix described below, one layer up. A
+    /// checker nobody can afford to run is a checker nobody runs.
+    withdrawn: std::cell::OnceCell<BTreeSet<NodeId>>,
     /// Adjacency indices into `edges`, by source and by target.
     ///
     /// `edges_from`/`edges_to` were full scans of the edge vector, and the promotion
@@ -33,11 +44,17 @@ impl Graph {
 
     /// Add a node, replacing any node with the same id.
     pub fn insert_node(&mut self, node: Node) {
+        // Any mutation invalidates the memo; a stale withdrawal set is a wrong answer
+        // that looks like a fast one.
+        self.withdrawn.take();
         self.nodes.insert(node.id.clone(), node);
     }
 
     /// Add an edge.
     pub fn insert_edge(&mut self, edge: Edge) {
+        // Any mutation invalidates the memo; a stale withdrawal set is a wrong answer
+        // that looks like a fast one.
+        self.withdrawn.take();
         let i = self.edges.len();
         self.out.entry(edge.from.clone()).or_default().push(i);
         self.inc.entry(edge.to.clone()).or_default().push(i);
@@ -100,7 +117,11 @@ impl Graph {
     /// withdrawn — and when those disagreed, `peira status` reported `review_ready` over
     /// a claim `peira packet` refused. One question, asked once.
     #[must_use]
-    pub fn withdrawn(&self) -> BTreeSet<NodeId> {
+    pub fn withdrawn(&self) -> &BTreeSet<NodeId> {
+        self.withdrawn.get_or_init(|| self.compute_withdrawn())
+    }
+
+    fn compute_withdrawn(&self) -> BTreeSet<NodeId> {
         // TWO RELATIONS, TWO ALGEBRAS. Grouping them cost a live defect: applying
         // retraction-lifting to a version chain revived a twice-superseded claim, and
         // the packet announced its own rehabilitation.
@@ -338,6 +359,49 @@ impl Graph {
 #[cfg(test)]
 mod tests {
 
+    /// The memo must never outlive the graph state it describes.
+    ///
+    /// `withdrawn()` is a least fixed point and ten call sites want it, several per
+    /// node — so it is computed once and cached. A cache that survives a mutation is a
+    /// wrong answer that looks like a fast one, which is worse than the slow correct one
+    /// it replaced.
+    #[test]
+    fn the_withdrawal_memo_is_invalidated_by_mutation() {
+        use crate::{Edge, EdgeKind, NodeId};
+        let mk = |id: &str| {
+            crate::parse_node(&format!("---\nid: {id}\ntype: claim\ntitle: t\n---\n"))
+                .expect("fixture parses")
+        };
+        let mut g = Graph::new();
+        g.insert_node(mk("c1"));
+        g.insert_node(mk("d1"));
+        assert!(
+            g.withdrawn().is_empty(),
+            "nothing is withdrawn yet — and this call POPULATES the memo"
+        );
+
+        g.insert_edge(Edge::new(
+            NodeId::new("d1"),
+            NodeId::new("c1"),
+            EdgeKind::Retracts,
+        ));
+        assert!(
+            g.withdrawn().contains(&NodeId::new("c1")),
+            "the edge changed the answer, so the memo must have been dropped"
+        );
+
+        g.insert_node(mk("d2"));
+        g.insert_edge(Edge::new(
+            NodeId::new("d2"),
+            NodeId::new("d1"),
+            EdgeKind::Retracts,
+        ));
+        assert!(
+            !g.withdrawn().contains(&NodeId::new("c1")),
+            "and again when the retraction was itself retracted"
+        );
+    }
+
     /// Superseding something is not retracting it, and the two obey different laws.
     ///
     /// A RETRACTION can be lifted: if the node that retracted X is itself retracted, the
@@ -367,7 +431,7 @@ mod tests {
             }
             g.insert_edge(Edge::new(NodeId::new("v2"), NodeId::new("v1"), kind));
             g.insert_edge(Edge::new(NodeId::new("v3"), NodeId::new("v2"), kind));
-            g.withdrawn()
+            g.withdrawn().clone()
         };
 
         for kind in [EdgeKind::Supersedes, EdgeKind::Sublates] {
