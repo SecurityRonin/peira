@@ -35,6 +35,8 @@ pub const BOUNDARIES_MISSING: &str = "PEIR-BOUNDARIES-MISSING";
 pub const FALSIFIER_MISSING: &str = "PEIR-FALSIFIER-MISSING";
 /// 因三相 (異品遍無性): every line of support is shared with a live rival.
 pub const HETU_UNDIAGNOSTIC: &str = "PEIR-HETU-UNDIAGNOSTIC";
+/// ACH: a causal claim with no competing explanation written down.
+pub const RIVALS_UNENUMERATED: &str = "PEIR-RIVALS-UNENUMERATED";
 
 /// Words that turn a description into a judgement.
 ///
@@ -761,6 +763,11 @@ rival, or state in the packet that the evidence held does not decide the contest
     GateResult::Pass
 }
 
+/// Heuer's move: a causal claim owes at least one competing explanation.
+pub fn rivals_enumerated(_graph: &Graph, _node: &Node) -> GateResult {
+    GateResult::Pass
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -768,6 +775,47 @@ mod tests {
 
     fn node(src: &str) -> Node {
         parse_node(src).expect("fixture parses")
+    }
+
+    /// An explanation with nothing to beat has not been tested against anything.
+    ///
+    /// This is the other half of the 共不定 interlock: `PEIR-HETU-UNDIAGNOSTIC` is
+    /// `NotApplicable` where no rival exists, so deleting the rival would buy silence.
+    /// It buys this instead.
+    #[test]
+    fn a_causal_claim_with_no_rival_has_not_done_the_work() {
+        let build = |rival: bool| {
+            let mut g = Graph::new();
+            g.insert_node(node(
+                "---\nid: c1\ntype: claim\ntitle: Running the binary wrote the entry\n\
+causal_rung: counterfactual\n---\n",
+            ));
+            g.insert_node(node(
+                "---\nid: run1\ntype: run\ntitle: Controlled execution on a clean VM\n---\n",
+            ));
+            g.insert_edge(Edge::new(NodeId::new("run1"), NodeId::new("c1"), EdgeKind::Supports));
+            if rival {
+                g.insert_node(node(
+                    "---\nid: h1\ntype: hypothesis\ntitle: The appraiser wrote it on scan\n---\n",
+                ));
+                g.insert_edge(Edge::new(
+                    NodeId::new("h1"),
+                    NodeId::new("c1"),
+                    EdgeKind::Attacks,
+                ));
+            }
+            let n = g.node(&NodeId::new("c1")).expect("c1").clone();
+            rivals_enumerated(&g, &n)
+        };
+
+        assert!(
+            matches!(build(false), GateResult::Block(_)),
+            "a counterfactual claim with no competing explanation must block"
+        );
+        assert!(
+            matches!(build(true), GateResult::Pass),
+            "control: one written-down rival is what ACH asks for — it must pass"
+        );
     }
 
     /// 共不定: support a rival claims just as loudly decides nothing.
