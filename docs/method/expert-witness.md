@@ -28,8 +28,9 @@ dropped for punchiness.
 
 peira mechanises the layer-1/layer-2 boundary as the causal ladder gate
 (`PEIR-CAUSAL-RUNG-UNREACHED`) and the substance/function gate (`PEIR-FUNCTION-AS-SUBSTANCE`) —
-noting that each reaches a verdict only when the claim declares `causal_rung:` or `aspect:`; a
-claim that declares neither reaches no verdict and is BLOCKED, rather than passing unexamined.
+noting that each reaches a verdict only when the claim declares `causal_rung:` or `aspect:`. A
+claim declaring no `causal_rung:` reaches no verdict and is BLOCKED; an undeclared `aspect:` is
+not caught by 體用 at all, and such a claim is stopped, if at all, by a neighbouring gate.
 Layer-3 overreach is partly mechanised: `PEIR-LINT-LEGAL-CONCLUSION` catches the ultimate issue,
 which unlike overstatement is a closed vocabulary — a verdict word said of a party, outside a
 negation, an attribution or a quotation. Deciding what the tribunal decides is still a human

@@ -20,9 +20,9 @@ $ peira gates vault/
       → restate as a claim about what the thing did, or add evidence bearing on what it is
 
   PEIR-CAUSAL-RUNG-UNREACHED [RUNG]  c-overclaim
-      claims the counterfactual rung but rests on observation alone —
-      no executed protocol supports it
-      → run a controlled protocol and cite the Run, or restate at the association rung
+      "This Amcache entry proves execution of the suspicious binary" claims the
+      counterfactual rung but rests on observation alone — no executed protocol supports it
+      → run a controlled protocol and cite the Run, or restate the claim at the association rung
 ```
 
 ## Install
@@ -57,8 +57,9 @@ as a rule about a claim graph, each becomes machine-checkable:
 | ACH | confirmation by consistency | a causal claim names something it was tested against |
 | 不可得因 anupalabdhi | an absence certified by a search that could not have found it | absence claims need an instrument with a positive control |
 
-Twenty-three lenses are catalogued; thirteen are enforced today. `peira lens` lists them,
-each with its sources and a worked example of its gate firing.
+Twenty-three lenses are catalogued; thirteen are enforced today. `peira lens` lists them by
+name and phase; `peira lens <ID>` shows one in full — its failure mode, its gates, its sources,
+and a worked example. For a catalogued lens the example is of the failure, since it owns no gate.
 
 ## The invariant
 
@@ -94,7 +95,7 @@ are run:
 
 | Control | Setup | Result |
 |---|---|---|
-| **A** | `"This Amcache entry proves execution"` | **BLOCKS** — 8 gates + 1 lint, exit 1 |
+| **A** | `"This Amcache entry proves execution"` | **BLOCKS** — 8 gates + 3 lints, exit 1 |
 | **B** | the bounded conclusion | **PASSES** — exit 0, packet freezes |
 | **B′** | causal-rung gate neutered | that finding disappears, then returns on restore |
 | **C** | vault absent | exit 2 in 2 ms — distinguishable from A |

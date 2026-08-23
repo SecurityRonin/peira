@@ -104,7 +104,7 @@ How each half of the discipline maps onto the machinery, honestly:
 | Rule | Mechanism | Status |
 |---|---|---|
 | Record before you report | There is no prose write path into a packet: `freeze` renders it from the graph, and the parser refuses `status:` and `confidence:` outright | **enforced** |
-| Correct at the source, then rebuild | `verify` re-derives from the vault and compares digests. An edit that reaches the rendered body surfaces as `DigestMismatch`; one confined to unrendered fields — a grade, a grader, a `via=`, a `measured_by:` — changes no digest. An edit confined to the `Packet format:` line is named as the edit it is, since no older renderer could emit a body identical to today's | **enforced, narrow — defect 8** |
+| Correct at the source, then rebuild | `verify` re-derives from the vault and compares digests. An edit that reaches the rendered body surfaces as `DigestMismatch`; one confined to unrendered fields — a grade, a `via=`, a `measured_by:` — changes no digest. A `by=` edit is NOT one of those: the Provenance section renders `Credited:` into the body, so changing who is credited surfaces as `DigestMismatch`. An edit confined to the `Packet format:` line is named as the edit it is, since no older renderer could emit a body identical to today's | **enforced, narrow — defect 8** |
 | Mark supersession, never silently overwrite | `supersedes:` and `retracts:` edges are read by `PEIR-LINT-RETRACTED`, by the grounded extension, and by the packet's standing line | **enforced** |
 | The deliverable is a projection, never the whole | A packet renders a fixed projection: the claim's title and warrant, the ids and titles of its direct supporters, contradictors and limiters, boundaries, falsifiers, and the term moments. Grades, graders, pramāṇas and instrument links are not in it — so they are not under the digest either | by construction — **and the digest inherits the narrowness (defect 8)** |
 | If it cannot be regenerated, it is not compiled — it is a fork | `Verified` means exactly: the rendered body re-derived byte-identically from the source | **enforced** |
@@ -474,7 +474,7 @@ the threshold was 3 of 5.
 
 **A fabricated finding was seeded into the docket and rejected 0-5**, every judge naming the
 mechanism — `is_attack()` excludes `Limits`, so the alleged rendering could not occur. Three went
-further and noticed the cited line number falls inside a different function. Five real findings
+further and noticed the cited line number falls inside a different function. Four real findings
 were also rejected on the merits, including two this document's author had expected to sustain.
 
 The round's dominant shape was **a fix that reached one copy**: one negation rule with a second,

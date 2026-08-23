@@ -221,7 +221,7 @@ refused *"evidence that the entry was forged and the transfer fraudulent"* — p
 is excluded from the scan; each line instead carries the prefix *"Would defeat this claim:"*, so a
 line lifted out of the packet keeps the sense the heading gave it.
 ³ Fires where one supporter is explicitly marked as duplicating another, AND where two supporters
-name the same producing instrument — one tool is one line of evidence however the readings are
+share an instrument LINEAGE — one tool is one line of evidence however the readings are
 labelled. An instrument declaring `role: verifying` is exempt, because a tool that checked the
 artifact did not produce either finding; absence of the field fails safe. It still does not detect
 two supporters that share a *source* without naming an instrument.

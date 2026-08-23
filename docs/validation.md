@@ -133,7 +133,7 @@ version freely and the packet asserts a format the digest never covered.
 ## Reproducing
 
 ```bash
-cargo test --workspace --no-fail-fast          # 220 tests, incl. the acceptance suite
+cargo test --workspace --no-fail-fast          # 243 tests, incl. the acceptance suite
 cargo build -p peira-cli && tests/controls.sh target/debug/peira   # A, B and C
 ```
 
@@ -147,29 +147,35 @@ different test sets.
 
 ## Coverage
 
-**98.06% of lines**, over the workspace excluding the binary shell
+**97.99% of lines**, over the workspace excluding the binary shell
 (`src/main.rs`, `src/bin/`) — measured with CI's own invocation, never `--lib`,
 which builds only each lib's own unit tests and so cannot see the integration
 suite.
 
 ```
-core/src/edge.rs     100.00%      lens/src/gates.rs     98.07%
-core/src/graph.rs     99.70%      lens/src/lib.rs       97.76%
-core/src/node.rs      98.59%      lens/src/lints.rs     99.03%
-core/src/vault.rs     95.99%      court/src/lib.rs      96.62%
-index/src/lib.rs      94.67%      TOTAL                 98.06%
+core/src/edge.rs     100.00%      lens/src/gates.rs     98.09%
+core/src/graph.rs     99.79%      lens/src/lib.rs       98.23%
+core/src/node.rs      98.59%      lens/src/lints.rs     99.12%
+core/src/vault.rs     91.35%      court/src/lib.rs      96.91%
+index/src/lib.rs      94.67%      TOTAL                 97.99%
 ```
 
 **This is below the fleet's 100% standard, and the gap is stated rather than
-rounded away.** 100 of 5,154 lines are uncovered: SQLite and I/O
+rounded away.** 135 of 6,732 lines are uncovered: SQLite and I/O
 error-propagation arms reached only by injecting filesystem or database failures,
 and `panic!` arms inside test helpers, which by construction never execute while
 the tests pass.
 
-Every figure above was re-measured after audit round 6 rather than carried
-forward. The previous version of this section read 98.11% and 49 uncovered lines
-and had drifted from the build — a derived number stated once and never
-re-derived is a claim about the day it was written.
+**Two figures here are moving in the wrong direction and are named rather than
+smoothed.** `core/src/vault.rs` fell from 95.99% to 91.35% as the loader grew
+skip rules and refusal paths that the suite does not exercise, and the total sits
+0.99 points above CI's `--fail-under-lines 97`. Neither is a failure today;
+both are the margin narrowing.
+
+Every figure above was re-measured on 2026-08-23 rather than carried forward. The
+previous version read 98.06% and 100 of 5,154 uncovered, against a suite of 220 —
+it had drifted from the build on all three, which is what a derived number stated
+once and never re-derived becomes.
 
 One line is deliberately unreachable and annotated rather than deleted:
 `graph.rs` returns a conservative answer if the characteristic function's fixed

@@ -8,7 +8,7 @@ peira is a command-line program that reads and writes files on your machine.
   written to paths you name.
 - **No accounts.** There is nothing to sign in to.
 
-Reviewer identities you write into `graded_by` are ordinary text in your own files,
+Reviewer identities you write into a support edge's `by=` are ordinary text in your own files,
 under your control, and are never transmitted anywhere.
 
 © Security Ronin Ltd
