@@ -33,6 +33,8 @@ pub const CAUSAL_RUNG_UNREACHED: &str = "PEIR-CAUSAL-RUNG-UNREACHED";
 pub const BOUNDARIES_MISSING: &str = "PEIR-BOUNDARIES-MISSING";
 /// Premortem: a claim with nothing that could ever count against it.
 pub const FALSIFIER_MISSING: &str = "PEIR-FALSIFIER-MISSING";
+/// 因三相 (異品遍無性): every line of support is shared with a live rival.
+pub const HETU_UNDIAGNOSTIC: &str = "PEIR-HETU-UNDIAGNOSTIC";
 
 /// Words that turn a description into a judgement.
 ///
@@ -687,6 +689,13 @@ or as a node that attacks it",
     )
 }
 
+/// 因三相, third characteristic (異品遍無性): evidence must be absent where the claim
+/// is false. Its structural limiting case — every supporter shared with a live rival —
+/// is 共不定 (sādhāraṇa-anaikāntika), and needs no declaration to detect.
+fn hetu_undiagnostic(_graph: &Graph, _node: &Node) -> GateResult {
+    GateResult::Pass
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -694,6 +703,52 @@ mod tests {
 
     fn node(src: &str) -> Node {
         parse_node(src).expect("fixture parses")
+    }
+
+    /// 共不定: support a rival claims just as loudly decides nothing.
+    ///
+    /// The Amcache InventoryApplicationFile entry is written by the compatibility
+    /// appraiser for binaries that were inventoried and never run, so it stands in
+    /// exactly the same relation to "it executed" and to "it was catalogued". A vault
+    /// whose entire case rests on it has not argued for either side.
+    #[test]
+    fn support_common_to_a_live_rival_decides_nothing() {
+        let build = |discriminating: bool| {
+            let mut g = Graph::new();
+            g.insert_node(node(
+                "---\nid: c1\ntype: claim\ntitle: The user executed coreupdater.exe\n---\n",
+            ));
+            g.insert_node(node(
+                "---\nid: r1\ntype: claim\ntitle: The appraiser catalogued it, unrun\n---\n",
+            ));
+            g.insert_node(node(
+                "---\nid: o1\ntype: observation\ntitle: InventoryApplicationFile entry\n---\n",
+            ));
+            g.insert_edge(Edge::new(NodeId::new("r1"), NodeId::new("c1"), EdgeKind::Attacks));
+            g.insert_edge(Edge::new(NodeId::new("o1"), NodeId::new("c1"), EdgeKind::Supports));
+            g.insert_edge(Edge::new(NodeId::new("o1"), NodeId::new("r1"), EdgeKind::Supports));
+            if discriminating {
+                g.insert_node(node(
+                    "---\nid: o2\ntype: observation\ntitle: Prefetch .pf, run counter 3\n---\n",
+                ));
+                g.insert_edge(Edge::new(
+                    NodeId::new("o2"),
+                    NodeId::new("c1"),
+                    EdgeKind::Supports,
+                ));
+            }
+            let n = g.node(&NodeId::new("c1")).expect("c1").clone();
+            hetu_undiagnostic(&g, &n)
+        };
+
+        assert!(
+            matches!(build(false), GateResult::Block(_)),
+            "every supporter shared with a live rival is 共不定 and must block"
+        );
+        assert!(
+            matches!(build(true), GateResult::Pass),
+            "control: one discriminating line is what decides a contest — it must pass"
+        );
     }
 
     /// Four corners means four corners, not one typed four ways.
