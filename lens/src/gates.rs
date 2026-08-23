@@ -39,6 +39,10 @@ pub const HETU_UNDIAGNOSTIC: &str = "PEIR-HETU-UNDIAGNOSTIC";
 pub const RIVALS_UNENUMERATED: &str = "PEIR-RIVALS-UNENUMERATED";
 /// 不可得因: an absence certified by a search never shown able to find the thing.
 pub const ABSENCE_UNCONTROLLED: &str = "PEIR-ABSENCE-UNCONTROLLED";
+/// 因三相 (異品遍無性): an inference that never surveyed the dissimilar cases.
+pub const VIPAKSA_UNSURVEYED: &str = "PEIR-VIPAKSA-UNSURVEYED";
+/// 因三相 (同品定有性): an inference rule with no known instance.
+pub const SAPAKSA_UNDECLARED: &str = "PEIR-SAPAKSA-UNDECLARED";
 
 /// Words that turn a description into a judgement.
 ///
@@ -916,6 +920,16 @@ fn asserts_absence(node: &Node) -> bool {
     ABSENCE_MARKERS.iter().any(|m| haystack.contains(m)) || haystack.trim_start().starts_with("no ")
 }
 
+/// 異品遍無性: in what known circumstances does this evidence occur WITHOUT the thing?
+pub fn vipaksa_surveyed(_graph: &Graph, _node: &Node) -> GateResult {
+    GateResult::Pass
+}
+
+/// 同品定有性: has anyone ever seen this reason and this property co-occur?
+pub fn sapaksa_declared(_graph: &Graph, _node: &Node) -> GateResult {
+    GateResult::Pass
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -923,6 +937,66 @@ mod tests {
 
     fn node(src: &str) -> Node {
         parse_node(src).expect("fixture parses")
+    }
+
+    /// The two declared characteristics, and the scope that keeps them honest.
+    ///
+    /// Trairūpya is the theory of anumāna and of nothing else. A claim resting on
+    /// perception owes no dissimilar-case survey, and demanding one would be the
+    /// checker refusing a sentence it has no doctrine against — so the trigger is an
+    /// evidence edge declaring `via=inference`, not promotion in general.
+    ///
+    /// The obvious dodge, omitting `via=`, is already policed: a settled grade with no
+    /// declared pramāṇa blocks as `PEIR-GATE-UNASSESSED [PRAMANA]`. Writing less does
+    /// not win.
+    #[test]
+    fn an_inference_surveys_the_dissimilar_cases_and_cites_a_positive_instance() {
+        let build = |via: Pramana, fields: &str| {
+            let mut g = Graph::new();
+            g.insert_node(node(&format!(
+                "---\nid: c1\ntype: claim\ntitle: The binary was executed\n{fields}---\n"
+            )));
+            g.insert_node(node(
+                "---\nid: o1\ntype: observation\ntitle: Amcache entry\n---\n",
+            ));
+            g.insert_edge(
+                Edge::new(NodeId::new("o1"), NodeId::new("c1"), EdgeKind::Supports).via(via),
+            );
+            let n = g.node(&NodeId::new("c1")).expect("c1").clone();
+            (vipaksa_surveyed(&g, &n), sapaksa_declared(&g, &n))
+        };
+
+        let (v, sa) = build(Pramana::Inference, "");
+        assert!(
+            matches!(v, GateResult::Unassessed { .. }),
+            "an inference that never surveyed the dissimilar cases reaches no verdict"
+        );
+        assert!(
+            matches!(sa, GateResult::Unassessed { .. }),
+            "an inference rule with no cited instance reaches no verdict"
+        );
+
+        let surveyed = concat!(
+            "vipaksa:\n",
+            "  - staged but never run: the appraiser inventories on scheduled scan, so \
+the entry is present anyway\n",
+            "sapaksa:\n",
+            "  - run-2026-08-11: known execution on a clean VM produced the entry\n"
+        );
+        let (v, sa) = build(Pramana::Inference, surveyed);
+        assert!(matches!(v, GateResult::Pass), "control: a survey exists");
+        assert!(matches!(sa, GateResult::Pass), "control: an instance is cited");
+
+        // Scope control — the one that decides whether this is doctrine or ceremony.
+        let (v, sa) = build(Pramana::Perception, "");
+        assert!(
+            matches!(v, GateResult::NotApplicable),
+            "perception owes no dissimilar-case survey — trairūpya is about anumāna"
+        );
+        assert!(
+            matches!(sa, GateResult::NotApplicable),
+            "perception owes no positive instance either"
+        );
     }
 
     /// A search that could not have found the thing has not established its absence.
