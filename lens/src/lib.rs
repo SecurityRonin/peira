@@ -721,6 +721,31 @@ Stcherbatsky, Buddhist Logic vol. II (1930)",
         phase: Phase::Enforced,
     },
     Lens {
+        id: "ABHASA",
+        name: "似因・似宗 — The Semblance Taxonomies",
+        tradition: Tradition::Buddhist,
+        failure_mode: "a thesis or reason with the form of proof and not the force of it — \
+unestablished, inconclusive, contradictory, or resting on terms the other party never granted",
+        operation: "a human screen: each load-bearing inference is read against the fourteen \
+似因 and the nine 似宗 before the packet leaves",
+        applies_to: ARGUMENTS,
+        gates: &[],
+        worked_example: "能別不極成: one expert stipulates \"exfiltration\" as any copy to \
+non-corporate storage, the other as transfer outside the tenant. Both proofs are internally \
+valid, neither engages the other, and the tribunal receives two sound arguments about different \
+words. peira has no party model, so 極成 is deliberately substituted by the 是名 disclosure — \
+what cannot be verified (the opponent's assent) is replaced by what can be enforced (the \
+admission that assent was never obtained).",
+        sources: &[
+            "商羯羅主《因明入正理論》T32n1630 — 似因十四過 (不成四・不定六・相違四), 似宗九過",
+            "M. Tachikawa, \"A Sixth-Century Manual of Indian Logic\", J. Indian Philosophy 1 \
+(1971) 111–145",
+            "S. Katsura, \"The theory of anaikāntika in Buddhist logic\", in Studies in the \
+Buddhist Epistemological Tradition (Vienna 1991)",
+        ],
+        phase: Phase::Catalogued,
+    },
+    Lens {
         id: "ERDI",
         name: "二諦 — The Two Truths, and Court Mode",
         tradition: Tradition::Buddhist,
@@ -822,6 +847,91 @@ causal_rung: counterfactual\n---\n",
 reaching the caller were: {:?}",
             found.iter().map(|v| v.gate).collect::<Vec<_>>()
         );
+    }
+
+    /// 九句因 — the wheel is the truth table inside the gate, not a lens of its own.
+    ///
+    /// Two of Dignāga's nine cells are valid (2 and 8), both characterised by absence
+    /// from the dissimilar cases. This asserts what the STRUCTURAL gate can and cannot
+    /// see, so the coverage limit is machine-checked rather than promised in prose:
+    /// the graph records which supporters a rival shares, and nothing more. Cell 1
+    /// (all shared) is visible and blocks. Cells 3/9 (some shared) deliberately pass —
+    /// one discriminating line is what decides a contest. Cells 5 and 7 turn on how the
+    /// reason behaves across similar and dissimilar CLASSES, which no attack edge
+    /// records; those need `sapaksa:`/`vipaksa:`, and until those land this lens does
+    /// not claim them.
+    #[test]
+    fn the_wheel_of_reasons_maps_onto_what_the_graph_can_see() {
+        use peira_core::{parse_node, Edge, EdgeKind, NodeId};
+        // (shared supporters, unshared supporters, cell, must block)
+        let wheel = [
+            (
+                1_usize,
+                0_usize,
+                "1 共不定 — present in every dissimilar case",
+                true,
+            ),
+            (0, 1, "2 正因 — absent from the dissimilar cases", false),
+            (2, 0, "1 共不定, several lines, all of them shared", true),
+            (
+                1,
+                1,
+                "3/9 — partial sharing; one discriminating line decides",
+                false,
+            ),
+            (
+                2,
+                1,
+                "3/9 — mostly shared, still decided by the one line",
+                false,
+            ),
+        ];
+        for (shared, unshared, cell, must_block) in wheel {
+            let mut g = Graph::new();
+            for src in [
+                "---\nid: c1\ntype: claim\ntitle: The user executed it\n---\n",
+                "---\nid: r1\ntype: claim\ntitle: The appraiser catalogued it\n---\n",
+            ] {
+                g.insert_node(parse_node(src).expect("fixture parses"));
+            }
+            g.insert_edge(Edge::new(
+                NodeId::new("r1"),
+                NodeId::new("c1"),
+                EdgeKind::Attacks,
+            ));
+            for i in 0..shared + unshared {
+                let id = format!("o{i}");
+                g.insert_node(
+                    parse_node(&format!(
+                        "---\nid: {id}\ntype: observation\ntitle: line {i}\n---\n"
+                    ))
+                    .expect("fixture parses"),
+                );
+                g.insert_edge(Edge::new(
+                    NodeId::new(&id),
+                    NodeId::new("c1"),
+                    EdgeKind::Supports,
+                ));
+                if i < shared {
+                    g.insert_edge(Edge::new(
+                        NodeId::new(&id),
+                        NodeId::new("r1"),
+                        EdgeKind::Supports,
+                    ));
+                }
+            }
+            // Scoped to c1. The gate fires symmetrically by design — where r1's own
+            // single line is shared, r1 is 共不定 too, and each author can fix the node
+            // they own. Asserting over the whole graph would conflate the two verdicts.
+            let subject = NodeId::new("c1");
+            let blocked = examine_graph(&g)
+                .iter()
+                .any(|v| v.gate == gates::HETU_UNDIAGNOSTIC && v.subject == subject);
+            assert_eq!(
+                blocked, must_block,
+                "cell {cell}: {shared} shared / {unshared} unshared supporters"
+            );
+        }
     }
 
     /// The 共不定 verdict must survive the trip to the caller.
