@@ -691,6 +691,28 @@ or as a node that attacks it",
     )
 }
 
+/// The arguments contesting the same ground as `node`.
+///
+/// Rivalry is symmetric — whichever way the author happened to draw the edge, the two
+/// nodes are arguing against each other. `live_attacks_on` is asked in both directions
+/// rather than reimplemented, so the withdrawn-attacker and reference-material rules
+/// are inherited rather than forgotten.
+///
+/// One definition, because two gates need it and they must never disagree about what
+/// a rival is: TRAIRUPYA blocks when rivals exist and share all the evidence, ACH
+/// blocks when none exists at all. A drift between the two spellings would open a gap
+/// between them that answers to neither.
+fn live_rivals<'a>(graph: &'a Graph, node: &Node) -> Vec<&'a Node> {
+    graph
+        .nodes()
+        .filter(|r| r.id != node.id)
+        .filter(|r| {
+            graph.live_attacks_on(&node.id).any(|e| e.from == r.id)
+                || graph.live_attacks_on(&r.id).any(|e| e.from == node.id)
+        })
+        .collect()
+}
+
 /// 因三相, third characteristic (異品遍無性): evidence must be absent where the claim
 /// is false. Its structural limiting case — every supporter shared with a live rival —
 /// is 共不定 (sādhāraṇa-anaikāntika), and needs no declaration to detect.
@@ -705,18 +727,7 @@ pub fn hetu_undiagnostic(graph: &Graph, node: &Node) -> GateResult {
         return GateResult::NotApplicable;
     }
 
-    // Rivalry is symmetric — whichever way the author happened to draw the edge, the
-    // two nodes are contesting the same ground. `live_attacks_on` is asked in both
-    // directions rather than reimplemented, so the withdrawn-attacker and
-    // reference-material rules are inherited rather than forgotten.
-    let rivals: Vec<&Node> = graph
-        .nodes()
-        .filter(|r| r.id != node.id)
-        .filter(|r| {
-            graph.live_attacks_on(&node.id).any(|e| e.from == r.id)
-                || graph.live_attacks_on(&r.id).any(|e| e.from == node.id)
-        })
-        .collect();
+    let rivals = live_rivals(graph, node);
     // 異品遍無性 presupposes a 異品. An uncontested claim owes this gate nothing —
     // and scoring a thin hypothesis set as diagnosticity is exactly the error the
     // Heuer entry warns against.
@@ -764,7 +775,39 @@ rival, or state in the packet that the evidence held does not decide the contest
 }
 
 /// Heuer's move: a causal claim owes at least one competing explanation.
-pub fn rivals_enumerated(_graph: &Graph, _node: &Node) -> GateResult {
+pub fn rivals_enumerated(graph: &Graph, node: &Node) -> GateResult {
+    if !under_promotion(graph, node) {
+        return GateResult::NotApplicable;
+    }
+    // Naming an alternative is an obligation about EXPLANATION. A claim that two things
+    // co-occur owes none, and demanding one would be ceremony. An absent `causal_rung:`
+    // is not an escape: RUNG already returns Unassessed for it, which blocks.
+    let Some(rung) = node.field("causal_rung").and_then(CausalRung::from_str_opt) else {
+        return GateResult::NotApplicable;
+    };
+    if rung == CausalRung::Association {
+        return GateResult::NotApplicable;
+    }
+    if live_rivals(graph, node).is_empty() {
+        return block(
+            RIVALS_UNENUMERATED,
+            "ACH",
+            node,
+            format!(
+                "\"{}\" explains {} and the vault records nothing it was tested against \
+— an explanation with no rival has been confirmed by consistency, not chosen",
+                node.title,
+                match rung {
+                    CausalRung::Intervention => "by intervention",
+                    CausalRung::Counterfactual => "counterfactually",
+                    CausalRung::Association => "by association",
+                }
+            ),
+            "write down the competing explanation you rejected and attack this claim \
+with it — the one that survives is the finding, and the ones that did not are the \
+reason anyone should believe it",
+        );
+    }
     GateResult::Pass
 }
 
@@ -793,7 +836,11 @@ causal_rung: counterfactual\n---\n",
             g.insert_node(node(
                 "---\nid: run1\ntype: run\ntitle: Controlled execution on a clean VM\n---\n",
             ));
-            g.insert_edge(Edge::new(NodeId::new("run1"), NodeId::new("c1"), EdgeKind::Supports));
+            g.insert_edge(Edge::new(
+                NodeId::new("run1"),
+                NodeId::new("c1"),
+                EdgeKind::Supports,
+            ));
             if rival {
                 g.insert_node(node(
                     "---\nid: h1\ntype: hypothesis\ntitle: The appraiser wrote it on scan\n---\n",

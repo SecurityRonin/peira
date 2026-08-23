@@ -523,16 +523,20 @@ dismissed.",
         tradition: Tradition::Modern,
         failure_mode: "confirmation by consistency — collecting evidence that fits the favoured \
 hypothesis without asking what it rules out",
-        operation: "hypotheses are eliminated by inconsistency, weighted by diagnosticity",
+        operation: "an explanation above the association rung must name something it was \
+tested against; diagnosticity is TRAIRUPYA's half of the same rule",
         applies_to: ARGUMENTS,
-        gates: &[],
+        gates: &[Gate {
+            code: gates::RIVALS_UNENUMERATED,
+            check: gates::rivals_enumerated,
+        }],
         worked_example: "Evidence consistent with execution is usually also consistent with \
 installation and with scanning, so it is not diagnostic and should carry no weight either way.",
         sources: &[
             "Richards J. Heuer Jr., Psychology of Intelligence Analysis (CIA CSI, 1999), ch. 8",
             "https://www.cia.gov/resources/csi/books-monographs/psychology-of-intelligence-analysis-2/",
         ],
-        phase: Phase::Catalogued,
+        phase: Phase::Enforced,
     },
     Lens {
         id: "PANCAVAYAVA",
@@ -736,6 +740,33 @@ mod meta_tests {
 
     use super::*;
     use std::collections::BTreeSet;
+
+    /// ACH's demand must survive the trip to the caller.
+    #[test]
+    fn an_unrivalled_explanation_reaches_the_caller() {
+        use peira_core::{parse_node, Edge, EdgeKind, NodeId};
+        let mut g = Graph::new();
+        for src in [
+            "---\nid: c1\ntype: claim\ntitle: Running the binary wrote the entry\n\
+causal_rung: counterfactual\n---\n",
+            "---\nid: run1\ntype: run\ntitle: Controlled execution on a clean VM\n---\n",
+        ] {
+            g.insert_node(parse_node(src).expect("fixture parses"));
+        }
+        g.insert_edge(Edge::new(
+            NodeId::new("run1"),
+            NodeId::new("c1"),
+            EdgeKind::Supports,
+        ));
+
+        let found = examine_graph(&g);
+        assert!(
+            found.iter().any(|v| v.gate == gates::RIVALS_UNENUMERATED),
+            "ACH's demand was computed and then discarded in transit; violations \
+reaching the caller were: {:?}",
+            found.iter().map(|v| v.gate).collect::<Vec<_>>()
+        );
+    }
 
     /// The 共不定 verdict must survive the trip to the caller.
     ///
