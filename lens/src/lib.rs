@@ -697,6 +697,30 @@ Prefetch .pf with a run counter decides the contest, and passes the gate.",
         phase: Phase::Enforced,
     },
     Lens {
+        id: "ANUPALABDHI",
+        name: "不可得因 — Non-Perception as a Reason",
+        tradition: Tradition::Buddhist,
+        failure_mode: "certifying an absence with a search never shown able to find the thing",
+        operation: "an absence claim must rest on an instrument with a recorded positive control; \
+naming no instrument reaches no verdict rather than passing",
+        applies_to: &[],
+        gates: &[Gate {
+            code: gates::ABSENCE_UNCONTROLLED,
+            check: gates::absence_is_controlled,
+        }],
+        worked_example: "\"The binary was never executed — no Prefetch file exists.\" On a \
+Server SKU with SysMain disabled, no execution would ever have written one, so the search could \
+not have found the thing it reports missing. Non-perception establishes absence only of the \
+perceptible; of the imperceptible it establishes nothing.",
+        sources: &[
+            "Dharmakīrti, Nyāyabindu II.12–20 (the dṛśya restriction at II.13); tr. Th. \
+Stcherbatsky, Buddhist Logic vol. II (1930)",
+            "Dharmakīrti, Pramāṇavārttika, svārthānumāna ch.; ed. Gnoli (Rome 1960)",
+            "呂澂《因明入正理論講解》中華書局 (1983) — the received Chinese terminology",
+        ],
+        phase: Phase::Enforced,
+    },
+    Lens {
         id: "ERDI",
         name: "二諦 — The Two Truths, and Court Mode",
         tradition: Tradition::Buddhist,
@@ -740,6 +764,38 @@ mod meta_tests {
 
     use super::*;
     use std::collections::BTreeSet;
+
+    /// The dṛśya restriction must survive the trip to the caller.
+    #[test]
+    fn an_uncontrolled_absence_reaches_the_caller() {
+        use peira_core::{parse_node, Edge, EdgeKind, NodeId};
+        let mut g = Graph::new();
+        for src in [
+            "---\nid: c1\ntype: claim\ntitle: No Prefetch file exists for the binary\n---\n",
+            "---\nid: o1\ntype: observation\ntitle: Prefetch directory listing\n---\n",
+            "---\nid: i1\ntype: instrument\ntitle: Prefetch enumerator\n---\n",
+        ] {
+            g.insert_node(parse_node(src).expect("fixture parses"));
+        }
+        g.insert_edge(Edge::new(
+            NodeId::new("o1"),
+            NodeId::new("c1"),
+            EdgeKind::Supports,
+        ));
+        g.insert_edge(Edge::new(
+            NodeId::new("o1"),
+            NodeId::new("i1"),
+            EdgeKind::MeasuredBy,
+        ));
+
+        let found = examine_graph(&g);
+        assert!(
+            found.iter().any(|v| v.gate == gates::ABSENCE_UNCONTROLLED),
+            "the dṛśya restriction was computed and then discarded in transit; \
+violations reaching the caller were: {:?}",
+            found.iter().map(|v| v.gate).collect::<Vec<_>>()
+        );
+    }
 
     /// ACH's demand must survive the trip to the caller.
     #[test]

@@ -815,8 +815,105 @@ reason anyone should believe it",
 
 /// Dharmakīrti's dṛśya restriction: non-perception establishes absence only of what
 /// would have been perceived had it been there.
-pub fn absence_is_controlled(_graph: &Graph, _node: &Node) -> GateResult {
-    GateResult::Pass
+pub fn absence_is_controlled(graph: &Graph, node: &Node) -> GateResult {
+    if !under_promotion(graph, node) || !asserts_absence(node) {
+        return GateResult::NotApplicable;
+    }
+    let supp = supporters(graph, node);
+    if supp.is_empty() {
+        return GateResult::NotApplicable;
+    }
+
+    let mut named_an_instrument = false;
+    for s in &supp {
+        for e in graph
+            .edges_from(&s.id)
+            .filter(|e| e.kind == EdgeKind::MeasuredBy)
+        {
+            if let Some(i) = graph.node(&e.to) {
+                named_an_instrument = true;
+                if i.field("positive_control").is_some() {
+                    return GateResult::Pass;
+                }
+            }
+        }
+    }
+
+    // Silence about the instrument must not read better than naming an uncontrolled
+    // one. `PEIR-LINT-UNCONTROLLED-INSTRUMENT` iterates measured_by edges, so a
+    // supporting observation that names no instrument produces no edges and no
+    // violation — absence of configuration reported as absence of a problem.
+    if !named_an_instrument {
+        return GateResult::Unassessed {
+            why: format!(
+                "\"{}\" asserts an absence and its evidence names no instrument, so \
+whether the search could have found the thing is unknown",
+                node.title
+            ),
+        };
+    }
+
+    block(
+        ABSENCE_UNCONTROLLED,
+        "ANUPALABDHI",
+        node,
+        format!(
+            "\"{}\" rests on a search that has never been shown to find the thing when \
+it IS there — non-perception establishes absence only of the perceptible",
+            node.title
+        ),
+        "run the same protocol against a known positive and cite it as \
+`positive_control:` on the instrument, or restate the claim as what the search \
+returned rather than as what is not there",
+    )
+}
+
+/// Comparative idioms that open with a negator and bound a quantity rather than deny
+/// a thing. Stripped before the markers are read: "no later than 09:14" is a
+/// timestamp, and a checker that calls it an absence claim gets switched off.
+const BOUNDS_NOT_ABSENCES: &[&str] = &[
+    "no later than",
+    "no earlier than",
+    "no more than",
+    "no fewer than",
+    "no less than",
+    "no sooner than",
+    "no greater than",
+];
+
+/// Words that turn a description into a denial.
+///
+/// Deliberately narrow, per the project's bias: a missed absence claim costs a miss,
+/// a blocked idiom costs the tool. `polarity:` overrides in BOTH directions — it is
+/// the author's escape from a false positive and the gate's reach past a phrasing the
+/// list does not know.
+const ABSENCE_MARKERS: &[&str] = &[
+    "no evidence",
+    "no trace",
+    "no record",
+    "no sign",
+    "no indication",
+    "no artifact",
+    "not present",
+    "not found",
+    "does not exist",
+    "did not exist",
+    "never ",
+    "nothing ",
+    "absent",
+];
+
+fn asserts_absence(node: &Node) -> bool {
+    match node.field("polarity") {
+        Some("negative") => return true,
+        Some("positive") => return false,
+        _ => {}
+    }
+    let mut haystack = format!("{} {}", node.title, node.body).to_ascii_lowercase();
+    for idiom in BOUNDS_NOT_ABSENCES {
+        haystack = haystack.replace(idiom, " ");
+    }
+    ABSENCE_MARKERS.iter().any(|m| haystack.contains(m)) || haystack.trim_start().starts_with("no ")
 }
 
 #[cfg(test)]
@@ -830,7 +927,7 @@ mod tests {
 
     /// A search that could not have found the thing has not established its absence.
     ///
-    /// The Prefetch case: on a Server SKU with SysMain disabled, no execution would
+    /// The Prefetch case: on a Server SKU with `SysMain` disabled, no execution would
     /// ever have written a `.pf`, so "no Prefetch file exists" is non-perception of
     /// the imperceptible (adṛśyānupalabdhi) and certifies nothing.
     ///
@@ -847,7 +944,11 @@ mod tests {
             g.insert_node(node(
                 "---\nid: o1\ntype: observation\ntitle: Prefetch directory listing\n---\n",
             ));
-            g.insert_edge(Edge::new(NodeId::new("o1"), NodeId::new("c1"), EdgeKind::Supports));
+            g.insert_edge(Edge::new(
+                NodeId::new("o1"),
+                NodeId::new("c1"),
+                EdgeKind::Supports,
+            ));
             if instrument {
                 let pc = if control {
                     "positive_control: lists a .pf for a binary known to have run\n"
