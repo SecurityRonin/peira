@@ -126,6 +126,9 @@ to prevent.
 | A causal claim earns its rung | `PEIR-CAUSAL-RUNG-UNREACHED` (Pearl) | **checked when declared** ⁴ |
 | A claim states where it holds | `PEIR-BOUNDARIES-MISSING` | **enforced** |
 | A claim states what would defeat it | `PEIR-FALSIFIER-MISSING` (Popper / premortem) | **enforced** |
+| Evidence common to both sides of a contest carries no weight | `PEIR-HETU-UNDIAGNOSTIC` (因三相, 共不定) | **enforced** ¹⁴ |
+| A causal claim names something it was tested against | `PEIR-RIVALS-UNENUMERATED` (ACH) | **enforced** ¹⁴ |
+| Absence is certified only by a search shown able to find the thing | `PEIR-ABSENCE-UNCONTROLLED` (不可得因) | **enforced, heuristic** ¹⁵ |
 | What survives attack is computed, not asserted | grounded extension (Dung) | **enforced** |
 | A claim with no support at all is flagged | `PEIR-LINT-ORPHAN-CLAIM` | **enforced** |
 | Support must reach the world, not only more claims | `PEIR-LINT-UNGROUNDED-CHAIN` | **enforced** |
@@ -151,6 +154,22 @@ to prevent.
 | **Extraordinary claims need extraordinary evidence** | — | **not mechanised** |
 | **The prosecutor's fallacy** | — | **not mechanised** |
 | **Custody and pedigree of an observation** | — | **not mechanised** |
+¹⁴ The two interlock, and neither is complete alone. `PEIR-HETU-UNDIAGNOSTIC` is `NotApplicable`
+where no rival exists — 異品遍無性 presupposes a 異品, and scoring a thin hypothesis set as
+diagnosticity is the error ACH itself warns about — so deleting the rival would buy silence.
+`PEIR-RIVALS-UNENUMERATED` is what it buys instead. The structural gate sees only cell 1 of the
+九句因 (every line of support shared); the partial-sharing cells deliberately pass, because one
+discriminating line is what decides a contest, and the cells turning on behaviour across similar
+and dissimilar CLASSES are not visible to an attack edge at all. That limit is asserted as a test,
+not promised here.
+
+¹⁵ Absence is detected from the claim's own words, with `polarity:` overriding in both directions.
+The word list is deliberately narrow and comparative idioms are stripped before it is read — "no
+later than 09:14" is a timestamp, and a checker that calls it an absence claim gets switched off. A
+missed absence claim costs a miss; a blocked idiom costs the tool. Where the supporting evidence
+names no instrument at all the gate reaches NO VERDICT rather than passing: silence about the
+search must not read better than naming an uncontrolled one.
+
 ⁹ The lint reports a leak on the node that carries it, and `freeze` walks the claim's evidential
 closure — so a privilege leak on a *supporting* node DOES stop a packet. What it does not reach is
 a rival or limiter: their prose is withheld when flagged rather than adopted, because the subject

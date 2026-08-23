@@ -359,6 +359,9 @@ artifact is not execution; 是名「執行」— it is conventionally named exec
         sources: &[
             "《金剛般若波羅蜜經》: 所謂佛法者，即非佛法，是名佛法",
             "https://ctext.org/analects/zi-lu (論語·子路: 必也正名乎)",
+            "陳那 Dignāga, 集量論 Pramāṇasamuccaya ch. 5 (遮詮/anyāpoha) — a term excludes what \
+it is not, which is the 即非 moment reached from Buddhist epistemology; `not_essence` is that \
+obligation mechanised, so apoha earns no separate entry",
         ],
         phase: Phase::Enforced,
     },
@@ -549,9 +552,12 @@ hetvābhāsa taxonomy",
         applies_to: ARGUMENTS,
         gates: &[],
         worked_example: "pratijñā, hetu, udāharaṇa, upanaya, nigamana — with the reason tested \
-for asiddha, viruddha, anaikāntika, satpratipakṣa and bādhita.",
+for asiddha, viruddha, anaikāntika, satpratipakṣa and bādhita. 世親 Vasubandhu's 如實論 argues \
+this five-member form carrying only a proto-因三相: the 古因明 stage, and the precursor to 陳那's \
+reduction to three members (TRAIRUPYA, ABHASA), never its originator.",
         sources: &[
             "Nyāya Sūtra 1.1.32–1.1.39; 1.2.4–1.2.9",
+            "世親《如實論・反質難品》真諦譯 c. 550, T32n1633 — the 古因明 five-member form",
             "https://plato.stanford.edu/entries/logic-india/",
         ],
         phase: Phase::Catalogued,

@@ -53,8 +53,11 @@ as a rule about a claim graph, each becomes machine-checkable:
 | pramāṇa | testimony passed off as observation | grade ceilings by means of knowing |
 | Pearl's ladder | rung-3 claims from rung-1 data | interventional claims need an executed protocol |
 | Premortem / Popper | nothing could ever count against it | `falsifier` is required, or a node that attacks it |
+| 因三相 trairūpya | a reason that also holds where the claim is false | support common to every side of a contest carries no weight |
+| ACH | confirmation by consistency | a causal claim names something it was tested against |
+| 不可得因 anupalabdhi | an absence certified by a search that could not have found it | absence claims need an instrument with a positive control |
 
-Twenty lenses are catalogued; ten are enforced today. `peira lens` lists them,
+Twenty-three lenses are catalogued; thirteen are enforced today. `peira lens` lists them,
 each with its sources and a worked example of its gate firing.
 
 ## The invariant
