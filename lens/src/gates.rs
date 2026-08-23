@@ -37,6 +37,8 @@ pub const FALSIFIER_MISSING: &str = "PEIR-FALSIFIER-MISSING";
 pub const HETU_UNDIAGNOSTIC: &str = "PEIR-HETU-UNDIAGNOSTIC";
 /// ACH: a causal claim with no competing explanation written down.
 pub const RIVALS_UNENUMERATED: &str = "PEIR-RIVALS-UNENUMERATED";
+/// 不可得因: an absence certified by a search never shown able to find the thing.
+pub const ABSENCE_UNCONTROLLED: &str = "PEIR-ABSENCE-UNCONTROLLED";
 
 /// Words that turn a description into a judgement.
 ///
@@ -811,6 +813,12 @@ reason anyone should believe it",
     GateResult::Pass
 }
 
+/// Dharmakīrti's dṛśya restriction: non-perception establishes absence only of what
+/// would have been perceived had it been there.
+pub fn absence_is_controlled(_graph: &Graph, _node: &Node) -> GateResult {
+    GateResult::Pass
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -818,6 +826,77 @@ mod tests {
 
     fn node(src: &str) -> Node {
         parse_node(src).expect("fixture parses")
+    }
+
+    /// A search that could not have found the thing has not established its absence.
+    ///
+    /// The Prefetch case: on a Server SKU with SysMain disabled, no execution would
+    /// ever have written a `.pf`, so "no Prefetch file exists" is non-perception of
+    /// the imperceptible (adṛśyānupalabdhi) and certifies nothing.
+    ///
+    /// The third case is the false-positive control that decides whether this gate is
+    /// usable: "no later than" is a comparative idiom, not an absence claim, and a
+    /// checker that blocks it is a checker that gets switched off.
+    #[test]
+    fn absence_rests_on_a_search_shown_able_to_find_the_thing() {
+        let build = |title: &str, control: bool, instrument: bool| {
+            let mut g = Graph::new();
+            g.insert_node(node(&format!(
+                "---\nid: c1\ntype: claim\ntitle: {title}\n---\n"
+            )));
+            g.insert_node(node(
+                "---\nid: o1\ntype: observation\ntitle: Prefetch directory listing\n---\n",
+            ));
+            g.insert_edge(Edge::new(NodeId::new("o1"), NodeId::new("c1"), EdgeKind::Supports));
+            if instrument {
+                let pc = if control {
+                    "positive_control: lists a .pf for a binary known to have run\n"
+                } else {
+                    ""
+                };
+                g.insert_node(node(&format!(
+                    "---\nid: i1\ntype: instrument\ntitle: Prefetch enumerator\n{pc}---\n"
+                )));
+                g.insert_edge(Edge::new(
+                    NodeId::new("o1"),
+                    NodeId::new("i1"),
+                    EdgeKind::MeasuredBy,
+                ));
+            }
+            let n = g.node(&NodeId::new("c1")).expect("c1").clone();
+            absence_is_controlled(&g, &n)
+        };
+
+        assert!(
+            matches!(
+                build("No Prefetch file exists for the binary", false, true),
+                GateResult::Block(_)
+            ),
+            "an absence measured by an uncontrolled instrument must block"
+        );
+        assert!(
+            matches!(
+                build("No Prefetch file exists for the binary", false, false),
+                GateResult::Unassessed { .. }
+            ),
+            "naming no instrument at all must not read better than naming an \
+uncontrolled one"
+        );
+        assert!(
+            matches!(
+                build("No Prefetch file exists for the binary", true, true),
+                GateResult::Pass
+            ),
+            "control: an executed positive control is exactly what the gate asks for"
+        );
+        assert!(
+            matches!(
+                build("The archive was written no later than 09:14", false, true),
+                GateResult::NotApplicable
+            ),
+            "false-positive control: `no later than` is a comparative idiom, not an \
+absence claim"
+        );
     }
 
     /// An explanation with nothing to beat has not been tested against anything.
