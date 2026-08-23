@@ -1376,6 +1376,20 @@ falsifier:\n  - a register shown to record entries that were never written\n---\
 
         let mut clean = clean_graph();
         clean.insert_node(node(groomed));
+        // c1 is about to be given an inference-graded dependency below, and 因三相 asks
+        // an inference for its two surveys. `clean_graph`'s c1 rests on perception and
+        // owes neither; here it does, so grooming it is what "groomed" means in this
+        // test. The withdrawal assertion beneath is untouched.
+        clean.insert_node(node(
+            "---\nid: c1\ntype: claim\ntitle: The hive catalogued the file at that path\n\
+warrant: A catalogue entry evidences that the path was recorded.\n\
+quantifier: singular\naspect: function\ncausal_rung: association\n\
+boundaries:\n  - Windows 10 1809 and later\n\
+falsifier:\n  - an entry shown to be written without the path ever being present\n\
+sapaksa:\n  - a path known to have been present was recorded in the register\n\
+vipaksa:\n  - a path recorded after deletion: the register retains the entry, so the \
+record outlives the presence it evidences\n---\n",
+        ));
         clean.insert_node(node(
             "---\nid: o2\ntype: observation\ntitle: the register entry is present\n\
 aspect: function\n---\n",
