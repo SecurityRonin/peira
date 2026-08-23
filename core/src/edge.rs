@@ -65,6 +65,68 @@ pub enum EdgeKind {
 }
 
 impl EdgeKind {
+    /// Every edge kind, and the ONE list of them.
+    ///
+    /// The vault loader used to carry its own copy as `EDGE_KEYS` — a third spelling
+    /// of the edge grammar beside this enum and `from_str`. Deleting one entry there
+    /// silently stopped loading that edge for every vault in the field, with the whole
+    /// suite green, because nothing held the two lists together. `exhaustive` below is
+    /// what holds them together now: adding a variant fails the build until it is
+    /// added here too.
+    pub const ALL: &'static [EdgeKind] = &[
+        EdgeKind::Supports,
+        EdgeKind::Contradicts,
+        EdgeKind::Limits,
+        EdgeKind::Duplicates,
+        EdgeKind::DependsOn,
+        EdgeKind::Supersedes,
+        EdgeKind::Retracts,
+        EdgeKind::IsA,
+        EdgeKind::HasA,
+        EdgeKind::InstanceOf,
+        EdgeKind::PartOf,
+        EdgeKind::SubstanceOf,
+        EdgeKind::FunctionOf,
+        EdgeKind::Negates,
+        EdgeKind::Sublates,
+        EdgeKind::Attacks,
+        EdgeKind::JudgedBy,
+        EdgeKind::UsesTerm,
+        EdgeKind::Examines,
+        EdgeKind::MeasuredBy,
+    ];
+
+    /// A compile-time proof that [`EdgeKind::ALL`] is complete.
+    ///
+    /// Not a test — a test can only run after someone remembers to write it. This is
+    /// an exhaustive match, so a new variant is a BUILD failure rather than a silently
+    /// unloadable edge.
+    #[allow(dead_code)]
+    const fn exhaustive(self) {
+        match self {
+            EdgeKind::Supports
+            | EdgeKind::Contradicts
+            | EdgeKind::Limits
+            | EdgeKind::Duplicates
+            | EdgeKind::DependsOn
+            | EdgeKind::Supersedes
+            | EdgeKind::Retracts
+            | EdgeKind::IsA
+            | EdgeKind::HasA
+            | EdgeKind::InstanceOf
+            | EdgeKind::PartOf
+            | EdgeKind::SubstanceOf
+            | EdgeKind::FunctionOf
+            | EdgeKind::Negates
+            | EdgeKind::Sublates
+            | EdgeKind::Attacks
+            | EdgeKind::JudgedBy
+            | EdgeKind::UsesTerm
+            | EdgeKind::Examines
+            | EdgeKind::MeasuredBy => (),
+        }
+    }
+
     /// The frontmatter spelling.
     #[must_use]
     pub fn as_str(self) -> &'static str {
@@ -350,6 +412,32 @@ impl Edge {
         match (self.grade(), self.pramana) {
             (Some(grade), Some(pramana)) => grade > pramana.grade_ceiling(),
             _ => false,
+        }
+    }
+}
+
+#[cfg(test)]
+mod published_pramana_spellings {
+    use super::*;
+
+    /// H6 — `every_pramana_renders_its_name` compared a value to itself.
+    ///
+    /// These four tokens are what an author writes as `via=` and what a packet prints;
+    /// pinning them to literals is the only thing that notices one changing.
+    #[test]
+    fn every_pramana_token_is_pinned_to_its_published_literal() {
+        for (p, spelling) in [
+            (Pramana::Perception, "perception"),
+            (Pramana::Inference, "inference"),
+            (Pramana::Comparison, "comparison"),
+            (Pramana::Testimony, "testimony"),
+        ] {
+            assert_eq!(
+                p.as_str(),
+                spelling,
+                "the published `via=` token changed — every vault in the field writes \
+the old one"
+            );
         }
     }
 }

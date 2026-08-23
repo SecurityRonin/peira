@@ -67,30 +67,6 @@ impl fmt::Display for VaultError {
 
 impl std::error::Error for VaultError {}
 
-/// Edge-bearing frontmatter keys, and the edge each produces.
-const EDGE_KEYS: &[EdgeKind] = &[
-    EdgeKind::Supports,
-    EdgeKind::Contradicts,
-    EdgeKind::Limits,
-    EdgeKind::Duplicates,
-    EdgeKind::DependsOn,
-    EdgeKind::Supersedes,
-    EdgeKind::Retracts,
-    EdgeKind::IsA,
-    EdgeKind::HasA,
-    EdgeKind::InstanceOf,
-    EdgeKind::PartOf,
-    EdgeKind::SubstanceOf,
-    EdgeKind::FunctionOf,
-    EdgeKind::Negates,
-    EdgeKind::Sublates,
-    EdgeKind::Attacks,
-    EdgeKind::JudgedBy,
-    EdgeKind::UsesTerm,
-    EdgeKind::Examines,
-    EdgeKind::MeasuredBy,
-];
-
 /// Parse `id grade=G2 by=albert via=perception` into an edge.
 ///
 /// The inline form keeps a graded edge on one line in the source note, which is
@@ -239,7 +215,7 @@ pub fn load(root: &Path) -> Result<Graph, VaultError> {
         }
         seen.push((node.id.clone(), path.clone()));
 
-        for kind in EDGE_KEYS {
+        for kind in EdgeKind::ALL {
             for spec in node.field_list(kind.as_str()) {
                 graph.insert_edge(edge_from_spec(&node.id, spec, *kind));
             }

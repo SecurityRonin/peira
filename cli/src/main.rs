@@ -689,7 +689,8 @@ supports: [\"riv grade=G2 by=a-reviewer via=perception\"]\n---\n",
     /// test follows the function every time.
     #[test]
     fn cmd_status_exits_non_zero_on_a_defeated_claim() {
-        let dir = std::env::temp_dir().join("peira-cmd-status-exit-test");
+        let dir =
+            std::env::temp_dir().join(format!("peira-cmd-status-exit-test-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&dir);
         std::fs::create_dir_all(dir.join("70-inquiry")).expect("scratch vault");
         let write = |name: &str, body: &str| {
@@ -766,7 +767,8 @@ stipulated: c\n---\n",
     /// prove those are distinguishable.
     #[test]
     fn an_empty_vault_is_not_a_clean_one() {
-        let dir = std::env::temp_dir().join("peira-empty-vault-test");
+        let dir =
+            std::env::temp_dir().join(format!("peira-empty-vault-test-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&dir);
         std::fs::create_dir_all(&dir).expect("scratch dir");
         let err = load(&dir).expect_err("a vault with no nodes examined nothing");

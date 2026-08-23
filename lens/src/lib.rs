@@ -528,7 +528,9 @@ dismissed.",
 hypothesis without asking what it rules out",
         operation: "an explanation above the association rung must name something it was \
 tested against; diagnosticity is TRAIRUPYA's half of the same rule",
-        applies_to: ARGUMENTS,
+        // No kind list: `examine` applies one BEFORE the gate, so it is an evasion by
+        // relabelling. `rivals_enumerated` scopes itself through `under_promotion`.
+        applies_to: &[],
         gates: &[Gate {
             code: gates::RIVALS_UNENUMERATED,
             check: gates::rivals_enumerated,
@@ -899,6 +901,33 @@ causal_rung: counterfactual\n---\n",
 reaching the caller were: {:?}",
             found.iter().map(|v| v.gate).collect::<Vec<_>>()
         );
+    }
+
+    /// H5 — the relabelling evasion is closed for EVERY gate-owning lens, not one.
+    ///
+    /// `Lens::examine` applies `applies_to` BEFORE the gate runs, so a static kind list
+    /// on a gate-owning lens means relabelling a load-bearing claim `type: observation`
+    /// strips the obligation entirely. That was found on TIYONG and fixed there, and
+    /// the regression test was written for TIYONG alone — restoring `ARGUMENTS` on
+    /// CATUSKOTI passed the whole suite. The rule is a property of the catalogue, so
+    /// it is asserted over the catalogue.
+    ///
+    /// A gateless lens may carry a kind list: it scopes documentation, not enforcement.
+    #[test]
+    fn no_gate_owning_lens_scopes_itself_by_node_kind() {
+        for l in CATALOG {
+            if l.gates.is_empty() {
+                continue;
+            }
+            assert!(
+                l.applies_to.is_empty(),
+                "{} owns gates and lists node kinds {:?}; `examine` applies that list \
+before the gate, so relabelling the node evades every one of them. Scope inside the \
+gate instead — `under_promotion` is the shared predicate.",
+                l.id,
+                l.applies_to
+            );
+        }
     }
 
     /// 九句因 — the wheel is the truth table inside the gate, not a lens of its own.

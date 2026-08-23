@@ -281,7 +281,10 @@ mod tests {
             )
             .expect("fixture parses"),
         );
-        let path = std::env::temp_dir().join("peira-index-ordering.sqlite");
+        let path = std::env::temp_dir().join(format!(
+            "peira-index-ordering-{}.sqlite",
+            std::process::id()
+        ));
         let _ = std::fs::remove_file(&path);
         build(&g, &path).expect("index builds");
         let conn = Connection::open(&path).expect("opens");
@@ -329,9 +332,47 @@ would satisfy the assertion above and this one catches it"
         );
     }
 
+    /// H7 — the violations table is documented as "claims blocked by at least one
+    /// gate", and the lint pack is half of what blocks. Dropping
+    /// `.chain(lints::lint(graph))` from `build` lost every lint finding from the
+    /// table with the whole suite green, because every index test was satisfied by
+    /// gate findings alone.
+    ///
+    /// Asserted against the BUILT DATABASE, never by re-evaluating the same chain
+    /// expression here — a test that reuses the implementation's own predicate cannot
+    /// detect a defect in it, which is how the first version of this test was wrong.
+    #[test]
+    fn the_violations_table_carries_lint_findings_not_only_gate_findings() {
+        let path = std::env::temp_dir().join(format!(
+            "peira-index-lints-in-table-{}.sqlite",
+            std::process::id()
+        ));
+        let _ = std::fs::remove_file(&path);
+        let graph = vault("overclaim");
+        build(&graph, &path).expect("index builds");
+        let conn = Connection::open(&path).expect("opens");
+
+        let n: i64 = conn
+            .query_row(
+                "SELECT COUNT(*) FROM violations WHERE gate LIKE 'PEIR-LINT-%'",
+                [],
+                |r| r.get(0),
+            )
+            .expect("counts");
+        assert!(
+            n > 0,
+            "the built index holds no lint findings — the lint pack is unwired from \
+`build`, and the table documented as what blocks a claim is showing gates alone"
+        );
+        let _ = std::fs::remove_file(&path);
+    }
+
     #[test]
     fn rebuilding_over_an_existing_index_replaces_rather_than_accumulates() {
-        let path = std::env::temp_dir().join("peira-index-test-rebuild.sqlite");
+        let path = std::env::temp_dir().join(format!(
+            "peira-index-test-rebuild-{}.sqlite",
+            std::process::id()
+        ));
         let _ = std::fs::remove_file(&path);
         let graph = vault("bounded");
 

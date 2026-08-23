@@ -170,3 +170,72 @@ pramana: perception\nsupports: [\"c-bounded grade=G2 by=albert via=perception\"]
         "changing cited evidence under a frozen packet must break it"
     );
 }
+
+/// H2 — `peira verify` is EXECUTED, not just its library flag inspected.
+///
+/// `a_proved_format_edit_says_so` asserts on `Verification::DigestMismatch`'s
+/// `format_line_only` flag, which the library sets correctly. Nothing anywhere ran the
+/// binary, so neutering `if format_line_only` in `cmd_verify` reintroduced the
+/// documented "proof computed and dropped in transit" defect with the whole suite and
+/// all three controls green — the fix written to close that defect was itself
+/// unguarded at the only layer a user sees.
+///
+/// Both branches return the same exit code, so the exit code cannot separate them.
+/// The claim lives in stdout, so stdout is what is asserted.
+#[test]
+fn the_binary_names_a_format_line_edit_as_an_edit() {
+    use std::process::Command;
+
+    let bin = env!("CARGO_BIN_EXE_peira");
+    let root = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .parent()
+        .expect("workspace root")
+        .join("tests/vaults/bounded");
+    let out = std::env::temp_dir().join(format!("peira-h2-packet-{}.md", std::process::id()));
+    let _ = std::fs::remove_file(&out);
+
+    let froze = Command::new(bin)
+        .args(["packet", root.to_str().expect("utf-8"), "c-bounded"])
+        .arg("--out")
+        .arg(&out)
+        .output()
+        .expect("the binary runs");
+    assert!(
+        froze.status.success(),
+        "control: the bounded claim must freeze, or this test measures grooming — {}",
+        String::from_utf8_lossy(&froze.stderr)
+    );
+
+    let body = std::fs::read_to_string(&out).expect("the packet was written");
+    let line = body
+        .lines()
+        .find(|l| l.contains("Packet format:"))
+        .expect("the packet declares its format");
+    let bumped = line
+        .rsplit_once(char::is_whitespace)
+        .map(|(head, n)| {
+            format!(
+                "{head} {}",
+                n.parse::<u32>().expect("the format is a number") + 1
+            )
+        })
+        .expect("the format line ends in its number");
+    std::fs::write(&out, body.replace(line, &bumped)).expect("hand-edit the format line");
+
+    let verified = Command::new(bin)
+        .args([
+            "verify",
+            root.to_str().expect("utf-8"),
+            out.to_str().expect("utf-8"),
+        ])
+        .output()
+        .expect("the binary runs");
+    let said = String::from_utf8_lossy(&verified.stdout);
+    let _ = std::fs::remove_file(&out);
+
+    assert!(
+        said.contains("was EDITED"),
+        "the tool PROVED the format number is the sole difference and then printed the \
+generic \"the record has changed\" exculpation over it. stdout was:\n{said}"
+    );
+}

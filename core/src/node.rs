@@ -429,6 +429,42 @@ pub fn parse_node(source: &str) -> Result<Node, ParseError> {
 }
 
 #[cfg(test)]
+mod published_spellings {
+    use super::*;
+
+    /// H6 — a round trip cannot pin a spelling.
+    ///
+    /// `every_node_kind_round_trips_through_its_frontmatter_spelling` parses back what
+    /// it just rendered, so misspelling a token in BOTH directions leaves it green:
+    /// `type: quesiton` becomes the published grammar and every vault in the field
+    /// stops loading. The token is an interface, so it is pinned to a literal.
+    #[test]
+    fn every_node_kind_token_is_pinned_to_its_published_literal() {
+        for (kind, spelling) in [
+            (NodeKind::Question, "question"),
+            (NodeKind::Hypothesis, "hypothesis"),
+            (NodeKind::Claim, "claim"),
+            (NodeKind::Observation, "observation"),
+            (NodeKind::Term, "term"),
+            (NodeKind::Criterion, "criterion"),
+            (NodeKind::Protocol, "protocol"),
+            (NodeKind::Run, "run"),
+            (NodeKind::Examination, "examination"),
+            (NodeKind::Instrument, "instrument"),
+            (NodeKind::Dissent, "dissent"),
+            (NodeKind::Packet, "packet"),
+        ] {
+            assert_eq!(
+                kind.as_str(),
+                spelling,
+                "the published `type:` token changed — every vault in the field writes \
+the old one"
+            );
+        }
+    }
+}
+
+#[cfg(test)]
 mod tests {
     use super::*;
 

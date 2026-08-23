@@ -2068,6 +2068,38 @@ silent about it:\n{}",
 trust:\n{}",
             p.body
         );
+
+        // H8/round 8 — THE "BY" WAS UNTESTED. Every node in the fixture above was
+        // authored by the credited grader, so deleting the `author ==` filter
+        // attributed withdrawn work correctly by accident and stayed green. What that
+        // filter prevents is a FALSE STATEMENT ABOUT A NAMED PERSON in a court
+        // artifact, so the fixture must contain withdrawn work by someone else.
+        g.insert_node(node(
+            "---\nid: c8\ntype: claim\ntitle: A withdrawn finding by a DIFFERENT hand\n\
+author: someone-else\n---\n",
+        ));
+        g.insert_node(node(
+            "---\nid: d8\ntype: dissent\ntitle: that one was withdrawn too\n---\n",
+        ));
+        g.insert_edge(Edge::new(
+            NodeId::new("d8"),
+            NodeId::new("c8"),
+            EdgeKind::Retracts,
+        ));
+
+        let p = freeze(&g, &NodeId::new("c1")).expect("the subject still freezes");
+        assert!(
+            p.body.contains("c9"),
+            "the credited grader's own withdrawn work must still be named:\n{}",
+            p.body
+        );
+        assert!(
+            !p.body.contains("c8"),
+            "c8 was withdrawn by a DIFFERENT author and must not be laid at the \
+credited grader's door — this packet makes a false statement about a named \
+person:\n{}",
+            p.body
+        );
     }
 
     /// The proof that an edit happened must reach the caller that reports it.
