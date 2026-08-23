@@ -16,7 +16,7 @@
 //! out of the grounded extension and why* are SQL rather than a re-scan.
 
 use peira_core::{Graph, NodeId};
-use peira_lens::{examine_graph, lints};
+use peira_lens::examine_graph;
 use rusqlite::{params, Connection};
 use std::path::Path;
 
@@ -146,7 +146,10 @@ fn write_derived(tx: &rusqlite::Transaction<'_>, graph: &Graph) -> rusqlite::Res
             "INSERT INTO violations (gate, lens, subject, detail, remedy)
              VALUES (?1, ?2, ?3, ?4, ?5)",
         )?;
-        for v in examine_graph(graph).into_iter().chain(lints::lint(graph)) {
+        for v in examine_graph(graph)
+            .into_iter()
+            .chain(peira_court::all_findings(graph))
+        {
             viol_stmt.execute(params![
                 v.gate,
                 v.lens,
@@ -363,6 +366,40 @@ would satisfy the assertion above and this one catches it"
             n > 0,
             "the built index holds no lint findings — the lint pack is unwired from \
 `build`, and the table documented as what blocks a claim is showing gates alone"
+        );
+        let _ = std::fs::remove_file(&path);
+    }
+
+    /// E3 — the index must ask the SAME question the CLI does about what blocks.
+    ///
+    /// The violations table is documented as "claims blocked by at least one gate".
+    /// It was built from `examine_graph + lints::lint` while the CLI additionally
+    /// consolidated what a packet would SEAL — the node-level pack skips a term's
+    /// moments, and a packet quotes them verbatim. Two implementations of one
+    /// question, and the derived index held the narrower one.
+    ///
+    /// Asserted as a count against `court::all_findings`, because the extra finding
+    /// shares a gate and subject with one the node pack already raises and differs
+    /// only in its detail — a set comparison on gate+subject would not have seen it.
+    #[test]
+    fn the_violations_table_asks_the_same_question_the_cli_does() {
+        let path = std::env::temp_dir().join(format!(
+            "peira-index-same-question-{}.sqlite",
+            std::process::id()
+        ));
+        let _ = std::fs::remove_file(&path);
+        let graph = vault("overclaim");
+        build(&graph, &path).expect("index builds");
+        let conn = Connection::open(&path).expect("opens");
+
+        let rows: i64 = conn
+            .query_row("SELECT COUNT(*) FROM violations", [], |r| r.get(0))
+            .expect("counts");
+        let expected = examine_graph(&graph).len() + peira_court::all_findings(&graph).len();
+        assert_eq!(
+            rows as usize, expected,
+            "the index's violations table has drifted from what the CLI reports as \
+blocking — it is re-deriving a narrower question"
         );
         let _ = std::fs::remove_file(&path);
     }

@@ -539,7 +539,15 @@ fn provenance_section(graph: &Graph, id: &NodeId) -> String {
         .filter_map(|who| {
             let mut retired: Vec<&str> = graph
                 .nodes()
-                .filter(|n| n.field("author") == Some(who.as_str()))
+                // Case-insensitively, and trimmed. Both sides are free strings a
+                // human typed — `author: Albert` against `by=albert` is one person,
+                // and letting a capital decide whether the packet discloses withdrawn
+                // work makes the disclosure a matter of typing. The join stays a
+                // string join, which the Provenance section already says it is.
+                .filter(|n| {
+                    n.field("author")
+                        .is_some_and(|a| a.trim().eq_ignore_ascii_case(who.trim()))
+                })
                 .filter(|n| withdrawn.contains(&n.id))
                 .map(|n| n.id.as_str())
                 .collect();
@@ -765,6 +773,33 @@ pub fn sealed_prose_findings(graph: &Graph, id: &NodeId) -> Vec<Violation> {
     render_body(graph, id).map_or_else(Vec::new, |body| {
         lints::prose_findings_in(&asserted_text(&body), id)
     })
+}
+
+/// Every deterministic finding over a vault: the node-level lint pack, plus what a
+/// packet would SEAL.
+///
+/// One implementation, because two drift. The node-level pack deliberately skips a
+/// term's moments — mention is not use — but a packet quotes them verbatim, so a
+/// vault could hold an overstatement that `peira lint` reported and the derived index
+/// did not, in the table documented as what blocks a claim. This consolidation lived
+/// in the CLI alone and the index re-derived a narrower question beside it.
+#[must_use]
+pub fn all_findings(graph: &Graph) -> Vec<Violation> {
+    let mut found = lints::lint(graph);
+    for n in graph.nodes().filter(|n| n.kind == NodeKind::Claim) {
+        for v in sealed_prose_findings(graph, &n.id) {
+            // Dedup by SUBJECT too: ignoring it suppressed the second claim sealing the
+            // same overstated word, hiding a finding because another node happened to
+            // have the same problem first.
+            if !found
+                .iter()
+                .any(|f| f.gate == v.gate && f.subject == v.subject && f.detail == v.detail)
+            {
+                found.push(v);
+            }
+        }
+    }
+    found
 }
 
 /// Everything standing in the way of freezing a packet for `id`.
@@ -2098,6 +2133,35 @@ author: someone-else\n---\n",
             "c8 was withdrawn by a DIFFERENT author and must not be laid at the \
 credited grader's door — this packet makes a false statement about a named \
 person:\n{}",
+            p.body
+        );
+    }
+
+    /// G1 — a capital letter must not decide whether a disclosure appears.
+    ///
+    /// `by=` and `author:` are both free strings a human typed. Joining them
+    /// case-sensitively meant `author: Albert` against `by=albert` silently suppressed
+    /// the withdrawn-work disclosure — the packet stayed silent about the record, and
+    /// nothing anywhere said why.
+    #[test]
+    fn the_withdrawn_work_disclosure_survives_a_difference_of_case() {
+        let mut g = clean_graph();
+        // The clean fixture credits `a-reviewer`; the author line differs only in case.
+        g.insert_node(node(
+            "---\nid: c9\ntype: claim\ntitle: an earlier finding\nauthor: A-Reviewer\n---\n",
+        ));
+        g.insert_node(node("---\nid: d9\ntype: dissent\ntitle: withdrawn\n---\n"));
+        g.insert_edge(Edge::new(
+            NodeId::new("d9"),
+            NodeId::new("c9"),
+            EdgeKind::Retracts,
+        ));
+
+        let p = freeze(&g, &NodeId::new("c1")).expect("the subject still freezes");
+        assert!(
+            p.body.contains("c9"),
+            "`author: A-Reviewer` and `by=a-reviewer` name one person; a capital \
+letter suppressed the disclosure:\n{}",
             p.body
         );
     }

@@ -1424,8 +1424,17 @@ fn orphan_claims(graph: &Graph, node: &Node) -> Vec<Violation> {
         ORPHAN_CLAIM,
         &node.id,
         format!("\"{}\" has no supporting evidence", node.title),
-        "attach an observation, a run, or another claim — or record it as a hypothesis \
-until something supports it",
+        if node.kind == NodeKind::Hypothesis {
+            // It already IS one. The falsifier gate's own remedy is to record a
+            // defeater as an attacking node, and that node arrives here unsupported —
+            // so the tool told the author to write something it then told them to
+            // relabel as what they had written.
+            "attach an observation or a run — an unsupported defeater is a lead, and a \
+lead cannot defeat anything until something stands behind it"
+        } else {
+            "attach an observation, a run, or another claim — or record it as a \
+hypothesis until something supports it"
+        },
     )]
 }
 
@@ -1880,8 +1889,8 @@ fn false_independence(graph: &Graph, node: &Node) -> Vec<Violation> {
                     FALSE_INDEPENDENCE,
                     &node.id,
                     format!(
-                        "`{a}` and `{b}` both support \"{}\", and both were measured by {names} \
-— one instrument is one line of evidence, not two",
+                        "`{a}` and `{b}` both support \"{}\", and {names} lies in both \
+their instrument lineages — one instrument is one line of evidence, not two",
                         node.title
                     ),
                     "cite them as a single line, or corroborate with evidence from an \
@@ -4117,6 +4126,88 @@ would punish the discipline this lint teaches"
         assert_eq!(codes(&found), vec![FALSE_INDEPENDENCE]);
         assert!(found[0].detail.contains("p1"), "{}", found[0].detail);
         assert!(found[0].detail.contains("p2"), "{}", found[0].detail);
+    }
+
+    /// C4 — the tool must not tell a hypothesis to become a hypothesis.
+    ///
+    /// PREMORTEM's remedy is to record a defeater as a node that attacks the claim.
+    /// That node arrives unsupported, ORPHAN-CLAIM fires on it, and the remedy read
+    /// "record it as a hypothesis until something supports it" — which it already was.
+    /// One gate's advice drew another gate's finding, whose advice was to do what had
+    /// just been done.
+    #[test]
+    fn an_unsupported_defeater_is_not_told_to_become_what_it_is() {
+        let mut g = Graph::new();
+        g.insert_node(
+            parse_node("---\nid: c1\ntype: claim\ntitle: a claim\n---\n").expect("parses"),
+        );
+        g.insert_node(
+            parse_node("---\nid: h1\ntype: hypothesis\ntitle: the entry predates the file\n---\n")
+                .expect("parses"),
+        );
+        // The edge explicitly: `parse_node` reads frontmatter, the VAULT LOADER is what
+        // turns `attacks: [c1]` into an edge. Writing the key here and expecting the
+        // edge builds a graph production never produces.
+        g.insert_edge(Edge::new(
+            NodeId::new("h1"),
+            NodeId::new("c1"),
+            EdgeKind::Attacks,
+        ));
+        let v = lint(&g)
+            .into_iter()
+            .find(|v| v.gate == ORPHAN_CLAIM && v.subject == NodeId::new("h1"))
+            .expect("an unsupported defeater is flagged");
+        assert!(
+            !v.remedy.contains("record it as a hypothesis"),
+            "the remedy tells a hypothesis to become a hypothesis: {}",
+            v.remedy
+        );
+    }
+
+    /// G2 — a shared instrument ANCESTOR is not a shared measurement.
+    ///
+    /// `instruments_of` walks the lineage, so the finding correctly fires when two
+    /// supporters rest on tools sharing an upstream. The sentence said "both were
+    /// measured by lib" — a false statement about an instrument that measured neither.
+    #[test]
+    fn a_shared_ancestor_is_reported_as_lineage_not_as_measurement() {
+        let mut g = Graph::new();
+        for src in [
+            "---\nid: c1\ntype: claim\ntitle: a claim\n---\n",
+            "---\nid: o1\ntype: observation\ntitle: reading one\n---\n",
+            "---\nid: o2\ntype: observation\ntitle: reading two\n---\n",
+            "---\nid: t1\ntype: instrument\ntitle: tool one\n---\n",
+            "---\nid: t2\ntype: instrument\ntitle: tool two\n---\n",
+            "---\nid: lib\ntype: instrument\ntitle: the shared parser\n---\n",
+        ] {
+            g.insert_node(parse_node(src).expect("parses"));
+        }
+        for (f, t, k) in [
+            ("o1", "c1", EdgeKind::Supports),
+            ("o2", "c1", EdgeKind::Supports),
+            ("o1", "t1", EdgeKind::MeasuredBy),
+            ("o2", "t2", EdgeKind::MeasuredBy),
+            // lib measured NEITHER observation; both tools rest on it.
+            ("t1", "lib", EdgeKind::DependsOn),
+            ("t2", "lib", EdgeKind::DependsOn),
+        ] {
+            g.insert_edge(Edge::new(NodeId::new(f), NodeId::new(t), k));
+        }
+        let v = lint(&g)
+            .into_iter()
+            .find(|v| v.gate == FALSE_INDEPENDENCE)
+            .expect("a shared lineage is one line of evidence");
+        assert!(
+            v.detail.contains("lib"),
+            "the shared layer must be named: {}",
+            v.detail
+        );
+        assert!(
+            !v.detail.contains("were measured by"),
+            "`lib` measured neither observation — reporting it as a measurement is a \
+false statement about the instrument: {}",
+            v.detail
+        );
     }
 
     #[test]

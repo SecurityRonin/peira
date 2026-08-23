@@ -6,9 +6,9 @@
 //! nodes and edges all day and never assert that anything is accepted.
 
 use clap::{Parser, Subcommand};
-use peira_core::{Graph, NodeId, NodeKind};
+use peira_core::{Graph, NodeId};
 use peira_court::Verification;
-use peira_lens::{examine_graph, lints, Violation, CATALOG};
+use peira_lens::{examine_graph, Violation, CATALOG};
 use std::{
     path::{Path, PathBuf},
     process::ExitCode,
@@ -547,25 +547,9 @@ fn run() -> Result<u8, String> {
         Command::Index { vault, out } => cmd_index(&vault, &out),
         Command::Lint { vault } => {
             let graph = load(&vault)?;
-            // AND what a packet would seal. The node-level pack deliberately skips a
-            // term's moments — mention is not use — but a packet quotes them verbatim,
-            // so `peira lint` reported nothing over a term `peira packet` refused. The
-            // command an author runs to FIND problems was silent about the one they had.
-            let mut found = lints::lint(&graph);
-            for n in graph.nodes().filter(|n| n.kind == NodeKind::Claim) {
-                for v in peira_court::sealed_prose_findings(&graph, &n.id) {
-                    if !found
-                        .iter()
-                        // Dedup by SUBJECT too. Ignoring it suppressed the second
-                        // claim sealing the same overstated word, while `status` and
-                        // `packet` both blocked it — a finding hidden because another
-                        // node happened to have the same problem first.
-                        .any(|f| f.gate == v.gate && f.subject == v.subject && f.detail == v.detail)
-                    {
-                        found.push(v);
-                    }
-                }
-            }
+            // AND what a packet would seal — `all_findings` is the one
+            // implementation, shared with the derived index.
+            let found = peira_court::all_findings(&graph);
             Ok(report(&found, "lint"))
         }
         Command::Gates { vault, node } => cmd_gates(&vault, node),

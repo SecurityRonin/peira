@@ -459,6 +459,7 @@ name = "peira-index"
 version = "0.1.0"
 dependencies = [
  "peira-core",
+ "peira-court",
  "peira-lens",
  "rusqlite",
 ]
