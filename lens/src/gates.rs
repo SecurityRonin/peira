@@ -692,7 +692,72 @@ or as a node that attacks it",
 /// 因三相, third characteristic (異品遍無性): evidence must be absent where the claim
 /// is false. Its structural limiting case — every supporter shared with a live rival —
 /// is 共不定 (sādhāraṇa-anaikāntika), and needs no declaration to detect.
-fn hetu_undiagnostic(_graph: &Graph, _node: &Node) -> GateResult {
+pub fn hetu_undiagnostic(graph: &Graph, node: &Node) -> GateResult {
+    if !under_promotion(graph, node) {
+        return GateResult::NotApplicable;
+    }
+    // An unsupported node is the orphan lint's business. Reporting it here as
+    // undiagnostic would blame the author for evidence they have not filed yet.
+    let supp = supporters(graph, node);
+    if supp.is_empty() {
+        return GateResult::NotApplicable;
+    }
+
+    // Rivalry is symmetric — whichever way the author happened to draw the edge, the
+    // two nodes are contesting the same ground. `live_attacks_on` is asked in both
+    // directions rather than reimplemented, so the withdrawn-attacker and
+    // reference-material rules are inherited rather than forgotten.
+    let rivals: Vec<&Node> = graph
+        .nodes()
+        .filter(|r| r.id != node.id)
+        .filter(|r| {
+            graph.live_attacks_on(&node.id).any(|e| e.from == r.id)
+                || graph.live_attacks_on(&r.id).any(|e| e.from == node.id)
+        })
+        .collect();
+    // 異品遍無性 presupposes a 異品. An uncontested claim owes this gate nothing —
+    // and scoring a thin hypothesis set as diagnosticity is exactly the error the
+    // Heuer entry warns against.
+    if rivals.is_empty() {
+        return GateResult::NotApplicable;
+    }
+
+    for rival in rivals {
+        // ALL, never ANY. Background evidence legitimately supports both sides of a
+        // contest — "the file was present" is consistent with install and with
+        // execution — and blocking on one shared line would refuse the vault an
+        // expert is obliged to build. One uncommon supporter is what decides a
+        // contest, and its presence is the pass.
+        //
+        // Direct edges only. A supporter reaching the rival down a chain is a weaker
+        // relation, and sweeping it in would import the drift `carries_weight`
+        // documents. Stated as a limit rather than hidden.
+        let all_shared = supp.iter().all(|s| {
+            graph
+                .edges_from(&s.id)
+                .any(|e| e.kind == EdgeKind::Supports && e.to == rival.id)
+        });
+        if all_shared {
+            let shared = supp
+                .iter()
+                .map(|s| s.id.as_str())
+                .collect::<Vec<_>>()
+                .join(", ");
+            return block(
+                HETU_UNDIAGNOSTIC,
+                "TRAIRUPYA",
+                node,
+                format!(
+                    "every line of support under \"{}\" ({shared}) also supports its \
+live rival \"{}\" — evidence standing in the same relation to both sides of a contest \
+discriminates neither (共不定)",
+                    node.title, rival.title
+                ),
+                "record the line of evidence that distinguishes this claim from its \
+rival, or state in the packet that the evidence held does not decide the contest",
+            );
+        }
+    }
     GateResult::Pass
 }
 
@@ -707,7 +772,7 @@ mod tests {
 
     /// 共不定: support a rival claims just as loudly decides nothing.
     ///
-    /// The Amcache InventoryApplicationFile entry is written by the compatibility
+    /// The Amcache `InventoryApplicationFile` entry is written by the compatibility
     /// appraiser for binaries that were inventoried and never run, so it stands in
     /// exactly the same relation to "it executed" and to "it was catalogued". A vault
     /// whose entire case rests on it has not argued for either side.
@@ -724,9 +789,21 @@ mod tests {
             g.insert_node(node(
                 "---\nid: o1\ntype: observation\ntitle: InventoryApplicationFile entry\n---\n",
             ));
-            g.insert_edge(Edge::new(NodeId::new("r1"), NodeId::new("c1"), EdgeKind::Attacks));
-            g.insert_edge(Edge::new(NodeId::new("o1"), NodeId::new("c1"), EdgeKind::Supports));
-            g.insert_edge(Edge::new(NodeId::new("o1"), NodeId::new("r1"), EdgeKind::Supports));
+            g.insert_edge(Edge::new(
+                NodeId::new("r1"),
+                NodeId::new("c1"),
+                EdgeKind::Attacks,
+            ));
+            g.insert_edge(Edge::new(
+                NodeId::new("o1"),
+                NodeId::new("c1"),
+                EdgeKind::Supports,
+            ));
+            g.insert_edge(Edge::new(
+                NodeId::new("o1"),
+                NodeId::new("r1"),
+                EdgeKind::Supports,
+            ));
             if discriminating {
                 g.insert_node(node(
                     "---\nid: o2\ntype: observation\ntitle: Prefetch .pf, run counter 3\n---\n",

@@ -35,7 +35,7 @@ pub enum Tradition {
     Chinese,
     /// Indian — Nyāya, and the wider pramāṇa epistemology.
     Indian,
-    /// Buddhist — Madhyamaka, 金剛經, 二諦.
+    /// Buddhist — Madhyamaka, 金剛經, 二諦, and Dignāgan 因明/pramāṇavāda.
     Buddhist,
     /// Jewish — Talmudic machloket and the preservation of minority opinion.
     Jewish,
@@ -667,6 +667,32 @@ A claim with no answer is not yet a claim.",
         phase: Phase::Enforced,
     },
     Lens {
+        id: "TRAIRUPYA",
+        name: "因三相 — The Three Characteristics of a Valid Reason",
+        tradition: Tradition::Buddhist,
+        failure_mode: "a reason that also holds where the claim is false, so it proves nothing \
+while looking like proof",
+        operation: "support common to every side of a live contest carries no weight for any of \
+them",
+        applies_to: &[],
+        gates: &[Gate {
+            code: gates::HETU_UNDIAGNOSTIC,
+            check: gates::hetu_undiagnostic,
+        }],
+        worked_example: "An Amcache InventoryApplicationFile entry supports \"the user ran it\" \
+and \"the appraiser catalogued it, unrun\" equally, because the appraiser writes one either way. \
+A case resting on it alone has argued for neither side — 共不定, cell 1 of the 九句因. One \
+Prefetch .pf with a run counter decides the contest, and passes the gate.",
+        sources: &[
+            "商羯羅主《因明入正理論》玄奘譯 (647), T32n1630: 「因有三相…謂遍是宗法性、同品定有性、異品遍無性」",
+            "陳那 Dignāga, 《因明正理門論本》玄奘譯, T32n1628",
+            "Dharmakīrti, Nyāyabindu II.5–7; tr. Th. Stcherbatsky, Buddhist Logic vol. II (1930)",
+            "R. Hayes, Dignāga on the Interpretation of Signs (Kluwer 1988), ch. 4",
+            "https://plato.stanford.edu/entries/logic-india/",
+        ],
+        phase: Phase::Enforced,
+    },
+    Lens {
         id: "ERDI",
         name: "二諦 — The Two Truths, and Court Mode",
         tradition: Tradition::Buddhist,
@@ -710,6 +736,48 @@ mod meta_tests {
 
     use super::*;
     use std::collections::BTreeSet;
+
+    /// The 共不定 verdict must survive the trip to the caller.
+    ///
+    /// A gate is not enforced because its predicate is correct; it is enforced when the
+    /// aggregator carries its verdict out. This crate has shipped a rule whose only
+    /// callers were tests, so the assertion is made THROUGH `examine_graph` — unwiring
+    /// the catalogue entry must turn this red.
+    #[test]
+    fn undiagnostic_support_reaches_the_caller() {
+        use peira_core::{parse_node, Edge, EdgeKind, NodeId};
+        let mut g = Graph::new();
+        for src in [
+            "---\nid: c1\ntype: claim\ntitle: The user executed coreupdater.exe\n---\n",
+            "---\nid: r1\ntype: claim\ntitle: The appraiser catalogued it, unrun\n---\n",
+            "---\nid: o1\ntype: observation\ntitle: InventoryApplicationFile entry\n---\n",
+        ] {
+            g.insert_node(parse_node(src).expect("fixture parses"));
+        }
+        g.insert_edge(Edge::new(
+            NodeId::new("r1"),
+            NodeId::new("c1"),
+            EdgeKind::Attacks,
+        ));
+        g.insert_edge(Edge::new(
+            NodeId::new("o1"),
+            NodeId::new("c1"),
+            EdgeKind::Supports,
+        ));
+        g.insert_edge(Edge::new(
+            NodeId::new("o1"),
+            NodeId::new("r1"),
+            EdgeKind::Supports,
+        ));
+
+        let found = examine_graph(&g);
+        assert!(
+            found.iter().any(|v| v.gate == gates::HETU_UNDIAGNOSTIC),
+            "共不定 was computed and then discarded in transit; violations reaching the \
+caller were: {:?}",
+            found.iter().map(|v| v.gate).collect::<Vec<_>>()
+        );
+    }
 
     #[test]
     fn every_lens_cites_at_least_one_source() {
