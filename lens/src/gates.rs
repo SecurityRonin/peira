@@ -8,7 +8,7 @@
 //! was missing. It never returns `Pass`. Silence is not consent.
 
 use crate::{GateResult, Violation};
-use peira_core::{EdgeKind, Graph, Node, NodeKind};
+use peira_core::{EdgeKind, Graph, Node, NodeKind, Pramana};
 
 // ── Stable published gate codes ──────────────────────────────────────────────
 // These appear in Court Mode packets. A shipped code never changes meaning.
@@ -921,13 +921,57 @@ fn asserts_absence(node: &Node) -> bool {
 }
 
 /// 異品遍無性: in what known circumstances does this evidence occur WITHOUT the thing?
-pub fn vipaksa_surveyed(_graph: &Graph, _node: &Node) -> GateResult {
+pub fn vipaksa_surveyed(graph: &Graph, node: &Node) -> GateResult {
+    if !under_promotion(graph, node) || !rests_on_inference(graph, node) {
+        return GateResult::NotApplicable;
+    }
+    if node.field_list("vipaksa").is_empty() {
+        return GateResult::Unassessed {
+            why: format!(
+                "\"{}\" rests on inference and never surveyed the dissimilar cases — in \
+what known circumstances does this kind of evidence occur WITHOUT the thing inferred?",
+                node.title
+            ),
+        };
+    }
     GateResult::Pass
 }
 
 /// 同品定有性: has anyone ever seen this reason and this property co-occur?
-pub fn sapaksa_declared(_graph: &Graph, _node: &Node) -> GateResult {
+pub fn sapaksa_declared(graph: &Graph, node: &Node) -> GateResult {
+    if !under_promotion(graph, node) || !rests_on_inference(graph, node) {
+        return GateResult::NotApplicable;
+    }
+    if node.field_list("sapaksa").is_empty() {
+        return GateResult::Unassessed {
+            why: format!(
+                "\"{}\" rests on inference and cites no case where the reason and the \
+thing inferred were both known to hold — a rule nobody has ever seen hold is not a rule yet",
+                node.title
+            ),
+        };
+    }
     GateResult::Pass
+}
+
+/// Whether any line of evidence under `node` declares itself an inference.
+///
+/// Trairūpya is the theory of anumāna and of nothing else: perception needs no
+/// vipakṣa, and demanding one from a claim resting on `via=perception` would be the
+/// checker refusing a sentence it has no doctrine against.
+///
+/// Both directions, per the pramāṇa-ceiling precedent — the edge that makes a node
+/// load-bearing can point either way, and this codebase has missed that twice.
+fn rests_on_inference(graph: &Graph, node: &Node) -> bool {
+    graph
+        .edges_to(&node.id)
+        .filter(|e| e.kind == EdgeKind::Supports)
+        .chain(
+            graph
+                .edges_from(&node.id)
+                .filter(|e| e.kind == EdgeKind::DependsOn),
+        )
+        .any(|e| e.pramana == Some(Pramana::Inference))
 }
 
 #[cfg(test)]
@@ -985,7 +1029,10 @@ the entry is present anyway\n",
         );
         let (v, sa) = build(Pramana::Inference, surveyed);
         assert!(matches!(v, GateResult::Pass), "control: a survey exists");
-        assert!(matches!(sa, GateResult::Pass), "control: an instance is cited");
+        assert!(
+            matches!(sa, GateResult::Pass),
+            "control: an instance is cited"
+        );
 
         // Scope control — the one that decides whether this is doctrine or ceremony.
         let (v, sa) = build(Pramana::Perception, "");

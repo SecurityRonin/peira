@@ -685,10 +685,20 @@ while looking like proof",
         operation: "support common to every side of a live contest carries no weight for any of \
 them",
         applies_to: &[],
-        gates: &[Gate {
-            code: gates::HETU_UNDIAGNOSTIC,
-            check: gates::hetu_undiagnostic,
-        }],
+        gates: &[
+            Gate {
+                code: gates::HETU_UNDIAGNOSTIC,
+                check: gates::hetu_undiagnostic,
+            },
+            Gate {
+                code: gates::VIPAKSA_UNSURVEYED,
+                check: gates::vipaksa_surveyed,
+            },
+            Gate {
+                code: gates::SAPAKSA_UNDECLARED,
+                check: gates::sapaksa_declared,
+            },
+        ],
         worked_example: "An Amcache InventoryApplicationFile entry supports \"the user ran it\" \
 and \"the appraiser catalogued it, unrun\" equally, because the appraiser writes one either way. \
 A case resting on it alone has argued for neither side — 共不定, cell 1 of the 九句因. One \
@@ -795,6 +805,42 @@ mod meta_tests {
 
     use super::*;
     use std::collections::BTreeSet;
+
+    /// Both declared characteristics must survive the trip to the caller.
+    ///
+    /// Worth stating what the fixture vaults do NOT prove here: no edge in either of
+    /// them declares `via=inference`, so `bounded` staying clean is the SCOPE control
+    /// passing — perception and testimony owe these fields nothing — and is silent on
+    /// whether the gates work. This is where that evidence lives.
+    #[test]
+    fn the_declared_characteristics_reach_the_caller() {
+        use peira_core::{parse_node, Edge, EdgeKind, NodeId, Pramana};
+        let mut g = Graph::new();
+        for src in [
+            "---\nid: c1\ntype: claim\ntitle: The binary was executed\n---\n",
+            "---\nid: o1\ntype: observation\ntitle: Amcache entry\n---\n",
+        ] {
+            g.insert_node(parse_node(src).expect("fixture parses"));
+        }
+        g.insert_edge(
+            Edge::new(NodeId::new("o1"), NodeId::new("c1"), EdgeKind::Supports)
+                .via(Pramana::Inference),
+        );
+
+        // Both reach NO VERDICT, and Unassessed is never a pass — so what must arrive
+        // is the unassessed report naming each gate, not a violation carrying its code.
+        let unassessed: Vec<String> = examine_graph(&g).iter().map(|v| v.detail.clone()).collect();
+        assert!(
+            unassessed.iter().any(|d| d.contains("dissimilar cases")),
+            "the vipakṣa survey demand was computed and then discarded in transit: {unassessed:?}"
+        );
+        assert!(
+            unassessed
+                .iter()
+                .any(|d| d.contains("not a rule yet")),
+            "the sapakṣa instance demand was computed and then discarded in transit: {unassessed:?}"
+        );
+    }
 
     /// The dṛśya restriction must survive the trip to the caller.
     #[test]

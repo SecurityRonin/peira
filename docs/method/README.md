@@ -129,6 +129,8 @@ to prevent.
 | Evidence common to both sides of a contest carries no weight | `PEIR-HETU-UNDIAGNOSTIC` (因三相, 共不定) | **enforced** ¹⁴ |
 | A causal claim names something it was tested against | `PEIR-RIVALS-UNENUMERATED` (ACH) | **enforced** ¹⁴ |
 | Absence is certified only by a search shown able to find the thing | `PEIR-ABSENCE-UNCONTROLLED` (不可得因) | **enforced, heuristic** ¹⁵ |
+| An inference surveys the cases where the thing is absent | `PEIR-VIPAKSA-UNSURVEYED` (異品遍無性) | **checked when declared** ¹⁶ |
+| An inference cites one case where its rule was seen to hold | `PEIR-SAPAKSA-UNDECLARED` (同品定有性) | **checked when declared** ¹⁶ |
 | What survives attack is computed, not asserted | grounded extension (Dung) | **enforced** |
 | A claim with no support at all is flagged | `PEIR-LINT-ORPHAN-CLAIM` | **enforced** |
 | Support must reach the world, not only more claims | `PEIR-LINT-UNGROUNDED-CHAIN` | **enforced** |
@@ -154,6 +156,16 @@ to prevent.
 | **Extraordinary claims need extraordinary evidence** | — | **not mechanised** |
 | **The prosecutor's fallacy** | — | **not mechanised** |
 | **Custody and pedigree of an observation** | — | **not mechanised** |
+¹⁶ Triggered by an evidence edge declaring `via=inference`, because trairūpya is the theory of
+anumāna and of nothing else — a claim resting on perception owes neither field, and demanding one
+would be the checker refusing a sentence it has no doctrine against. Omitting `via=` is not an
+escape: a settled grade with no declared pramāṇa already blocks as `PEIR-GATE-UNASSESSED`. Both are
+surveys in the trust class of `boundaries:` and `falsifier:` — presence is checked, truth is not —
+and neither demands the author assert exceptionless absence, which would itself be an overclaim. An
+entry admitting the reason appears in a dissimilar case IS a survey, and one showing the warrant is
+共不定. Note that neither fixture vault exercises these: no edge in either declares `via=inference`,
+so a clean run there is the scope control passing and is silent on the gates themselves.
+
 ¹⁴ The two interlock, and neither is complete alone. `PEIR-HETU-UNDIAGNOSTIC` is `NotApplicable`
 where no rival exists — 異品遍無性 presupposes a 異品, and scoring a thin hypothesis set as
 diagnosticity is the error ACH itself warns about — so deleting the rival would buy silence.
