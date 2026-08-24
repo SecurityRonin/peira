@@ -1,7 +1,7 @@
 name: release-plz
 
 # Owns crates.io publishing + changelogs + version bumps for the workspace LIBRARIES
-# (peira-core, peira-lens, peira-court, peira-index). Configuration lives in
+# (peira-core, peira-lens, peira-citation, peira-index). Configuration lives in
 # release-plz.toml.
 #
 # On every push to main:

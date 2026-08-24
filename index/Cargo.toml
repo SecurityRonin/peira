@@ -17,7 +17,7 @@ peira-lens = { workspace = true }
 # The index must ask the SAME question the CLI does about what blocks a claim.
 # It re-derived a narrower one and its violations table silently omitted
 # everything a packet would seal.
-peira-court = { workspace = true }
+peira-citation = { workspace = true }
 # `bundled` compiles SQLite in, per the batteries-included rule: a capability not
 # compiled in is not there in the field, and an index that depends on whichever
 # libsqlite3 the host happens to ship is not reproducible.

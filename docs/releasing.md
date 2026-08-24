@@ -4,7 +4,7 @@ Two pipelines, deliberately decoupled. Nothing here is ever hand-cut.
 
 | | Owns | Trigger | Config |
 |---|---|---|---|
-| **release-plz** | `peira-core`, `peira-lens`, `peira-court`, `peira-index` | push to `main` | `release-plz.toml`, `.github/workflows/release-plz.yml` |
+| **release-plz** | `peira-core`, `peira-lens`, `peira-citation`, `peira-index` | push to `main` | `release-plz.toml`, `.github/workflows/release-plz.yml` |
 | **release.yml** | the `peira` binary + the `peira-cli` crate | a signed `v[0-9]*` tag | `.github/workflows/release.yml` |
 
 ## Libraries — release-plz
@@ -125,7 +125,7 @@ an unsigned artifact ships and is trusted.
 
 ## Crate names
 
-`peira-core`, `peira-lens`, `peira-court`, `peira-index`, `peira-cli` were all
+`peira-core`, `peira-lens`, `peira-citation`, `peira-index`, `peira-cli` were all
 confirmed unclaimed on crates.io. The bare `peira` is also unclaimed and is
 deliberately not a crate — under the fleet naming grammar a suite's repo name is an
 umbrella, and the front-end takes the `-cli` suffix. Registering it defensively is a

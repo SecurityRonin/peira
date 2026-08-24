@@ -1,5 +1,5 @@
 # release-plz owns crates.io publishing + changelogs + version bumps for the four
-# workspace LIBRARIES (peira-core, peira-lens, peira-court, peira-index). It runs on
+# workspace LIBRARIES (peira-core, peira-lens, peira-citation, peira-index). It runs on
 # pushes to main (see .github/workflows/release-plz.yml):
 #   - `release-pr`  opens a human-reviewed version-bump PR (conventional commits)
 #   - `release`     publishes any crate whose Cargo.toml version is ahead of

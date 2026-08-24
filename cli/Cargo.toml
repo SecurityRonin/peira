@@ -19,7 +19,7 @@ path = "src/main.rs"
 [dependencies]
 peira-core = { workspace = true }
 peira-lens = { workspace = true }
-peira-court = { workspace = true }
+peira-citation = { workspace = true }
 peira-index = { workspace = true }
 clap = { version = "4", features = ["derive"] }
 

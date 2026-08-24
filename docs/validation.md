@@ -156,7 +156,7 @@ suite.
 core/src/edge.rs      98.64%      lens/src/gates.rs     98.17%
 core/src/graph.rs     99.79%      lens/src/lib.rs       98.26%
 core/src/node.rs      98.65%      lens/src/lints.rs     99.15%
-core/src/vault.rs     91.35%      court/src/lib.rs      97.03%
+core/src/vault.rs     91.35%      citation/src/lib.rs   97.03%
 index/src/lib.rs      95.56%      TOTAL                 98.01%
 ```
 

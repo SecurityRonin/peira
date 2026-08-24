@@ -6,8 +6,8 @@
 //! nodes and edges all day and never assert that anything is accepted.
 
 use clap::{Parser, Subcommand};
+use peira_citation::Verification;
 use peira_core::{Graph, NodeId};
-use peira_court::Verification;
 use peira_lens::{examine_graph, Violation, CATALOG};
 use std::{
     path::{Path, PathBuf},
@@ -167,7 +167,7 @@ const fn status_exit(blocking_empty: bool, grounded: bool, is_argument: bool) ->
 /// the same restored attack. Two implementations of one question is how a checker and
 /// the thing it checks drift apart — the same seam `blocking_for` already closes.
 fn withdrawn_attacks(graph: &Graph, id: &NodeId) -> usize {
-    peira_court::withdrawn_attacks(graph, id).len()
+    peira_citation::withdrawn_attacks(graph, id).len()
 }
 
 /// Everything blocking one node — the same question `freeze` asks, asked once.
@@ -177,7 +177,7 @@ fn withdrawn_attacks(graph: &Graph, id: &NodeId) -> usize {
 /// `peira packet` refused. A status line that disagrees with the tool's own refusal
 /// is worse than no status line.
 fn blocking_for(graph: &Graph, id: &NodeId) -> Vec<Violation> {
-    peira_court::violations_for(graph, id)
+    peira_citation::violations_for(graph, id)
 }
 
 /// The vault skeleton. Areas `00-59` belong to OGS; peira claims `60-99`.
@@ -280,8 +280,8 @@ fn cmd_gates(vault: &Path, node: Option<String>) -> Result<u8, String> {
         let found = blocking_for(&graph, &id);
         let code = report(&found, "gates");
         if found.is_empty() {
-            if let Some(peira_court::PacketError::Defeated(_)) =
-                peira_court::refusal_for(&graph, &id)
+            if let Some(peira_citation::PacketError::Defeated(_)) =
+                peira_citation::refusal_for(&graph, &id)
             {
                 println!(
                     "\n  …but `{id}` is DEFEATED in the grounded extension — an attack on \
@@ -406,7 +406,7 @@ fn cmd_lens(id: Option<String>) -> Result<u8, String> {
 
 fn cmd_packet(vault: &Path, id: &str, out: Option<PathBuf>) -> Result<u8, String> {
     let graph = load(vault)?;
-    match peira_court::freeze(&graph, &NodeId::new(id)) {
+    match peira_citation::freeze(&graph, &NodeId::new(id)) {
         Ok(packet) => {
             if let Some(path) = out {
                 std::fs::write(&path, &packet.body)
@@ -438,8 +438,8 @@ fn cmd_verify(vault: &Path, packet: &Path) -> Result<u8, String> {
 
     // The library owns the comparison, including reading the packet's declared format.
     // Re-implementing it here is how a checker and the thing it checks drift apart.
-    let doc = peira_court::Packet::from_stored(NodeId::new(subject), stored);
-    match peira_court::verify(&graph, &doc) {
+    let doc = peira_citation::Packet::from_stored(NodeId::new(subject), stored);
+    match peira_citation::verify(&graph, &doc) {
         Verification::Verified => {
             println!(
                 "✓ {} still matches the vault (sha256 {})",
@@ -549,7 +549,7 @@ fn run() -> Result<u8, String> {
             let graph = load(&vault)?;
             // AND what a packet would seal — `all_findings` is the one
             // implementation, shared with the derived index.
-            let found = peira_court::all_findings(&graph);
+            let found = peira_citation::all_findings(&graph);
             Ok(report(&found, "lint"))
         }
         Command::Gates { vault, node } => cmd_gates(&vault, node),
@@ -625,8 +625,8 @@ supports: [\"c1 grade=G2 by=a-reviewer via=perception\"]\n---\n",
             let g = load(dir).expect("vault loads");
             let id = NodeId::new("c1");
             let blocked = !blocking_for(&g, &id).is_empty();
-            let refused = peira_court::refusal_for(&g, &id).is_some();
-            let frozen = peira_court::freeze(&g, &id).is_ok();
+            let refused = peira_citation::refusal_for(&g, &id).is_some();
+            let frozen = peira_citation::freeze(&g, &id).is_ok();
             (blocked, refused, frozen)
         };
 

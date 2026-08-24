@@ -72,7 +72,7 @@ jobs:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
       # The published libraries promise 1.85. This job is what makes that a
       # measurement rather than a claim -- it already caught a false 1.75.
-      # court/ and cli/ declare 1.88 (scoped there by blazehash-core) and are
+      # citation/ and cli/ declare 1.88 (scoped there by blazehash-core) and are
       # excluded deliberately.
       - uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8
         with:

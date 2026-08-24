@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["core", "lens", "court", "index", "cli"]
+members = ["core", "lens", "citation", "index", "cli"]
 
 # Shared package fields (DRY). `version` is NOT hoisted — members version
 # independently, as in amcache-forensic.
@@ -23,7 +23,7 @@ readme = "README.md"
 [workspace.dependencies]
 peira-core = { path = "core", version = "0.1.0" }
 peira-lens = { path = "lens", version = "0.1.0" }
-peira-court = { path = "court", version = "0.1.0" }
+peira-citation = { path = "citation", version = "0.1.0" }
 peira-index = { path = "index", version = "0.1.0" }
 serde = { version = "1", features = ["derive"] }
 # Maintained fork of the archived serde_yaml (RUSTSEC unmaintained advisory).

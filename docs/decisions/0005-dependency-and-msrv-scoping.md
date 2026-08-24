@@ -30,7 +30,7 @@ against it.
   1.85 floor would raise our promise by ten releases). It is isolated behind `parse_node`
   so a later swap is a one-function change.
 - **`blazehash-core`** for digests, and never a hand-rolled one. The 1.88 constraint is
-  **scoped to `peira-court`**, where the dependency is actually used, instead of
+  **scoped to `peira-citation`**, where the dependency is actually used, instead of
   propagating up into the library crates.
 - **MSRV is measured, not asserted — and the first measurement failed.** 1.75 was
   declared, and the msrv job disproved it immediately: `indexmap 2.14` (pulled by

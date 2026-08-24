@@ -1,5 +1,5 @@
 [package]
-name = "peira-court"
+name = "peira-citation"
 version = "0.1.0"
 description = "Court Mode for peira — frozen, hash-verified citation packets whose safe statement is generated from the graph rather than authored."
 edition.workspace = true

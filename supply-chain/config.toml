@@ -22,7 +22,7 @@ audit-as-crates-io = false
 [policy.peira-core]
 audit-as-crates-io = false
 
-[policy.peira-court]
+[policy.peira-citation]
 audit-as-crates-io = false
 
 [policy.peira-index]

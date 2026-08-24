@@ -75,7 +75,7 @@ fn control_a_the_overclaim_is_blocked_by_at_least_five_lenses() {
 #[test]
 fn control_a_the_overclaim_cannot_be_frozen_into_a_packet() {
     let graph = vault("overclaim");
-    let err = peira_court::freeze(&graph, &NodeId::new("c-overclaim"))
+    let err = peira_citation::freeze(&graph, &NodeId::new("c-overclaim"))
         .expect_err("a packet must not be frozen over an unexamined claim");
     let rendered = err.to_string();
     assert!(rendered.contains("cannot be frozen"), "{rendered}");
@@ -103,7 +103,7 @@ fn control_b_the_bounded_claim_survives_in_the_grounded_extension() {
 #[test]
 fn control_b_freezes_a_packet_carrying_the_three_moments() {
     let graph = vault("bounded");
-    let packet = peira_court::freeze(&graph, &NodeId::new("c-bounded"))
+    let packet = peira_citation::freeze(&graph, &NodeId::new("c-bounded"))
         .expect("the bounded claim must freeze");
 
     // The safe statement is generated, not authored — so these are structural.
@@ -153,8 +153,8 @@ classic false green"
 #[test]
 fn a_frozen_packet_stops_verifying_when_its_evidence_changes() {
     let graph = vault("bounded");
-    let packet = peira_court::freeze(&graph, &NodeId::new("c-bounded")).unwrap();
-    assert!(peira_court::verify(&graph, &packet).is_verified());
+    let packet = peira_citation::freeze(&graph, &NodeId::new("c-bounded")).unwrap();
+    assert!(peira_citation::verify(&graph, &packet).is_verified());
 
     // Re-load and mutate an observation the packet cites.
     let mut tampered = vault("bounded");
@@ -166,7 +166,7 @@ pramana: perception\nsupports: [\"c-bounded grade=G2 by=albert via=perception\"]
     tampered.insert_node(doctored);
 
     assert!(
-        !peira_court::verify(&tampered, &packet).is_verified(),
+        !peira_citation::verify(&tampered, &packet).is_verified(),
         "changing cited evidence under a frozen packet must break it"
     );
 }

@@ -16,7 +16,7 @@ cargo-fuzz = true
 libfuzzer-sys = "0.4"
 peira-core = { path = "../core" }
 peira-lens = { path = "../lens" }
-peira-court = { path = "../court" }
+peira-citation = { path = "../citation" }
 
 [[bin]]
 name = "fuzz_parse_node"

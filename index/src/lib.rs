@@ -148,7 +148,7 @@ fn write_derived(tx: &rusqlite::Transaction<'_>, graph: &Graph) -> rusqlite::Res
         )?;
         for v in examine_graph(graph)
             .into_iter()
-            .chain(peira_court::all_findings(graph))
+            .chain(peira_citation::all_findings(graph))
         {
             viol_stmt.execute(params![
                 v.gate,
@@ -395,7 +395,7 @@ would satisfy the assertion above and this one catches it"
         let rows: i64 = conn
             .query_row("SELECT COUNT(*) FROM violations", [], |r| r.get(0))
             .expect("counts");
-        let expected = examine_graph(&graph).len() + peira_court::all_findings(&graph).len();
+        let expected = examine_graph(&graph).len() + peira_citation::all_findings(&graph).len();
         assert_eq!(
             rows as usize, expected,
             "the index's violations table has drifted from what the CLI reports as \
