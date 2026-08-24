@@ -16,13 +16,13 @@ url = "https://raw.githubusercontent.com/google/rust-crate-audits/main/audits.to
 [imports.mozilla]
 url = "https://raw.githubusercontent.com/mozilla/supply-chain/main/audits.toml"
 
+[policy.peira-citation]
+audit-as-crates-io = false
+
 [policy.peira-cli]
 audit-as-crates-io = false
 
 [policy.peira-core]
-audit-as-crates-io = false
-
-[policy.peira-citation]
 audit-as-crates-io = false
 
 [policy.peira-index]
