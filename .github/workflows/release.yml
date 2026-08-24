@@ -85,19 +85,29 @@ jobs:
       # Verified on an aarch64 host before landing: both musl targets build, and the
       # aarch64 artifact is statically linked and runs (`peira --version`, and the
       # bounded fixture gates clean).
-      - name: Install zig and cargo-zigbuild (musl targets)
+      # A PREBUILT cargo-zigbuild, never `cargo install`. Building it from source
+      # inside this repo made rustup honour rust-toolchain.toml's
+      # `components = ["clippy", "rustfmt"]` and collide with the runner's own:
+      #   failed to install component 'rustfmt-preview', detected conflict 'bin/cargo-fmt'
+      # install-action downloads a binary instead, is already trusted in ci.yml at
+      # this same SHA, and is faster besides.
+      - uses: taiki-e/install-action@59012be0884e296ca2da49b530610e72c49039ad
+        if: contains(matrix.target, 'musl')
+        with:
+          tool: cargo-zigbuild
+      - name: Install zig (musl targets)
         if: contains(matrix.target, 'musl')
         run: |
           # cargo-zigbuild needs a `zig` EXECUTABLE on PATH. The pip package ships the
           # compiler as a module with no entry point, so a bare `pip install ziglang`
           # leaves cargo-zigbuild reporting "could not execute command" -- checked,
-          # not assumed. Three lines of shim beat adding another third-party action
-          # to the release path.
+          # not assumed. install-action has no `zig` manifest, hence the shim.
           python3 -m pip install --break-system-packages ziglang
           printf '#!/bin/sh\nexec python3 -m ziglang "$@"\n' | sudo tee /usr/local/bin/zig >/dev/null
           sudo chmod +x /usr/local/bin/zig
+          # Positive control: a broken shim fails HERE, loudly, not at link time.
           zig version
-          cargo install cargo-zigbuild --locked
+          cargo zigbuild --version
       - name: Build (musl, via zig)
         if: contains(matrix.target, 'musl')
         run: cargo zigbuild --release -p peira-cli --target ${{ matrix.target }}
