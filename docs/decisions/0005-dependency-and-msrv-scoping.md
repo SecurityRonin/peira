@@ -45,6 +45,16 @@ against it.
   before any of our code is reached. The declared floor is now **1.85, verified by
   `cargo +1.85 check`**.
 
+  **[CORRECTED 2026-08-24 — the job was not testing what it said.]** It ran a bare
+  `cargo check` after installing 1.85. `rust-toolchain.toml` pins 1.96.0 and OUTRANKS
+  `rustup default`, so the compile happened on 1.96 and the 1.85 promise was asserted
+  rather than measured. It surfaced only because a newly added negative control reported
+  `peira-index` compiling on "1.85" — it was never 1.85. Every step now uses
+  `cargo +VERSION`, and the job asserts the resolved version before compiling anything,
+  so a job that quietly moves toolchains fails instead of reporting a floor it never
+  tested. What the job caught historically cannot be reconstructed from here and is not
+  claimed either way.
+
   The distinction matters and is recorded rather than smoothed over: **1.85 is an
   inherited floor, not this code's own.** `peira-core` and `peira-lens` very likely
   compile lower — clippy's `incompatible_msrv` was already enforcing 1.75 against our
