@@ -10,7 +10,7 @@ messages on `main`. Do not hand-edit released sections.
 
 ## [Unreleased]
 
-## [0.1.0](https://github.com/SecurityRonin/peira/releases/tag/peira-court-v0.1.0) - 2026-08-23
+## [0.1.0](https://github.com/SecurityRonin/peira/releases/tag/peira-citation-v0.1.0) - 2026-08-23
 
 ### Added
 
