@@ -42,6 +42,13 @@ jobs:
 
   build:
     needs: pin
+    # RUSTUP_TOOLCHAIN outranks rust-toolchain.toml, so rustup uses the pinned
+    # version directly instead of trying to MATERIALISE the toml -- which means
+    # installing its `components = ["clippy", "rustfmt"]` over the runner's own and
+    # failing with `detected conflict: bin/cargo-fmt`. Setting it here kills the
+    # whole class rather than the one command that tripped it.
+    env:
+      RUSTUP_TOOLCHAIN: ${{ needs.pin.outputs.channel }}
     strategy:
       fail-fast: false
       matrix:
@@ -106,8 +113,10 @@ jobs:
           printf '#!/bin/sh\nexec python3 -m ziglang "$@"\n' | sudo tee /usr/local/bin/zig >/dev/null
           sudo chmod +x /usr/local/bin/zig
           # Positive control: a broken shim fails HERE, loudly, not at link time.
+          # `zig version` only -- `cargo zigbuild --version` is not a thing (it
+          # forwards to `cargo build`, which rejects the flag), and any cargo call
+          # here also drags in the toolchain reconciliation below.
           zig version
-          cargo zigbuild --version
       - name: Build (musl, via zig)
         if: contains(matrix.target, 'musl')
         run: cargo zigbuild --release -p peira-cli --target ${{ matrix.target }}
