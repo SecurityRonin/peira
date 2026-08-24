@@ -5,9 +5,16 @@
 # The acceptance controls are not restated here: both this file and the CI job
 # call tests/controls.sh, so there is one copy to drift from.
 #
-# `cargo vet` is deliberately absent — it needs the network to fetch imported
-# audit sets, and a pre-commit hook that fails on a flaky DNS lookup gets disabled
-# within a week. CI owns that one.
+# `cargo vet` runs here ONLY in its offline form. The networked check needs to
+# fetch imported audit sets, and a hook that fails on a flaky DNS lookup gets
+# disabled within a week — CI still owns that one. `--locked --frozen` avoids the
+# network entirely and still catches the store-consistency class, which is what
+# actually broke: a crate rename left the `[policy.*]` entries out of alphabetical
+# order, every local check passed, and CI went red on ordering alone.
+#
+# Proved it can fail before trusting it: with the entries swapped back out of
+# order the offline check exits 255 with the same "store has consistency errors"
+# it produced in CI.
 repos:
   - repo: local
     hooks:
@@ -44,6 +51,13 @@ repos:
         entry: cargo deny check advisories bans licenses sources
         language: system
         files: (Cargo\.toml|Cargo\.lock|deny\.toml)
+        pass_filenames: false
+
+      - id: cargo-vet-store
+        name: cargo vet (store consistency, offline)
+        entry: cargo vet --locked --frozen
+        language: system
+        files: (Cargo\.(toml|lock)|^supply-chain/)
         pass_filenames: false
 
   - repo: https://github.com/gitleaks/gitleaks
