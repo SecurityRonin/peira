@@ -74,19 +74,35 @@ jobs:
           toolchain: ${{ needs.pin.outputs.channel }}
           targets: ${{ matrix.target }}
 
-      - name: Install musl tools (Linux)
+      # zig as the C cross-compiler for musl, replacing musl-tools plus a glibc
+      # cross-gcc. That combination built aarch64-unknown-linux-musl and then failed
+      # to link it: the bundled SQLite was compiled by `aarch64-linux-gnu-gcc`, a
+      # GLIBC compiler, and linked against musl -- so `__memset_chk`, `__memcpy_chk`,
+      # `stat64` and `fstat64` were all undefined. musl has no fortified `_chk`
+      # variants and no LFS64 aliases. x86_64 passed only because `musl-tools` ships
+      # a real `musl-gcc` and there is no aarch64 equivalent to install.
+      #
+      # Verified on an aarch64 host before landing: both musl targets build, and the
+      # aarch64 artifact is statically linked and runs (`peira --version`, and the
+      # bounded fixture gates clean).
+      - name: Install zig and cargo-zigbuild (musl targets)
         if: contains(matrix.target, 'musl')
         run: |
-          # Never `apt-get install` without `update` first: the runner image pins an
-          # exact .deb version that 404s the day Ubuntu supersedes it.
-          sudo apt-get update
-          sudo apt-get install -y musl-tools
-          if [[ "${{ matrix.target }}" == "aarch64-unknown-linux-musl" ]]; then
-            sudo apt-get install -y gcc-aarch64-linux-gnu
-            echo "CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_LINKER=aarch64-linux-gnu-gcc" >> $GITHUB_ENV
-          fi
-
+          # cargo-zigbuild needs a `zig` EXECUTABLE on PATH. The pip package ships the
+          # compiler as a module with no entry point, so a bare `pip install ziglang`
+          # leaves cargo-zigbuild reporting "could not execute command" -- checked,
+          # not assumed. Three lines of shim beat adding another third-party action
+          # to the release path.
+          python3 -m pip install --break-system-packages ziglang
+          printf '#!/bin/sh\nexec python3 -m ziglang "$@"\n' | sudo tee /usr/local/bin/zig >/dev/null
+          sudo chmod +x /usr/local/bin/zig
+          zig version
+          cargo install cargo-zigbuild --locked
+      - name: Build (musl, via zig)
+        if: contains(matrix.target, 'musl')
+        run: cargo zigbuild --release -p peira-cli --target ${{ matrix.target }}
       - name: Build
+        if: "!contains(matrix.target, 'musl')"
         run: cargo build --release -p peira-cli --target ${{ matrix.target }}
 
       - name: Azure login (OIDC)
