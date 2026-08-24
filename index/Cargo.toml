@@ -3,7 +3,11 @@ name = "peira-index"
 version = "0.1.0"
 description = "A derived, disposable SQLite index over a peira vault — rebuilt from committed markdown, never authoritative, never committed."
 edition.workspace = true
-rust-version = "1.85"
+# 1.88, INHERITED and not this code's own floor. peira-index gained a
+# peira-citation dependency (one implementation of "what blocks a claim",
+# shared with the CLI), and citation carries blazehash-core's 1.88. It
+# declared 1.85 for exactly as long as nothing checked it.
+rust-version = "1.88"
 license.workspace = true
 authors.workspace = true
 repository.workspace = true
