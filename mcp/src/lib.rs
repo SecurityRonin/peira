@@ -485,6 +485,220 @@ pub fn verify(graph: &Graph, packet: String) -> Result<VerifyReport, String> {
     Ok(report)
 }
 
+// ── Tier 3 — propose (no vault; STRUCTURE and CLASSIFICATION only) ─────────────
+//
+// `propose` reads prose the author already wrote and emits the skeleton of a claim node
+// — because a claim's required fields are the enforced gates in reverse. It infers the
+// CLASSIFICATION fields (quantifier, aspect, causal_rung) from the author's own words,
+// marked `confirm`, and reuses the lint's verb knowledge so it cannot disagree with the
+// gates. It authors NO evidence: there is no grade/by/via field anywhere. See ADR-0006.
+
+/// One classification field read from the proposition's own words. Confirmable — the
+/// author owns it; peira only names what the sentence already says.
+#[derive(Debug, Clone, Serialize, schemars::JsonSchema)]
+pub struct Inferred {
+    /// The field: `quantifier`, `aspect`, or `causal_rung`.
+    pub field: &'static str,
+    /// The inferred value, in the vocabulary the gate reads.
+    pub value: &'static str,
+    /// The words that triggered it — so the author can check the reading.
+    pub inferred_from: String,
+    /// Always true: an inference is a suggestion, never a decision.
+    pub confirm: bool,
+}
+
+/// A field the author must supply, named with the gate that will demand it. Blank by
+/// construction — there is no value here to fill in wrongly.
+#[derive(Debug, Clone, Serialize, schemars::JsonSchema)]
+pub struct Need {
+    /// The claim field left blank.
+    pub field: &'static str,
+    /// The gate that will block until it is supplied.
+    pub gate: &'static str,
+}
+
+/// A draft claim proposed from prose: STRUCTURE and CLASSIFICATION only, no evidence.
+#[derive(Debug, Clone, Serialize, schemars::JsonSchema)]
+pub struct ProposeReport {
+    /// The node type proposed. `claim` — the author may retype it.
+    pub proposed_type: &'static str,
+    /// The author's sentence, verbatim. peira never rewrites it.
+    pub proposition: String,
+    /// Classification fields inferred from the proposition, each marked `confirm`.
+    pub inferred: Vec<Inferred>,
+    /// Terms the author explicitly quoted — candidate Term nodes, still undefined.
+    pub candidate_terms: Vec<String>,
+    /// Every field left blank, with the gate that will demand it. Fill these to pass.
+    pub needs: Vec<Need>,
+    /// Overstatement in the proposition itself, caught by the same lint `check_prose`
+    /// runs — so an over-claim is named at the point of authoring.
+    pub prose_findings: Vec<Finding>,
+    /// Carried on every report; see the module note.
+    pub scope: &'static str,
+}
+
+const PROPOSE_SCOPE: &str = "STRUCTURE and CLASSIFICATION only. The proposition is the \
+author's own words, unaltered; the inferred fields classify those words and are marked to \
+confirm; the `needs` are blank for the author to fill. peira authors NO evidence here — \
+there is no grade, by, or via, because those assert something was examined, and nothing \
+was.";
+
+/// Whether `haystack` contains `word` as a whole word (both already lowercased).
+fn contains_word(haystack: &str, word: &str) -> bool {
+    haystack
+        .split(|c: char| !c.is_alphanumeric())
+        .any(|token| token == word)
+}
+
+fn infer_quantifier(proposition: &str) -> Inferred {
+    // A universal determiner makes the claim range over a class — the BAIMA question.
+    const UNIVERSAL: [&str; 5] = ["every", "all", "each", "any", "no"];
+    let lower = proposition.to_lowercase();
+    if let Some(w) = UNIVERSAL.iter().find(|w| contains_word(&lower, w)) {
+        Inferred {
+            field: "quantifier",
+            value: "universal",
+            inferred_from: format!("the determiner \"{w}\" — the claim ranges over a class"),
+            confirm: true,
+        }
+    } else {
+        Inferred {
+            field: "quantifier",
+            value: "singular",
+            inferred_from: "no universal determiner present".to_owned(),
+            confirm: true,
+        }
+    }
+}
+
+fn infer_aspect(proposition: &str) -> Inferred {
+    // A copular "X is a …" reads as a claim about what something IS (substance); an action
+    // predicate reads as what it DID (function). Crude on purpose — peira has no parser
+    // for meaning, so this is confirmable, not decided.
+    let lower = proposition.to_lowercase();
+    if lower.contains(" is a ") || lower.contains(" is an ") || lower.contains(" are ") {
+        Inferred {
+            field: "aspect",
+            value: "substance",
+            inferred_from: "a copular \"is a / are\" — a claim about what something IS".to_owned(),
+            confirm: true,
+        }
+    } else {
+        Inferred {
+            field: "aspect",
+            value: "function",
+            inferred_from: "an action predicate — what something DID, not what it is".to_owned(),
+            confirm: true,
+        }
+    }
+}
+
+fn infer_rung(findings: &[Violation]) -> Inferred {
+    // REUSE the lint's verb knowledge rather than a parallel table: if the proposition
+    // trips the forbidden-verb lint, it reads above the association rung, and inferring it
+    // there makes the RUNG gate FIRE on the draft — surfacing the over-claim, not hiding it.
+    if findings
+        .iter()
+        .any(|v| v.gate == peira_lens::lints::FORBIDDEN_VERB)
+    {
+        Inferred {
+            field: "causal_rung",
+            value: "counterfactual",
+            inferred_from: "a proving verb the forbidden-verb lint flags — the sentence \
+reads above the association rung, so the RUNG gate will demand a protocol"
+                .to_owned(),
+            confirm: true,
+        }
+    } else {
+        Inferred {
+            field: "causal_rung",
+            value: "association",
+            inferred_from: "no proving verb present — the safe floor".to_owned(),
+            confirm: true,
+        }
+    }
+}
+
+/// Terms the author explicitly put in double quotes — a strong, unambiguous signal, unlike
+/// guessing noun phrases, which peira has no model to do. Curly and straight quotes both.
+fn quoted_terms(proposition: &str) -> Vec<String> {
+    let mut terms = Vec::new();
+    let mut current = String::new();
+    let mut inside = false;
+    for ch in proposition.chars() {
+        if matches!(ch, '"' | '\u{201C}' | '\u{201D}') {
+            if inside {
+                let t = current.trim();
+                if !t.is_empty() && !terms.iter().any(|e| e == t) {
+                    terms.push(t.to_owned());
+                }
+                current.clear();
+            }
+            inside = !inside;
+        } else if inside {
+            current.push(ch);
+        }
+    }
+    terms
+}
+
+/// Propose a claim skeleton from prose the author already wrote.
+///
+/// No vault, no graph, no model. Infers the classification fields from the words, leaves
+/// every evidentiary field blank, and names each blank with the gate that will demand it.
+#[must_use]
+pub fn propose(prose: &str) -> ProposeReport {
+    let proposition = prose.trim().to_owned();
+    // The same lint `check_prose` runs, over the proposition — used both to surface the
+    // over-claim to the author and to infer the causal rung from it.
+    let subject = NodeId::new("(proposed)");
+    let findings = peira_lens::lints::prose_findings_in(&proposition, &subject);
+
+    let inferred = vec![
+        infer_quantifier(&proposition),
+        infer_aspect(&proposition),
+        infer_rung(&findings),
+    ];
+
+    // The blanks, each labelled with the gate that will demand it. These are the enforced
+    // gates in reverse: filling them is what turns the draft into a claim that passes.
+    let needs = vec![
+        Need {
+            field: "warrant",
+            gate: peira_lens::gates::WARRANT_MISSING,
+        },
+        Need {
+            field: "boundaries",
+            gate: peira_lens::gates::BOUNDARIES_MISSING,
+        },
+        Need {
+            field: "falsifier",
+            gate: peira_lens::gates::FALSIFIER_MISSING,
+        },
+        Need {
+            field: "uses_term",
+            gate: peira_lens::gates::TERM_UNSTIPULATED,
+        },
+    ];
+
+    ProposeReport {
+        proposed_type: "claim",
+        candidate_terms: quoted_terms(&proposition),
+        prose_findings: findings
+            .iter()
+            .map(|v| Finding {
+                code: v.gate,
+                detail: v.detail.clone(),
+                remedy: v.remedy,
+            })
+            .collect(),
+        proposition,
+        inferred,
+        needs,
+        scope: PROPOSE_SCOPE,
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -899,5 +1113,112 @@ that does not exist, cited as though it does"
             verified.get("outcome"),
             Some(&serde_json::json!("verified"))
         );
+    }
+
+    // ── Tier 3 — propose ──────────────────────────────────────────────────────
+
+    fn inferred_value<'a>(r: &'a ProposeReport, field: &str) -> &'a str {
+        r.inferred
+            .iter()
+            .find(|i| i.field == field)
+            .unwrap_or_else(|| panic!("no inference for {field}"))
+            .value
+    }
+
+    /// The proposition is the author's sentence, verbatim — peira never rewrites it.
+    #[test]
+    fn propose_takes_the_proposition_verbatim() {
+        let r = propose("  The Amcache entry proves execution of the binary.  ");
+        assert_eq!(r.proposed_type, "claim");
+        assert_eq!(
+            r.proposition,
+            "The Amcache entry proves execution of the binary."
+        );
+    }
+
+    /// The rung is inferred from the verb, reusing the lint — a proving verb reads above
+    /// the association rung (so the draft's RUNG gate will fire), a descriptive one does
+    /// not. The over-claim is also surfaced in `prose_findings`.
+    #[test]
+    fn propose_infers_the_rung_from_the_verb_reusing_the_lint() {
+        let over = propose("The Amcache entry proves execution.");
+        assert_eq!(inferred_value(&over, "causal_rung"), "counterfactual");
+        assert!(
+            over.prose_findings
+                .iter()
+                .any(|f| f.code == "PEIR-LINT-FORBIDDEN-VERB"),
+            "the proving verb is surfaced to the author too"
+        );
+
+        let bounded = propose("The Amcache entry records catalogued presence.");
+        assert_eq!(inferred_value(&bounded, "causal_rung"), "association");
+    }
+
+    /// The quantifier is inferred from determiners.
+    #[test]
+    fn propose_infers_the_quantifier_from_determiners() {
+        assert_eq!(
+            inferred_value(&propose("Every host was compromised."), "quantifier"),
+            "universal"
+        );
+        assert_eq!(
+            inferred_value(&propose("This host was compromised."), "quantifier"),
+            "singular"
+        );
+    }
+
+    /// Only terms the author explicitly quoted become candidates — no guessing.
+    #[test]
+    fn propose_extracts_only_quoted_candidate_terms() {
+        let r = propose("The record establishes \"presence\", never \"execution\".");
+        assert_eq!(r.candidate_terms, vec!["presence", "execution"]);
+        let none = propose("The record establishes catalogued presence.");
+        assert!(
+            none.candidate_terms.is_empty(),
+            "nothing quoted, nothing guessed"
+        );
+    }
+
+    /// Every blank is named with the gate that will demand it.
+    #[test]
+    fn propose_names_each_blank_with_its_gate() {
+        let r = propose("The record shows presence.");
+        let by_field: std::collections::BTreeMap<_, _> =
+            r.needs.iter().map(|n| (n.field, n.gate)).collect();
+        assert_eq!(by_field.get("warrant"), Some(&"PEIR-WARRANT-MISSING"));
+        assert_eq!(by_field.get("boundaries"), Some(&"PEIR-BOUNDARIES-MISSING"));
+        assert_eq!(by_field.get("falsifier"), Some(&"PEIR-FALSIFIER-MISSING"));
+    }
+
+    /// No evidentiary KEY (grade/by/via) and no `grade=`/`via=` value may appear anywhere.
+    fn authors_no_evidence(v: &serde_json::Value) -> bool {
+        match v {
+            serde_json::Value::Object(m) => m.iter().all(|(k, val)| {
+                !["grade", "by", "via"].contains(&k.as_str()) && authors_no_evidence(val)
+            }),
+            serde_json::Value::Array(a) => a.iter().all(authors_no_evidence),
+            serde_json::Value::String(s) => !s.contains("grade=") && !s.contains("via="),
+            _ => true,
+        }
+    }
+
+    /// THE Tier-3 guard: `propose` authors no evidence, on any input.
+    #[test]
+    fn propose_authors_no_evidence() {
+        for prose in [
+            "The Amcache entry proves execution of the binary.",
+            "Every host was compromised, and each was reviewed.",
+            "The record shows \"catalogued presence\".",
+        ] {
+            let v = serde_json::to_value(propose(prose)).unwrap();
+            assert!(authors_no_evidence(&v), "propose authored evidence: {v}");
+        }
+    }
+
+    /// And it mints no score.
+    #[test]
+    fn propose_mints_no_score() {
+        let v = serde_json::to_value(propose("The Amcache entry proves execution.")).unwrap();
+        assert!(has_no_score_key(&v), "a score field was minted: {v}");
     }
 }

@@ -14,8 +14,9 @@ use std::path::Path;
 
 use peira_core::NodeId;
 use peira_mcp::{
-    catalogue, check_prose, examine, freeze, gates, load_vault, status, verify, ExamineReport,
-    FreezeReport, GatesReport, LensCatalogue, ProseReport, StatusReport, VerifyReport,
+    catalogue, check_prose, examine, freeze, gates, load_vault, propose, status, verify,
+    ExamineReport, FreezeReport, GatesReport, LensCatalogue, ProposeReport, ProseReport,
+    StatusReport, VerifyReport,
 };
 use rmcp::handler::server::wrapper::{Json, Parameters};
 use rmcp::model::{Implementation, ServerCapabilities, ServerInfo};
@@ -45,6 +46,12 @@ struct LensArgs {
 struct VaultArgs {
     /// Path to the vault root directory. Read-only; never written.
     vault: String,
+}
+
+#[derive(Deserialize, schemars::JsonSchema)]
+struct ProposeArgs {
+    /// The prose to turn into a claim skeleton — a sentence the author already wrote.
+    prose: String,
 }
 
 #[derive(Deserialize, schemars::JsonSchema)]
@@ -159,6 +166,20 @@ blocks it, or it was defeated)."
         let graph = load_vault(Path::new(&a.vault)).map_err(bad_input)?;
         verify(&graph, a.packet).map(Json).map_err(bad_input)
     }
+
+    #[tool(
+        name = "peira_propose",
+        description = "Turn prose the author already wrote into a DRAFT claim skeleton to \
+accept — no vault needed. It takes the proposition VERBATIM, infers the classification \
+fields (quantifier, aspect, causal_rung) from the words and marks them to confirm, \
+extracts only quoted candidate terms, and names every blank field with the gate that will \
+demand it (fill the blanks → pass the gates). It authors NO evidence: there is no grade, \
+by, or via, because those assert something was examined and nothing was. An over-claiming \
+verb is surfaced in prose_findings."
+    )]
+    fn propose(Parameters(a): Parameters<ProposeArgs>) -> Json<ProposeReport> {
+        Json(propose(&a.prose))
+    }
 }
 
 // Written out rather than taking `#[tool_router(server_handler)]`'s generated
@@ -185,7 +206,8 @@ the checks are narrow by design and say so. Call `peira_lens` to read the catalo
 With a vault, `peira_examine`, `peira_status` and `peira_gates` READ the graph and never \
 write it: a claim's derived standing and what blocks it. `peira_freeze` renders a citation \
 packet (returned, never written) or reports why it refuses; `peira_verify` checks a stored \
-packet against the vault."
+packet against the vault. `peira_propose` turns a draft sentence into a claim skeleton to \
+accept — no vault, and no evidence authored."
                 .into(),
         );
         info

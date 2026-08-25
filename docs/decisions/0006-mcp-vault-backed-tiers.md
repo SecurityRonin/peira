@@ -114,24 +114,53 @@ written to the vault.
 ### Tier 3 — `peira_propose(prose)` (the only net-new logic)
 
 The adoption barrier is that nobody hand-writes
-`supports: ["c1 grade=G2 by=albert via=perception"]`. `propose` suggests structure for
-prose the author already wrote and authors nothing evidentiary:
+`supports: ["c1 grade=G2 by=albert via=perception"]`. `propose` reads prose the author
+already wrote and emits the skeleton of a claim node — because **a claim's required fields
+are the enforced gates in reverse** (`warrant`→TOULMIN, `aspect`→TIYONG,
+`quantifier`→BAIMA, `causal_rung`→RUNG, `uses_term`→ZHENGMING, `boundaries`/`falsifier`→
+RUNG/PREMORTEM). Filling the blanks it hands back is what turns the draft into a claim
+that passes, and each blank is labelled with the gate that will demand it.
+
+**Decision, 2026-08-25 — the extraction infers CLASSIFICATION, never EVIDENCE.** An earlier
+draft of this section said `propose` "authors nothing" and inferred nothing. That is
+refined here: it infers the three CLASSIFICATION fields — `quantifier`, `aspect`,
+`causal_rung` — from the author's *own words*, transparently and marked *confirm*. It does
+NOT touch the evidentiary fields (`grade`/`by`/`via`, `warrant` content, `boundaries`,
+`falsifier`, term definitions), which stay blank in every case. The line the ADR draws is
+between classifying the prose the author wrote (peira's core competency) and minting
+evidence that does not exist (forbidden) — not between inferring and not inferring.
+
+The inference **reuses the lint's verb knowledge, never a parallel table.** `causal_rung`
+is inferred by running `prose_findings_in` on the proposition: a forbidden verb ("proves")
+means the sentence reads at the counterfactual rung, so `propose` infers it there — which
+makes the RUNG gate FIRE on the draft, surfacing the over-claim instead of hiding it behind
+a blank. propose and the gates share one verb list by construction and cannot disagree.
 
 ```jsonc
 {
-  "suggested_type": "claim",
-  "proposition": "<the author's own sentence, unaltered>",
-  "key_terms": ["execution", "presence"],   // candidate Term nodes — extracted, not defined
-  "boundaries": null,                        // blank — human fills
-  "edges": [ { "kind": "supports", "target": null, "grade": null, "by": null, "via": null } ],
-  "scope": "STRUCTURE ONLY. No assertion authored; every grade/by/via/target is blank."
+  "proposed_type": "claim",
+  "proposition": "<the author's sentence, verbatim>",
+  "inferred": [                            // classification, from the author's own words
+    { "field": "causal_rung", "value": "counterfactual",
+      "inferred_from": "the verb \"proves\"", "confirm": true }
+  ],
+  "candidate_terms": ["execution"],        // crude (quoted) extraction — the caller refines
+  "needs": [                               // every blank, with the gate that will demand it
+    { "field": "warrant",  "gate": "PEIR-WARRANT-MISSING" },
+    { "field": "boundaries", "gate": "PEIR-BOUNDARIES-MISSING" }
+  ],
+  "prose_findings": [ /* forbidden-verb / legal-conclusion findings on the proposition */ ],
+  "scope": "STRUCTURE and CLASSIFICATION only; no grade/by/via/evidence is authored."
 }
 ```
 
-Every evidentiary field returns blank. This is the one tier that needs real new code
-(prose → candidate structure) and the one place an LLM could smuggle in a fabricated
-grade, so it carries an adversarial test: any populated `grade` or `via` in output fails
-the build.
+`propose` has **no grade/by/via field anywhere** — the evidentiary blanks are blank by
+construction, not by being set to null. This is the one place an LLM could smuggle in a
+fabricated grade, so it carries a mutation-proven adversarial test: any `grade`/`by`/`via`
+key or `grade=`/`via=` value appearing in the output fails the build. The determinism line
+holds too — peira does only crude, defensible extraction (verbatim title, determiner-scan
+quantifier, quoted candidate terms); the LLM caller, which is good at language, refines the
+rest.
 
 ### Build order
 
