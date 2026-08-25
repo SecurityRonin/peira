@@ -31,6 +31,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       channel: ${{ steps.read.outputs.channel }}
+      version: ${{ steps.read.outputs.version }}
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
       - id: read
@@ -39,6 +40,23 @@ jobs:
           [ -n "$channel" ] || { echo "::error::no channel in rust-toolchain.toml"; exit 1; }
           echo "channel=$channel" >> "$GITHUB_OUTPUT"
           echo "release builds on $channel"
+
+          # THE TAG IS NOT THE VERSION. It was the only source for the tarball names
+          # while cargo-deb read cli/Cargo.toml for the .deb, so `v0.2.0` on a manifest
+          # saying 0.1.0 would have produced peira-0.2.0-*.tar.gz beside
+          # peira_0.1.0-1_amd64.deb, a GitHub Release called v0.2.0, and `peira-cli
+          # 0.1.0` on crates.io — four artifacts disagreeing, one of them permanent.
+          # v0.1.0 was correct because the tag was checked by hand, which is not a control.
+          manifest=$(grep -m1 -E '^version' cli/Cargo.toml | cut -d'"' -f2)
+          [ -n "$manifest" ] || { echo "::error::no version in cli/Cargo.toml"; exit 1; }
+          tag="${GITHUB_REF_NAME#v}"
+          if [ "$manifest" != "$tag" ]; then
+            echo "::error::tag ${GITHUB_REF_NAME} says $tag, cli/Cargo.toml says $manifest"
+            echo "::error::bump the manifest or retag — do not publish a version nothing agrees on"
+            exit 1
+          fi
+          echo "version=$manifest" >> "$GITHUB_OUTPUT"
+          echo "releasing $manifest, and the tag agrees"
 
   build:
     needs: pin
@@ -70,11 +88,6 @@ jobs:
       contents: read
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
-
-      - name: Set version
-        id: version
-        shell: bash
-        run: echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
 
       - uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8
         with:
@@ -147,7 +160,7 @@ jobs:
         if: runner.os != 'Windows'
         run: |
           cd target/${{ matrix.target }}/release
-          tar czf ../../../peira-${{ steps.version.outputs.version }}-${{ matrix.target }}.tar.gz peira
+          tar czf ../../../peira-${{ needs.pin.outputs.version }}-${{ matrix.target }}.tar.gz peira
 
       # Ship the bare .exe as well as the MSI. If the MSI step ever fails, a working
       # binary still reaches the release rather than the whole Windows target
@@ -157,7 +170,7 @@ jobs:
         shell: pwsh
         run: |
           Compress-Archive -Path target/${{ matrix.target }}/release/peira.exe `
-            -DestinationPath peira-${{ steps.version.outputs.version }}-${{ matrix.target }}.zip
+            -DestinationPath peira-${{ needs.pin.outputs.version }}-${{ matrix.target }}.zip
 
       - name: Install cargo-wix (Windows)
         if: runner.os == 'Windows'
@@ -175,7 +188,7 @@ jobs:
           --package peira-cli
           --include wix/main.wxs
           --target ${{ matrix.target }}
-          --output peira-${{ steps.version.outputs.version }}-${{ matrix.target }}.msi
+          --output peira-${{ needs.pin.outputs.version }}-${{ matrix.target }}.msi
 
       - name: Sign Windows .msi (Azure Trusted Signing)
         if: runner.os == 'Windows'
@@ -193,8 +206,8 @@ jobs:
         # `always()`: a good binary uploads even if MSI packaging or signing failed.
         if: always()
         with:
-          name: peira-${{ steps.version.outputs.version }}-${{ matrix.target }}
-          path: peira-${{ steps.version.outputs.version }}-${{ matrix.target }}.*
+          name: peira-${{ needs.pin.outputs.version }}-${{ matrix.target }}
+          path: peira-${{ needs.pin.outputs.version }}-${{ matrix.target }}.*
           if-no-files-found: ignore
 
   release:
