@@ -10,7 +10,7 @@
 //! argument to open one with. peira's value is that it refuses; a server that can
 //! write is a server that can be talked into writing.
 
-use peira_mcp::{catalogue, check_prose, LensEntry, ProseReport};
+use peira_mcp::{catalogue, check_prose, LensCatalogue, ProseReport};
 use rmcp::handler::server::wrapper::{Json, Parameters};
 use rmcp::model::{Implementation, ServerCapabilities, ServerInfo};
 use rmcp::{schemars, tool, tool_handler, tool_router, ServerHandler, ServiceExt};
@@ -53,7 +53,7 @@ text is sound."
 each naming a specific way of being wrong, where it was identified, and whether it \
 REFUSES a claim or is only a reading. Omit `id` for all of them."
     )]
-    fn lens(Parameters(a): Parameters<LensArgs>) -> Json<Vec<LensEntry>> {
+    fn lens(Parameters(a): Parameters<LensArgs>) -> Json<LensCatalogue> {
         Json(catalogue(a.id.as_deref()))
     }
 }

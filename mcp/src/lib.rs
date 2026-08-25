@@ -130,16 +130,30 @@ not mechanised"
     }
 }
 
+/// The catalogue as it crosses MCP: the entries under a named field.
+///
+/// MCP's `structuredContent` must be a JSON OBJECT, so the entries cannot cross as a
+/// bare array — a top-level array is rejected in transit and the caller sees nothing.
+/// This wrapper is why `check_prose` was already correct: [`ProseReport`] is a struct,
+/// so it serialised to an object, and the catalogue must do the same.
+#[derive(Debug, Clone, Serialize, schemars::JsonSchema)]
+pub struct LensCatalogue {
+    /// The lenses, in catalogue order. One entry when an `id` selected it; none when the
+    /// id matched nothing — an empty list, never a placeholder.
+    pub lenses: Vec<LensEntry>,
+}
+
 /// The catalogue, or one entry of it.
 ///
 /// Exposed so a caller can REASON WITH the framework rather than only be checked by
 /// it: each entry names a failure mode and cites where it was identified.
 #[must_use]
-pub fn catalogue(id: Option<&str>) -> Vec<LensEntry> {
-    match id {
+pub fn catalogue(id: Option<&str>) -> LensCatalogue {
+    let lenses = match id {
         Some(want) => peira_lens::lens(want).map(entry).into_iter().collect(),
         None => peira_lens::CATALOG.iter().map(entry).collect(),
-    }
+    };
+    LensCatalogue { lenses }
 }
 
 #[cfg(test)]
@@ -233,10 +247,31 @@ reads two checks as all of peira"
         }
     }
 
+    /// The catalogue crosses MCP as `structuredContent`, which the spec requires to be
+    /// a JSON OBJECT. A bare `Vec` serialises to a top-level array, and the client
+    /// rejects the whole response in transit — the caller never sees a single lens.
+    /// This is the exact shape [`ProseReport`] already had and the catalogue did not.
+    #[test]
+    fn the_catalogue_payload_is_a_json_object_not_a_bare_array() {
+        let v = serde_json::to_value(catalogue(None)).expect("serialises");
+        assert!(
+            v.is_object(),
+            "MCP structuredContent must be an object; a bare array is rejected before \
+the caller sees it: {v}"
+        );
+        let lenses = v
+            .get("lenses")
+            .expect("the entries cross under a named field, not as the whole value");
+        assert!(
+            lenses.is_array(),
+            "the entries live under `lenses` as an array"
+        );
+    }
+
     /// The catalogue reaches the caller whole, and says which entries REFUSE.
     #[test]
     fn the_catalogue_distinguishes_what_enforces_from_what_is_merely_read() {
-        let all = catalogue(None);
+        let all = catalogue(None).lenses;
         assert_eq!(all.len(), peira_lens::CATALOG.len(), "every entry, or none");
 
         let enforced: Vec<&LensEntry> = all.iter().filter(|e| e.phase == "Enforced").collect();
@@ -271,13 +306,13 @@ it claims an examination nothing performs"
     /// One entry by id, and an unknown id yields nothing rather than something.
     #[test]
     fn an_unknown_lens_id_returns_nothing_not_a_placeholder() {
-        let one = catalogue(Some("TRAIRUPYA"));
+        let one = catalogue(Some("TRAIRUPYA")).lenses;
         assert_eq!(one.len(), 1);
         assert_eq!(one[0].id, "TRAIRUPYA");
         assert!(one[0].gates.contains(&"PEIR-HETU-UNDIAGNOSTIC"));
 
         assert!(
-            catalogue(Some("NOT-A-LENS")).is_empty(),
+            catalogue(Some("NOT-A-LENS")).lenses.is_empty(),
             "an unknown id must return nothing — a placeholder entry would be a lens \
 that does not exist, cited as though it does"
         );
