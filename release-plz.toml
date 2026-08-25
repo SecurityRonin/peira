@@ -73,3 +73,10 @@ commit_parsers = [
 [[package]]
 name = "peira-cli"
 release = false
+
+# Not published until the surface has been used in anger. A new member at 0.1.0
+# is "ahead of crates.io" by definition, so without this the next push to main
+# would claim the name on the strength of a first cut.
+[[package]]
+name = "peira-mcp"
+release = false

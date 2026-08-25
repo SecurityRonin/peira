@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["core", "lens", "citation", "index", "cli"]
+members = ["core", "lens", "citation", "index", "cli", "mcp"]
 
 # Shared package fields (DRY). `version` is NOT hoisted — members version
 # independently, as in amcache-forensic.

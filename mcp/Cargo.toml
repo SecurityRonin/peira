@@ -1,0 +1,30 @@
+[package]
+name = "peira-mcp"
+version = "0.1.0"
+description = "An MCP server exposing peira's prose checks and lens catalogue — the gates, where the writing happens."
+edition.workspace = true
+# 1.88, INHERITED: rmcp declares it. Deliberately its own crate so this floor
+# stays here and does not reach peira-core or peira-lens, which promise 1.85.
+rust-version = "1.88"
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+readme.workspace = true
+keywords = ["mcp", "critical-thinking", "llm", "knowledge-management"]
+categories = ["development-tools"]
+
+[dependencies]
+peira-core = { workspace = true }
+peira-lens = { workspace = true }
+# The official MCP SDK rather than a hand-rolled JSON-RPC loop. Protocol version
+# negotiation, capabilities and error codes are exactly the surface where rolling
+# your own produces a server that works with one client and not another. Cost,
+# stated: 11 required dependencies including tokio, and a 1.88 floor — both
+# confined to this leaf crate.
+rmcp = { version = "3", features = ["server", "transport-io"] }
+serde = { workspace = true }
+serde_json = "1"
+tokio = { version = "1", features = ["macros", "rt-multi-thread", "io-std"] }
+
+[lints]
+workspace = true
