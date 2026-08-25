@@ -429,16 +429,11 @@ fn cmd_verify(vault: &Path, packet: &Path) -> Result<u8, String> {
     let graph = load(vault)?;
     let stored =
         std::fs::read_to_string(packet).map_err(|e| format!("{}: {e}", packet.display()))?;
-    let subject = stored
-        .lines()
-        .next()
-        .and_then(|l| l.strip_prefix("# Citation packet — "))
-        .ok_or_else(|| format!("{} does not look like a packet", packet.display()))?
-        .trim();
 
-    // The library owns the comparison, including reading the packet's declared format.
-    // Re-implementing it here is how a checker and the thing it checks drift apart.
-    let doc = peira_citation::Packet::from_stored(NodeId::new(subject), stored);
+    // The library owns both the header parse and the comparison. Re-implementing either
+    // here is how a checker and the thing it checks drift apart.
+    let doc = peira_citation::Packet::from_document(stored)
+        .map_err(|e| format!("{}: {e}", packet.display()))?;
     match peira_citation::verify(&graph, &doc) {
         Verification::Verified => {
             println!(

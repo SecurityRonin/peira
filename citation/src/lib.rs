@@ -210,6 +210,32 @@ impl Packet {
             digest,
         }
     }
+
+    /// Recover a stored packet from its document text, reading the subject from the
+    /// header the renderer wrote on the first line.
+    ///
+    /// The complete counterpart to [`freeze`]: `freeze` renders, this reads one back.
+    /// [`from_stored`](Self::from_stored) already existed but makes the caller supply the
+    /// subject separately; a packet document names its own subject on line 1, so a caller
+    /// holding only the document had to parse that header itself — which the CLI did, and
+    /// an MCP server would have too, three copies of one format parse waiting to drift.
+    ///
+    /// # Errors
+    /// The text must carry the `# Citation packet — <id>` header. Anything else is named
+    /// as not-a-packet rather than silently digested as one.
+    pub fn from_document(stored: String) -> Result<Self, String> {
+        let subject = stored
+            .lines()
+            .next()
+            .and_then(|l| l.strip_prefix("# Citation packet — "))
+            .map(str::trim)
+            .filter(|s| !s.is_empty())
+            .ok_or_else(|| {
+                "not a citation packet: line 1 must be `# Citation packet — <id>`".to_owned()
+            })?
+            .to_owned();
+        Ok(Self::from_stored(NodeId::new(subject), stored))
+    }
 }
 
 /// Render the three-moment safe statement for a claim.
@@ -1826,6 +1852,32 @@ stipulated: the entry proves the file was executed\n---\n",
             p.body.starts_with("# Citation packet — c1\n"),
             "the format line must not displace the title `peira verify` parses:\n{}",
             p.body
+        );
+        // Round-trip guard: the parser must recover exactly what the renderer wrote. If
+        // the header ever changes, this breaks here rather than letting `from_document`
+        // silently fail to find a subject downstream.
+        let back = Packet::from_document(p.body.clone()).expect("a frozen packet parses back");
+        assert_eq!(back.subject, p.subject, "subject must round-trip");
+        assert_eq!(back.digest, p.digest, "digest must round-trip");
+    }
+
+    /// `from_document` recovers the subject the renderer wrote, and equals the packet
+    /// `from_stored` would build from the same bytes.
+    #[test]
+    fn from_document_recovers_the_subject() {
+        let body = "# Citation packet — c-x\n\n(body)\n".to_owned();
+        let p = Packet::from_document(body.clone()).expect("parses");
+        assert_eq!(p.subject, NodeId::new("c-x"));
+        assert_eq!(p, Packet::from_stored(NodeId::new("c-x"), body));
+    }
+
+    /// Text without the header is named as not-a-packet, never digested as one.
+    #[test]
+    fn from_document_refuses_a_non_packet() {
+        assert!(Packet::from_document("just some text\n".to_owned()).is_err());
+        assert!(
+            Packet::from_document("# Citation packet — \n".to_owned()).is_err(),
+            "an empty subject is not a packet"
         );
     }
 

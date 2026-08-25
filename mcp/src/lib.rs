@@ -22,7 +22,9 @@
 
 use std::path::Path;
 
-use peira_citation::{all_findings, refusal_for, violations_for, PacketError};
+use peira_citation::{
+    all_findings, refusal_for, violations_for, Packet, PacketError, Verification,
+};
 use peira_core::{Graph, NodeId};
 use peira_lens::Violation;
 use rmcp::schemars;
@@ -336,6 +338,153 @@ pub struct GatesReport {
     pub scope: &'static str,
 }
 
+// ── Tier 4 — freeze / verify (read-only; a refusal is a RESULT) ────────────────
+//
+// A refusal is not an error here: the reasons are the product, and an LLM handed a bare
+// error reads it as "try again". A packet is returned, never written. See ADR-0006.
+
+/// The outcome of a freeze attempt over a claim that exists.
+#[derive(Debug, Clone, Serialize, schemars::JsonSchema)]
+#[serde(tag = "outcome", rename_all = "snake_case")]
+pub enum FreezeReport {
+    /// The packet froze. `body` is the court artifact; `digest` is SHA-256 over it. The
+    /// packet is returned, not written — saving it is the caller's decision.
+    Frozen {
+        /// The claim frozen.
+        subject: String,
+        /// The rendered packet document; line 1 names the subject.
+        body: String,
+        /// SHA-256 over `body`.
+        digest: String,
+    },
+    /// Gates BLOCK: the claim is not yet freezable, and these findings stand in the way.
+    /// The reasons are the product; a bare "failed" would throw them away.
+    Blocked {
+        /// The claim.
+        node: String,
+        /// Everything blocking it, each naming its subject.
+        violations: Vec<NodeFinding>,
+    },
+    /// The claim is DEFEATED in the grounded extension — an attack on it stands
+    /// unanswered. Nothing is wrong with a packet; the claim loses on the argument.
+    Defeated {
+        /// The claim.
+        node: String,
+    },
+}
+
+/// Freeze a citation packet for one claim, or report why it will not freeze.
+///
+/// # Errors
+/// The subject must be a claim that exists. A missing node or a non-claim is a bad
+/// request — distinct from a claim that exists but declines to freeze, which is a
+/// [`FreezeReport`] result carrying its reasons.
+pub fn freeze(graph: &Graph, id: &NodeId) -> Result<FreezeReport, String> {
+    match peira_citation::freeze(graph, id) {
+        Ok(p) => Ok(FreezeReport::Frozen {
+            subject: p.subject.to_string(),
+            body: p.body,
+            digest: p.digest,
+        }),
+        Err(PacketError::Blocked { violations, .. }) => Ok(FreezeReport::Blocked {
+            node: id.to_string(),
+            violations: violations.iter().map(node_finding).collect(),
+        }),
+        Err(PacketError::Defeated(_)) => Ok(FreezeReport::Defeated {
+            node: id.to_string(),
+        }),
+        Err(PacketError::NoSuchClaim(_)) => Err(no_such_node(id)),
+        Err(PacketError::NotAClaim { kind, .. }) => Err(format!(
+            "`{id}` is not a claim (kind: {kind}); only claims freeze"
+        )),
+        // PacketError is #[non_exhaustive]: a refusal shape this build does not know is
+        // surfaced loudly, never mapped to a plausible-but-wrong outcome.
+        Err(other) => Err(format!("cannot freeze `{id}`: {other}")),
+    }
+}
+
+/// The outcome of verifying a stored packet against the vault as it stands now.
+#[derive(Debug, Clone, Serialize, schemars::JsonSchema)]
+#[serde(tag = "outcome", rename_all = "snake_case")]
+pub enum VerifyReport {
+    /// Re-derived byte-identically from the vault. The packet still stands.
+    Verified {
+        /// The claim.
+        subject: String,
+        /// SHA-256 the stored packet was checked at.
+        digest: String,
+    },
+    /// The vault no longer renders this packet. NOT by itself an accusation: a vault that
+    /// GREW (a corroborating observation added later) and one whose evidence was ALTERED
+    /// produce the same verdict — the reader judges which.
+    DigestMismatch {
+        /// The claim.
+        subject: String,
+        /// True iff the SOLE difference is the format number, which proves an edit — no
+        /// older renderer could emit a body byte-identical to a newer one's.
+        format_line_only: bool,
+        /// The first line at which stored and fresh diverge — evidence to act on.
+        first_difference: Option<String>,
+    },
+    /// Written by a different renderer than this build, so no comparison is meaningful.
+    FormatSuperseded {
+        /// The claim.
+        subject: String,
+        /// The format the packet declares.
+        stored_format: u32,
+        /// The format this build renders.
+        current_format: u32,
+    },
+    /// The claim no longer freezes — a gate now blocks it, or it has been defeated.
+    /// Nothing is wrong with the packet; the claim stopped qualifying.
+    NoLongerFreezable {
+        /// The claim.
+        subject: String,
+        /// Why it no longer freezes.
+        reason: String,
+    },
+}
+
+/// Verify a stored packet document against the vault as it stands.
+///
+/// # Errors
+/// The text must be a citation packet — its first line names the subject.
+pub fn verify(graph: &Graph, packet: String) -> Result<VerifyReport, String> {
+    let doc = Packet::from_document(packet)?;
+    let subject = doc.subject.to_string();
+    let report = match peira_citation::verify(graph, &doc) {
+        Verification::Verified => VerifyReport::Verified {
+            subject,
+            digest: doc.digest,
+        },
+        Verification::DigestMismatch {
+            format_line_only,
+            first_difference,
+            ..
+        } => VerifyReport::DigestMismatch {
+            subject,
+            format_line_only,
+            first_difference,
+        },
+        Verification::FormatSuperseded {
+            stored, current, ..
+        } => VerifyReport::FormatSuperseded {
+            subject,
+            stored_format: stored,
+            current_format: current,
+        },
+        Verification::NoLongerFreezable(err) => VerifyReport::NoLongerFreezable {
+            subject,
+            reason: err.to_string(),
+        },
+        // Verification is #[non_exhaustive]: an outcome this build does not know must
+        // NOT be mapped to a plausible one — a false "verified" is the worst case — so it
+        // fails loud instead.
+        _ => return Err(format!("unrecognised verification outcome for `{subject}`")),
+    };
+    Ok(report)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -624,6 +773,131 @@ that does not exist, cited as though it does"
         assert_eq!(
             serde_json::to_value(Standing::EvidencePending).unwrap(),
             json!("evidence_pending")
+        );
+    }
+
+    // ── Tier 4 — freeze / verify ──────────────────────────────────────────────
+
+    /// True iff no field is KEYED with a minted-score name, anywhere in the tree. Checks
+    /// keys, not string content, so a packet body legitimately saying "carries no weight"
+    /// does not trip it — the discipline forbids peira MINTING a score field, not the
+    /// author using the word.
+    fn has_no_score_key(v: &serde_json::Value) -> bool {
+        const MINTED: [&str; 5] = ["confidence", "score", "severity", "probability", "weight"];
+        match v {
+            serde_json::Value::Object(m) => m
+                .iter()
+                .all(|(k, val)| !MINTED.contains(&k.as_str()) && has_no_score_key(val)),
+            serde_json::Value::Array(a) => a.iter().all(has_no_score_key),
+            _ => true,
+        }
+    }
+
+    fn frozen_body(g: &Graph, id: &str) -> String {
+        match freeze(g, &NodeId::new(id)).expect("a claim") {
+            FreezeReport::Frozen { body, .. } => body,
+            other => panic!("expected Frozen for {id}: {other:?}"),
+        }
+    }
+
+    /// A bounded claim freezes into a packet whose first line names its subject.
+    #[test]
+    fn a_bounded_claim_freezes() {
+        let body = frozen_body(&vault("bounded"), "c-bounded");
+        assert!(
+            body.starts_with("# Citation packet — c-bounded"),
+            "the packet must name its subject on line 1: {body:.60}"
+        );
+    }
+
+    /// An over-claim is REFUSED as a result carrying its reasons — never an error string.
+    /// This is constraint #4: flattening `Blocked` to "failed" loses the product.
+    #[test]
+    fn an_overclaim_freeze_is_blocked_as_a_result_with_its_reasons() {
+        let r = freeze(&vault("overclaim"), &NodeId::new("c-overclaim"))
+            .expect("a result, not an error");
+        match r {
+            FreezeReport::Blocked { violations, .. } => {
+                assert!(!violations.is_empty(), "blocked must carry why");
+            }
+            other => panic!("an over-claim must be blocked, not {other:?}"),
+        }
+    }
+
+    /// A missing node and a non-claim are bad requests, distinct from a claim that
+    /// declines to freeze.
+    #[test]
+    fn freezing_a_non_claim_or_missing_node_is_an_error() {
+        let g = vault("bounded");
+        assert!(freeze(&g, &NodeId::new("no-such")).is_err(), "missing node");
+        let not_a_claim = freeze(&g, &NodeId::new("o1")).unwrap_err();
+        assert!(
+            not_a_claim.contains("not a claim"),
+            "a non-claim names what it is: {not_a_claim}"
+        );
+    }
+
+    /// A freshly frozen packet verifies against the same vault; tampering with the body
+    /// is caught as a digest mismatch.
+    #[test]
+    fn verify_confirms_an_untouched_packet_and_catches_a_tampered_one() {
+        let g = vault("bounded");
+        let body = frozen_body(&g, "c-bounded");
+
+        let clean = verify(&g, body.clone()).expect("a packet");
+        assert!(
+            matches!(clean, VerifyReport::Verified { .. }),
+            "an untouched packet verifies: {clean:?}"
+        );
+
+        // Append a line the vault never rendered, keeping line 1 intact so the subject
+        // still parses. The re-derivation will not contain it, so digests diverge.
+        let tampered = format!("{body}\nan extra line the vault never rendered\n");
+        let dirty = verify(&g, tampered).expect("a packet");
+        assert!(
+            matches!(dirty, VerifyReport::DigestMismatch { .. }),
+            "a tampered packet is a mismatch: {dirty:?}"
+        );
+    }
+
+    /// Text that is not a packet is a bad request, not a verdict.
+    #[test]
+    fn verifying_a_non_packet_is_an_error() {
+        assert!(verify(&vault("bounded"), "not a packet".to_owned()).is_err());
+    }
+
+    /// No score field is minted by any Tier-4 report — checked on the freeze (both
+    /// outcomes) and verify shapes.
+    #[test]
+    fn no_score_field_is_minted_by_the_tier_4_reports() {
+        let g = vault("bounded");
+        let frozen = freeze(&g, &NodeId::new("c-bounded")).unwrap();
+        let blocked = freeze(&vault("overclaim"), &NodeId::new("c-overclaim")).unwrap();
+        let verified = verify(&g, frozen_body(&g, "c-bounded")).unwrap();
+        for report in [
+            serde_json::to_value(&frozen).unwrap(),
+            serde_json::to_value(&blocked).unwrap(),
+            serde_json::to_value(&verified).unwrap(),
+        ] {
+            assert!(
+                has_no_score_key(&report),
+                "a score field was minted: {report}"
+            );
+        }
+    }
+
+    /// freeze and verify serialise to tagged OBJECTS, never a bare value — the Tier-1
+    /// bare-array bug must not recur at a new surface.
+    #[test]
+    fn tier_4_reports_are_tagged_objects() {
+        let g = vault("bounded");
+        let frozen = serde_json::to_value(freeze(&g, &NodeId::new("c-bounded")).unwrap()).unwrap();
+        assert_eq!(frozen.get("outcome"), Some(&serde_json::json!("frozen")));
+        let verified =
+            serde_json::to_value(verify(&g, frozen_body(&g, "c-bounded")).unwrap()).unwrap();
+        assert_eq!(
+            verified.get("outcome"),
+            Some(&serde_json::json!("verified"))
         );
     }
 }

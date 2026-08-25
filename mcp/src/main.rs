@@ -14,8 +14,8 @@ use std::path::Path;
 
 use peira_core::NodeId;
 use peira_mcp::{
-    catalogue, check_prose, examine, gates, load_vault, status, ExamineReport, GatesReport,
-    LensCatalogue, ProseReport, StatusReport,
+    catalogue, check_prose, examine, freeze, gates, load_vault, status, verify, ExamineReport,
+    FreezeReport, GatesReport, LensCatalogue, ProseReport, StatusReport, VerifyReport,
 };
 use rmcp::handler::server::wrapper::{Json, Parameters};
 use rmcp::model::{Implementation, ServerCapabilities, ServerInfo};
@@ -53,6 +53,14 @@ struct VaultNodeArgs {
     vault: String,
     /// The node id, e.g. `c-bounded`.
     node: String,
+}
+
+#[derive(Deserialize, schemars::JsonSchema)]
+struct VaultPacketArgs {
+    /// Path to the vault root directory. Read-only; never written.
+    vault: String,
+    /// The stored packet document; its first line names the subject.
+    packet: String,
 }
 
 #[derive(Debug, Clone, Default)]
@@ -122,6 +130,35 @@ found; an absent or empty vault is an error, not a clean result."
         let graph = load_vault(Path::new(&a.vault)).map_err(bad_input)?;
         Ok(Json(gates(&graph)))
     }
+
+    #[tool(
+        name = "peira_freeze",
+        description = "Freeze a Court-Mode citation packet for one claim, or report why \
+it will NOT freeze. READ-ONLY — the packet is RETURNED, never written to the vault; saving \
+it is the caller's decision. A refusal is a RESULT, not an error: outcome=blocked carries \
+the gate findings in the way, outcome=defeated means the claim loses on the argument. A \
+missing node or a non-claim is a bad request."
+    )]
+    fn freeze(Parameters(a): Parameters<VaultNodeArgs>) -> Result<Json<FreezeReport>, ErrorData> {
+        let graph = load_vault(Path::new(&a.vault)).map_err(bad_input)?;
+        freeze(&graph, &NodeId::new(a.node))
+            .map(Json)
+            .map_err(bad_input)
+    }
+
+    #[tool(
+        name = "peira_verify",
+        description = "Re-derive a stored packet from the vault as it stands and compare. \
+READ-ONLY. Pass the packet document text; its first line names the subject. \
+outcome=verified means byte-identical; digest_mismatch means the vault no longer renders \
+it — NOT by itself an accusation, since a vault that GREW and one whose evidence was \
+ALTERED look the same; no_longer_freezable means the claim stopped qualifying (a gate now \
+blocks it, or it was defeated)."
+    )]
+    fn verify(Parameters(a): Parameters<VaultPacketArgs>) -> Result<Json<VerifyReport>, ErrorData> {
+        let graph = load_vault(Path::new(&a.vault)).map_err(bad_input)?;
+        verify(&graph, a.packet).map(Json).map_err(bad_input)
+    }
 }
 
 // Written out rather than taking `#[tool_router(server_handler)]`'s generated
@@ -146,7 +183,9 @@ critical-thinking tradition that identified it. Call `peira_check_prose` on any 
 before it reaches a reader — it needs no vault. An empty result is not an endorsement: \
 the checks are narrow by design and say so. Call `peira_lens` to read the catalogue. \
 With a vault, `peira_examine`, `peira_status` and `peira_gates` READ the graph and never \
-write it: a claim's derived standing and what blocks it."
+write it: a claim's derived standing and what blocks it. `peira_freeze` renders a citation \
+packet (returned, never written) or reports why it refuses; `peira_verify` checks a stored \
+packet against the vault."
                 .into(),
         );
         info
