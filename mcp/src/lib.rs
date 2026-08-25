@@ -20,7 +20,11 @@
 //! Every response says which two, because a caller that reads silence as approval has
 //! been given a worse instrument than none.
 
-use peira_core::NodeId;
+use std::path::Path;
+
+use peira_citation::{all_findings, refusal_for, violations_for, PacketError};
+use peira_core::{Graph, NodeId};
+use peira_lens::Violation;
 use rmcp::schemars;
 use serde::Serialize;
 
@@ -154,6 +158,182 @@ pub fn catalogue(id: Option<&str>) -> LensCatalogue {
         None => peira_lens::CATALOG.iter().map(entry).collect(),
     };
     LensCatalogue { lenses }
+}
+
+// ── Tier 2 — vault-aware (read-only) ──────────────────────────────────────────
+//
+// These take a vault path and still never write it. peira's value is that it refuses;
+// a server that can write is a server that can be talked into writing. See ADR-0006.
+
+/// One vault finding, carrying the SUBJECT that a prose [`Finding`] does not need.
+///
+/// A whole-vault survey answers for many nodes at once, so the subject is not optional
+/// here. `PEIR-GATE-UNASSESSED` arrives as an ordinary finding with its own code — that
+/// is how "no verdict reached" survives the JSON boundary instead of collapsing into a
+/// pass or a bare `{ok: false}`.
+#[derive(Debug, Clone, Serialize, schemars::JsonSchema)]
+pub struct NodeFinding {
+    /// The stable gate code, e.g. `PEIR-WARRANT-MISSING` or `PEIR-GATE-UNASSESSED`.
+    pub code: &'static str,
+    /// The lens the gate belongs to.
+    pub lens: &'static str,
+    /// The node the finding is against.
+    pub subject: String,
+    /// What was found, verbatim.
+    pub detail: String,
+    /// What would resolve it.
+    pub remedy: &'static str,
+}
+
+fn node_finding(v: &Violation) -> NodeFinding {
+    NodeFinding {
+        code: v.gate,
+        lens: v.lens,
+        subject: v.subject.to_string(),
+        detail: v.detail.clone(),
+        remedy: v.remedy,
+    }
+}
+
+/// A node's derived standing — the same question `peira status` answers. Derived from
+/// the graph, never a field set on a node.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, schemars::JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum Standing {
+    /// Enforced gates pass and the claim stands: it is in the grounded extension, or it
+    /// is reference material that does not compete. A reviewer must still sign — peira
+    /// does not.
+    ReviewReady,
+    /// Gates pass, but the claim is DEFEATED in the grounded extension: an attack on it
+    /// stands unanswered. It loses on the argument, not on the evidence.
+    Contested,
+    /// One or more enforced gates BLOCK. The evidence is not yet enough to stand.
+    EvidencePending,
+}
+
+/// The standing of one node, by reusing the SAME refusal `freeze` and `peira status`
+/// obey — so this can never disagree with the tool's own refusal.
+///
+/// [`refusal_for`] owns the precedence: blocking gates before grounding. The one thing it
+/// does not distinguish is reference material, which cannot lose an argument it never
+/// entered; that single guard is added here, matching `peira status`.
+fn standing_of(graph: &Graph, id: &NodeId) -> Standing {
+    match refusal_for(graph, id) {
+        Some(PacketError::Blocked { .. }) => Standing::EvidencePending,
+        Some(PacketError::Defeated(_)) if graph.is_argument_node(id) => Standing::Contested,
+        // Freezable (`None`), reference material that loses no argument, and the
+        // `NoSuchClaim` that `refusal_for` never returns (existence is guarded upstream).
+        None | Some(_) => Standing::ReviewReady,
+    }
+}
+
+const EXAMINE_SCOPE: &str = "gates + lints for this claim and everything it rests on, plus \
+its derived standing. An empty findings list means clean; a PEIR-GATE-UNASSESSED finding \
+means a gate could NOT reach a verdict, which is never a pass. No claim is authored or \
+graded here — peira renders from the graph, it does not write it.";
+
+const STATUS_SCOPE: &str = "the derived standing of this node — the same question `peira \
+status` answers, computed from the graph and never set. review_ready means gates pass and \
+the claim stands, but a human reviewer must still sign; peira does not.";
+
+const GATES_SCOPE: &str = "every gate and lint finding across the whole vault. An empty \
+list over a NON-EMPTY vault means nothing was found; an absent or empty vault is an error, \
+not a clean result — silence from an empty vault would be a lie.";
+
+fn no_such_node(id: &NodeId) -> String {
+    format!("no node `{id}` in the vault")
+}
+
+/// One claim examined: its standing, and everything blocking it (the evidential closure).
+///
+/// # Errors
+/// The node must exist in the vault.
+pub fn examine(graph: &Graph, id: &NodeId) -> Result<ExamineReport, String> {
+    if graph.node(id).is_none() {
+        return Err(no_such_node(id));
+    }
+    Ok(ExamineReport {
+        node: id.to_string(),
+        standing: standing_of(graph, id),
+        findings: violations_for(graph, id).iter().map(node_finding).collect(),
+        scope: EXAMINE_SCOPE,
+    })
+}
+
+/// A node's standing alone — the lighter "is this claim actually standing?" question.
+///
+/// # Errors
+/// The node must exist in the vault.
+pub fn status(graph: &Graph, id: &NodeId) -> Result<StatusReport, String> {
+    if graph.node(id).is_none() {
+        return Err(no_such_node(id));
+    }
+    Ok(StatusReport {
+        node: id.to_string(),
+        standing: standing_of(graph, id),
+        scope: STATUS_SCOPE,
+    })
+}
+
+/// Every gate and lint finding across the whole vault.
+#[must_use]
+pub fn gates(graph: &Graph) -> GatesReport {
+    GatesReport {
+        findings: all_findings(graph).iter().map(node_finding).collect(),
+        scope: GATES_SCOPE,
+    }
+}
+
+/// Load a vault for read-only examination.
+///
+/// # Errors
+/// The path must load and hold at least one node. AN EMPTY VAULT IS NOT A CLEAN ONE: a
+/// directory with no nodes would make every survey below report nothing, indistinguishable
+/// from a vault whose every claim passed. Those must stay distinguishable, so an empty or
+/// unreadable vault is an error, never an empty result.
+pub fn load_vault(path: &Path) -> Result<Graph, String> {
+    let graph = peira_core::load(path).map_err(|e| e.to_string())?;
+    if graph.nodes().next().is_none() {
+        return Err(format!(
+            "vault `{}` holds no nodes — nothing was examined, which is not the same as \
+nothing being wrong",
+            path.display()
+        ));
+    }
+    Ok(graph)
+}
+
+/// One claim's standing and everything blocking it.
+#[derive(Debug, Clone, Serialize, schemars::JsonSchema)]
+pub struct ExamineReport {
+    /// The node examined.
+    pub node: String,
+    /// Its derived standing.
+    pub standing: Standing,
+    /// Every gate and lint blocking it, across its evidential closure.
+    pub findings: Vec<NodeFinding>,
+    /// Carried on every report; see the module note.
+    pub scope: &'static str,
+}
+
+/// A node's standing, without the findings list.
+#[derive(Debug, Clone, Serialize, schemars::JsonSchema)]
+pub struct StatusReport {
+    /// The node.
+    pub node: String,
+    /// Its derived standing.
+    pub standing: Standing,
+    /// Carried on every report; see the module note.
+    pub scope: &'static str,
+}
+
+/// Whole-vault gate and lint findings.
+#[derive(Debug, Clone, Serialize, schemars::JsonSchema)]
+pub struct GatesReport {
+    /// Every finding across the vault, each naming its subject.
+    pub findings: Vec<NodeFinding>,
+    /// Carried on every report; see the module note.
+    pub scope: &'static str,
 }
 
 #[cfg(test)]
@@ -315,6 +495,135 @@ it claims an examination nothing performs"
             catalogue(Some("NOT-A-LENS")).lenses.is_empty(),
             "an unknown id must return nothing — a placeholder entry would be a lens \
 that does not exist, cited as though it does"
+        );
+    }
+
+    // ── Tier 2 — vault-aware ──────────────────────────────────────────────────
+
+    /// Load a real fixture vault from the repo's `tests/vaults`. These are the same
+    /// corpora `docs/validation.md` exercises: real engine output over ground truth
+    /// derived from documented construction (Tier 2).
+    fn vault(name: &str) -> Graph {
+        let root = Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../tests/vaults")
+            .join(name);
+        load_vault(&root).expect("fixture vault loads")
+    }
+
+    /// A bounded claim clears the gates and stands.
+    #[test]
+    fn examine_a_bounded_claim_is_review_ready_and_clean() {
+        let g = vault("bounded");
+        let r = examine(&g, &NodeId::new("c-bounded")).expect("node exists");
+        assert_eq!(r.standing, Standing::ReviewReady);
+        assert!(
+            r.findings.is_empty(),
+            "a bounded claim blocks nothing: {:?}",
+            r.findings
+        );
+    }
+
+    /// THE constraint-#2 test, end to end: a gate that reached no verdict must arrive as
+    /// its own finding, never collapsed into a pass. `c-overclaim` produces a real
+    /// `PEIR-GATE-UNASSESSED` (via ZHENGMING), so this rides the whole path from graph to
+    /// serialisable report.
+    #[test]
+    fn examine_an_overclaim_is_evidence_pending_and_the_no_verdict_code_survives() {
+        let g = vault("overclaim");
+        let r = examine(&g, &NodeId::new("c-overclaim")).expect("node exists");
+        assert_eq!(r.standing, Standing::EvidencePending);
+        let codes: Vec<&str> = r.findings.iter().map(|f| f.code).collect();
+        assert!(
+            codes.contains(&"PEIR-GATE-UNASSESSED"),
+            "no-verdict must reach the caller as its own code, not a pass: {codes:?}"
+        );
+        assert!(
+            r.findings.iter().all(|f| !f.subject.is_empty()),
+            "every vault finding names its subject"
+        );
+    }
+
+    /// `status` answers standing and carries no findings list — the schema is the
+    /// assertion.
+    #[test]
+    fn status_answers_standing_only() {
+        let g = vault("overclaim");
+        let r = status(&g, &NodeId::new("c-overclaim")).expect("node exists");
+        assert_eq!(r.standing, Standing::EvidencePending);
+    }
+
+    /// A whole-vault survey: clean over `bounded`, and it names the offending node over
+    /// `overclaim`.
+    #[test]
+    fn gates_surveys_the_whole_vault() {
+        assert!(
+            gates(&vault("bounded")).findings.is_empty(),
+            "the bounded vault is clean"
+        );
+        assert!(
+            gates(&vault("overclaim"))
+                .findings
+                .iter()
+                .any(|f| f.subject == "c-overclaim"),
+            "the over-claim must appear in the survey"
+        );
+    }
+
+    /// An unknown node is an error that names the id, never an empty report that reads
+    /// as "clean".
+    #[test]
+    fn an_unknown_node_is_an_error_not_an_empty_report() {
+        let g = vault("bounded");
+        let err = examine(&g, &NodeId::new("no-such")).unwrap_err();
+        assert!(
+            err.contains("no-such"),
+            "the error names the missing id: {err}"
+        );
+        assert!(status(&g, &NodeId::new("no-such")).is_err());
+    }
+
+    /// The whole acceptance argument rests on empty-clean being distinguishable from
+    /// clean-clean. Both an absent path and an existing-but-empty directory must error.
+    #[test]
+    fn an_empty_or_absent_vault_is_an_error_not_a_clean_result() {
+        let absent = Path::new(env!("CARGO_MANIFEST_DIR")).join("../no-such-vault-xyz");
+        assert!(load_vault(&absent).is_err(), "an absent vault is an error");
+
+        let empty = Path::new(env!("CARGO_MANIFEST_DIR")).join("target/empty-vault-fixture");
+        std::fs::create_dir_all(&empty).expect("mk empty dir");
+        assert!(
+            load_vault(&empty).is_err(),
+            "an empty vault is an error, not a clean result"
+        );
+    }
+
+    /// No mintable number reaches the caller from a vault report either.
+    #[test]
+    fn no_number_reaches_the_caller_from_a_vault_report() {
+        let g = vault("overclaim");
+        let ex = serde_json::to_string(&examine(&g, &NodeId::new("c-overclaim")).unwrap()).unwrap();
+        let ga = serde_json::to_string(&gates(&g)).unwrap();
+        for minted in ["confidence", "score", "severity", "probability", "weight"] {
+            assert!(!ex.contains(minted), "examine carries `{minted}`");
+            assert!(!ga.contains(minted), "gates carries `{minted}`");
+        }
+    }
+
+    /// Standing crosses as a stable `snake_case` string, so a caller can match on it.
+    #[test]
+    fn standing_serialises_as_a_stable_string() {
+        use serde_json::json;
+        assert_eq!(
+            serde_json::to_value(Standing::ReviewReady).unwrap(),
+            json!("review_ready")
+        );
+        assert_eq!(
+            serde_json::to_value(Standing::Contested).unwrap(),
+            json!("contested")
+        );
+        assert_eq!(
+            serde_json::to_value(Standing::EvidencePending).unwrap(),
+            json!("evidence_pending")
         );
     }
 }

@@ -16,6 +16,7 @@ categories = ["development-tools"]
 [dependencies]
 peira-core = { workspace = true }
 peira-lens = { workspace = true }
+peira-citation = { workspace = true }
 # The official MCP SDK rather than a hand-rolled JSON-RPC loop. Protocol version
 # negotiation, capabilities and error codes are exactly the surface where rolling
 # your own produces a server that works with one client and not another. Cost,

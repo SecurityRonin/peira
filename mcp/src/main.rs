@@ -10,11 +10,24 @@
 //! argument to open one with. peira's value is that it refuses; a server that can
 //! write is a server that can be talked into writing.
 
-use peira_mcp::{catalogue, check_prose, LensCatalogue, ProseReport};
+use std::path::Path;
+
+use peira_core::NodeId;
+use peira_mcp::{
+    catalogue, check_prose, examine, gates, load_vault, status, ExamineReport, GatesReport,
+    LensCatalogue, ProseReport, StatusReport,
+};
 use rmcp::handler::server::wrapper::{Json, Parameters};
 use rmcp::model::{Implementation, ServerCapabilities, ServerInfo};
-use rmcp::{schemars, tool, tool_handler, tool_router, ServerHandler, ServiceExt};
+use rmcp::{schemars, tool, tool_handler, tool_router, ErrorData, ServerHandler, ServiceExt};
 use serde::Deserialize;
+
+/// Map a human-readable failure (bad vault path, unknown node) to an MCP error. A vault
+/// that will not load or a node that does not exist is a bad request, not a finding —
+/// distinct from a refusal-with-reasons, which is a Tier 4 concern.
+fn bad_input(message: String) -> ErrorData {
+    ErrorData::invalid_params(message, None)
+}
 
 #[derive(Deserialize, schemars::JsonSchema)]
 struct CheckProseArgs {
@@ -26,6 +39,20 @@ struct CheckProseArgs {
 struct LensArgs {
     /// A lens id such as `TRAIRUPYA`. Omit for the whole catalogue.
     id: Option<String>,
+}
+
+#[derive(Deserialize, schemars::JsonSchema)]
+struct VaultArgs {
+    /// Path to the vault root directory. Read-only; never written.
+    vault: String,
+}
+
+#[derive(Deserialize, schemars::JsonSchema)]
+struct VaultNodeArgs {
+    /// Path to the vault root directory. Read-only; never written.
+    vault: String,
+    /// The node id, e.g. `c-bounded`.
+    node: String,
 }
 
 #[derive(Debug, Clone, Default)]
@@ -56,6 +83,45 @@ REFUSES a claim or is only a reading. Omit `id` for all of them."
     fn lens(Parameters(a): Parameters<LensArgs>) -> Json<LensCatalogue> {
         Json(catalogue(a.id.as_deref()))
     }
+
+    #[tool(
+        name = "peira_examine",
+        description = "Examine one claim in a vault: its derived standing \
+(review_ready | contested | evidence_pending) and every gate and lint blocking it — the \
+claim and everything it rests on. READ-ONLY; the vault is never written. A \
+PEIR-GATE-UNASSESSED finding means a gate could NOT reach a verdict, which is never a \
+pass. No claim is authored or graded."
+    )]
+    fn examine(Parameters(a): Parameters<VaultNodeArgs>) -> Result<Json<ExamineReport>, ErrorData> {
+        let graph = load_vault(Path::new(&a.vault)).map_err(bad_input)?;
+        examine(&graph, &NodeId::new(a.node))
+            .map(Json)
+            .map_err(bad_input)
+    }
+
+    #[tool(
+        name = "peira_status",
+        description = "The derived standing of one node — the same question `peira status` \
+answers, computed from the graph and never set. review_ready means gates pass and the \
+claim stands, but a human reviewer must still sign; peira does not. READ-ONLY."
+    )]
+    fn status(Parameters(a): Parameters<VaultNodeArgs>) -> Result<Json<StatusReport>, ErrorData> {
+        let graph = load_vault(Path::new(&a.vault)).map_err(bad_input)?;
+        status(&graph, &NodeId::new(a.node))
+            .map(Json)
+            .map_err(bad_input)
+    }
+
+    #[tool(
+        name = "peira_gates",
+        description = "Survey every gate and lint finding across a whole vault, each \
+naming its subject. READ-ONLY. An empty list over a NON-EMPTY vault means nothing was \
+found; an absent or empty vault is an error, not a clean result."
+    )]
+    fn gates(Parameters(a): Parameters<VaultArgs>) -> Result<Json<GatesReport>, ErrorData> {
+        let graph = load_vault(Path::new(&a.vault)).map_err(bad_input)?;
+        Ok(Json(gates(&graph)))
+    }
 }
 
 // Written out rather than taking `#[tool_router(server_handler)]`'s generated
@@ -78,7 +144,9 @@ impl ServerHandler for Peira {
             "peira names specific ways of being wrong, each drawn from a \
 critical-thinking tradition that identified it. Call `peira_check_prose` on any draft \
 before it reaches a reader — it needs no vault. An empty result is not an endorsement: \
-the checks are narrow by design and say so. Call `peira_lens` to read the catalogue."
+the checks are narrow by design and say so. Call `peira_lens` to read the catalogue. \
+With a vault, `peira_examine`, `peira_status` and `peira_gates` READ the graph and never \
+write it: a claim's derived standing and what blocks it."
                 .into(),
         );
         info

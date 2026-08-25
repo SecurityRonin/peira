@@ -741,6 +741,7 @@ dependencies = [
 name = "peira-mcp"
 version = "0.1.0"
 dependencies = [
+ "peira-citation",
  "peira-core",
  "peira-lens",
  "rmcp",
