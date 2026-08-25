@@ -1115,6 +1115,25 @@ that does not exist, cited as though it does"
         );
     }
 
+    /// The documented example vault (`examples/prefetch-vault`) must stay freezable — a
+    /// gate change that breaks it should fail the build, not silently make its README
+    /// false. This is the "deliverables are compiled from source" rule applied to a doc.
+    #[test]
+    fn the_documented_example_vault_stays_freezable() {
+        let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../examples/prefetch-vault");
+        let g = load_vault(&root).expect("the example vault loads");
+        assert!(
+            gates(&g).findings.is_empty(),
+            "the example vault must be clean: {:?}",
+            gates(&g).findings
+        );
+        let frozen = freeze(&g, &NodeId::new("c-prefetch")).expect("a claim");
+        assert!(
+            matches!(frozen, FreezeReport::Frozen { .. }),
+            "the example claim must freeze: {frozen:?}"
+        );
+    }
+
     // ── Tier 3 — propose ──────────────────────────────────────────────────────
 
     fn inferred_value<'a>(r: &'a ProposeReport, field: &str) -> &'a str {
