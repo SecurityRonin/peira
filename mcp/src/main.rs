@@ -35,11 +35,13 @@ struct Peira;
 impl Peira {
     #[tool(
         name = "peira_check_prose",
-        description = "Scan prose for the failure modes peira names: overstated verbs \
-(an observation stated as a verdict), ultimate-issue conclusions that decide the \
-tribunal's question, unbounded quantifiers, and hedges that do not reach the claim. \
-Needs no vault. Returns each finding with the safe form named. An empty result means \
-the scan found nothing it knows how to name — it is NOT a finding that the text is sound."
+        description = "Scan prose for the TWO failure modes peira can name without a \
+vault: overstated verbs (an observation stated as a verdict) and ultimate-issue \
+conclusions (a verdict word said of a party). Every other rule peira enforces — \
+quantifier scope, causal rung, warrant, falsifier, boundaries — compares prose against a \
+node's declared fields and cannot run on bare text. Returns each finding with the safe \
+form named. An empty result means those two found nothing; it is NOT a finding that the \
+text is sound."
     )]
     fn check_prose(Parameters(a): Parameters<CheckProseArgs>) -> Json<ProseReport> {
         Json(check_prose(&a.text))

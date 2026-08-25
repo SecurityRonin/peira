@@ -13,10 +13,12 @@
 //! helpful-looking `confidence: 0.82` would appear. A finding carries a gate code, a
 //! subject, what was found and what to do instead — nothing that could be averaged.
 //!
-//! And an empty finding list is NOT an endorsement. The prose checks are narrow
-//! heuristics by design, so "nothing fired" means the scan found nothing it knows
-//! how to name, never "this sentence is safe". Every response says so, because a
-//! caller that reads silence as approval has been given a worse instrument than none.
+//! And an empty finding list is NOT an endorsement. Exactly two checks run without a
+//! node — overstated verbs and ultimate-issue conclusions — because every other rule
+//! peira enforces compares prose against DECLARED fields that bare text does not have.
+//! So "nothing fired" means those two found nothing, never "this sentence is safe".
+//! Every response says which two, because a caller that reads silence as approval has
+//! been given a worse instrument than none.
 
 use peira_core::NodeId;
 use rmcp::schemars;
@@ -43,10 +45,12 @@ pub struct ProseReport {
 }
 
 /// The scope note, carried on every report so silence cannot read as approval.
-const SCOPE: &str = "These are narrow prose heuristics: overstated verbs, ultimate-issue \
-conclusions, quantifiers, hedge frames. An empty result means the scan found nothing it \
-knows how to name — it is not a finding that the text is sound, and it says nothing about \
-whether the underlying claim is supported.";
+const SCOPE: &str = "TWO checks run here, and only two: overstated verbs (an observation \
+stated as a verdict) and ultimate-issue conclusions (a verdict word said of a party). \
+peira's other rules — quantifier scope, causal rung, warrant, falsifier, boundaries, \
+diagnosticity — compare prose against a node's DECLARED fields, so they cannot run on bare \
+text and are not run. An empty result means these two found nothing; it is not a finding \
+that the text is sound, and it says nothing about whether the claim is supported.";
 
 /// Run every prose check over arbitrary text. No vault, no graph, no model.
 #[must_use]
@@ -183,6 +187,36 @@ evidence demonstrates the respondent is guilty of unauthorised access.",
         assert!(
             r.scope.contains("not a finding that the text is sound"),
             "an empty result must disclaim itself"
+        );
+    }
+
+    /// THE LIMIT, pinned. Found by using the tool, not by reading the tests.
+    ///
+    /// The first tool description advertised four checks: overstated verbs,
+    /// ultimate-issue conclusions, unbounded quantifiers, and hedges. Only the first
+    /// two run without a node — the rest compare prose against DECLARED fields that
+    /// bare text does not have. So peira's own MCP surface overstated its coverage,
+    /// which is the failure peira exists to name.
+    ///
+    /// This asserts the boundary rather than the promise: a sentence that quantifies
+    /// over an estate draws NOTHING here, and the scope note must say why.
+    #[test]
+    fn an_unbounded_quantifier_is_not_caught_without_a_node() {
+        let r = check_prose("Every device in the estate shows the same registry artefact.");
+        assert!(
+            r.findings.is_empty(),
+            "if this now fires, the prose scan has grown a check and the scope note \
+and tool description are both stale: {:?}",
+            r.findings
+        );
+        assert!(
+            r.scope.contains("declared") || r.scope.contains("DECLARED"),
+            "the scope note must say WHY the other rules cannot run here, or a caller \
+reads two checks as all of peira"
+        );
+        assert!(
+            r.scope.contains("TWO") || r.scope.contains("two"),
+            "the scope note must state how many checks actually ran"
         );
     }
 
