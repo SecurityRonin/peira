@@ -224,10 +224,14 @@ impl Packet {
     /// The text must carry the `# Citation packet — <id>` header. Anything else is named
     /// as not-a-packet rather than silently digested as one.
     pub fn from_document(stored: String) -> Result<Self, String> {
-        let subject = stored
-            .lines()
-            .next()
-            .and_then(|l| l.strip_prefix("# Citation packet — "))
+        let first = stored.lines().next().unwrap_or("");
+        // Tolerate a leading UTF-8 BOM: a Windows editor silently prepends one, and
+        // without this a byte-authentic packet is REJECTED as "not a packet" rather than
+        // reaching verify. The digest is still taken over `stored` as-is, so a BOM (a real
+        // byte change) surfaces as an honest `DigestMismatch`, not a hard parse refusal.
+        let first = first.strip_prefix('\u{FEFF}').unwrap_or(first);
+        let subject = first
+            .strip_prefix("# Citation packet — ")
             .map(str::trim)
             .filter(|s| !s.is_empty())
             .ok_or_else(|| {
@@ -1869,6 +1873,16 @@ stipulated: the entry proves the file was executed\n---\n",
         let p = Packet::from_document(body.clone()).expect("parses");
         assert_eq!(p.subject, NodeId::new("c-x"));
         assert_eq!(p, Packet::from_stored(NodeId::new("c-x"), body));
+    }
+
+    /// F4.6: a Windows editor silently prepends a UTF-8 BOM. A BOM-prefixed packet must
+    /// still be RECOGNISED (so verify can report the honest digest verdict), not rejected
+    /// as not-a-packet.
+    #[test]
+    fn from_document_tolerates_a_leading_bom() {
+        let body = "\u{FEFF}# Citation packet — c-x\n\n(body)\n".to_owned();
+        let p = Packet::from_document(body).expect("a BOM-prefixed packet is still a packet");
+        assert_eq!(p.subject, NodeId::new("c-x"));
     }
 
     /// Text without the header is named as not-a-packet, never digested as one.
