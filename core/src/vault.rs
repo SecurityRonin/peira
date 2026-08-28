@@ -140,7 +140,19 @@ fn markdown_files(root: &Path) -> Result<Vec<PathBuf>, VaultError> {
             }
             if path.is_dir() {
                 stack.push(path);
-            } else if path
+                continue;
+            }
+            // Only REGULAR files are candidate nodes. A FIFO, device or socket anywhere
+            // in the tree would otherwise hang the walk forever: `is_a_frozen_packet`
+            // (and `load`'s `read_to_string`) call open(2), which BLOCKS on a special
+            // file that has no writer — a denial of service reachable from a caller-
+            // supplied vault path (the MCP server takes one). `metadata` stats without
+            // opening, so it is safe on a special file; a symlink is followed, and a
+            // broken or looping one fails the stat and is skipped.
+            if !path.metadata().is_ok_and(|m| m.is_file()) {
+                continue;
+            }
+            if path
                 .file_name()
                 .is_some_and(|n| n.eq_ignore_ascii_case("README.md"))
                 || is_a_frozen_packet(&path)
@@ -243,6 +255,51 @@ mod tests {
             fs::create_dir_all(parent).unwrap();
         }
         fs::write(dir.join(name), body).unwrap();
+    }
+
+    /// A blocking special file in the vault tree must not hang the load.
+    ///
+    /// F1 from the adversarial audit: files were opened (`is_a_frozen_packet`,
+    /// `read_to_string`) BEFORE the extension filter, so a FIFO of any name wedged the
+    /// walk in `open(2)` forever — a denial of service on a caller-supplied vault path
+    /// (the MCP server takes one). The regular-file guard must skip it. Run on a worker
+    /// thread with a timeout so a REGRESSION fails this test instead of hanging the suite.
+    #[cfg(unix)]
+    #[test]
+    fn a_blocking_special_file_does_not_hang_the_load() {
+        use std::sync::mpsc;
+        use std::time::Duration;
+
+        let dir = scratch("fifo-dos");
+        write(
+            &dir,
+            "70-inquiry/c1.md",
+            "---\nid: c1\ntype: claim\ntitle: a real node\n---\n",
+        );
+        // A FIFO with a `.md` name — it clears the extension filter, and with no writer
+        // an `open()` on it blocks forever without the regular-file guard.
+        let fifo = dir.join("70-inquiry/trap.md");
+        let made = std::process::Command::new("mkfifo")
+            .arg(&fifo)
+            .status()
+            .is_ok_and(|s| s.success());
+        if !made {
+            eprintln!("skipping: mkfifo unavailable on this host");
+            return;
+        }
+
+        let (tx, rx) = mpsc::channel();
+        let probe = dir.clone();
+        std::thread::spawn(move || {
+            let _ = tx.send(load(&probe).map(|g| g.nodes().count()));
+        });
+        match rx.recv_timeout(Duration::from_secs(10)) {
+            Ok(Ok(count)) => assert!(count >= 1, "the real node loads; the FIFO is skipped"),
+            Ok(Err(e)) => panic!("load errored rather than skipping the FIFO: {e}"),
+            Err(cause) => {
+                panic!("F1 REGRESSION: load did not return ({cause:?}) — hung on the FIFO")
+            }
+        }
     }
 
     /// A vault may name the detector an observation came off.
