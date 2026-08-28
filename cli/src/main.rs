@@ -279,7 +279,13 @@ fn cmd_gates(vault: &Path, node: Option<String>) -> Result<u8, String> {
         // SET while the grounding verdict stayed behind.
         let found = blocking_for(&graph, &id);
         let code = report(&found, "gates");
-        if found.is_empty() {
+        // REFERENCE MATERIAL DOES NOT COMPETE, so it cannot be "defeated". `refusal_for`
+        // returns Defeated for ANY non-grounded node, and a Term/Criterion is never in the
+        // grounded extension — so without the `is_argument_node` guard this branch reported
+        // every term as DEFEATED with a non-zero exit, disagreeing with `status` and the
+        // MCP, both of which guard it. (A term does not freeze because it is not a claim,
+        // not because it lost an argument.)
+        if found.is_empty() && graph.is_argument_node(&id) {
             if let Some(peira_citation::PacketError::Defeated(_)) =
                 peira_citation::refusal_for(&graph, &id)
             {
@@ -734,6 +740,15 @@ stipulated: c\n---\n",
             cmd_status(&dir, "t1").expect("status runs"),
             exit::OK,
             "reference material does not compete, so being OUT is not a defeat"
+        );
+        // F3.2: the same must hold for `gates --node <term>`. It lacked the is_argument
+        // guard that `status` has, so it reported a term DEFEATED with a non-zero exit —
+        // disagreeing with `status` and the MCP. A term does not freeze because it is not
+        // a claim, never because it "lost an argument".
+        assert_eq!(
+            cmd_gates(&dir, Some("t1".to_owned())).expect("gates runs"),
+            exit::OK,
+            "reference material is not defeated; `gates --node <term>` must not exit non-zero"
         );
         let _ = std::fs::remove_dir_all(&dir);
     }
