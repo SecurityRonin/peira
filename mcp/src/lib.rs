@@ -9,9 +9,12 @@
 //!
 //! # What it deliberately does not do
 //!
-//! No scores. peira mints no numbers, and a response schema is exactly where a
-//! helpful-looking `confidence: 0.82` would appear. A finding carries a gate code, a
-//! subject, what was found and what to do instead — nothing that could be averaged.
+//! No scores. peira mints no SCORE field — no confidence/severity/probability/weight —
+//! and a response schema is exactly where a helpful-looking `confidence: 0.82` would
+//! appear. A finding carries a gate code, a subject, what was found and what to do
+//! instead — nothing that could be averaged. (It does mint non-score numbers where they
+//! are structural, not evidential: a packet's format version, a line count in a verify
+//! diff. Those are facts about the artifact, not gradings of a claim.)
 //!
 //! And an empty finding list is NOT an endorsement. Exactly two checks run without a
 //! node — overstated verbs and ultimate-issue conclusions — because every other rule
@@ -280,8 +283,24 @@ pub fn status(graph: &Graph, id: &NodeId) -> Result<StatusReport, String> {
 /// Every gate and lint finding across the whole vault.
 #[must_use]
 pub fn gates(graph: &Graph) -> GatesReport {
+    // The COMPLETE survey — the enforced GATE pack AND the lint pack. `all_findings` is
+    // lints + sealed-prose ONLY; using it alone made this tool (the sole whole-vault
+    // survey, advertised as "every gate and lint finding") return an empty "clean" over a
+    // vault whose every claim was unfreezable, and silently drop PEIR-GATE-UNASSESSED —
+    // the no-verdict state the per-node path works to preserve. `examine_graph` is the
+    // gate pack; union it in, deduped by (gate, subject, detail) since a finding can in
+    // principle arise in both.
+    let mut violations = peira_lens::examine_graph(graph);
+    for v in all_findings(graph) {
+        if !violations
+            .iter()
+            .any(|f| f.gate == v.gate && f.subject == v.subject && f.detail == v.detail)
+        {
+            violations.push(v);
+        }
+    }
     GatesReport {
-        findings: all_findings(graph).iter().map(node_finding).collect(),
+        findings: violations.iter().map(node_finding).collect(),
         scope: GATES_SCOPE,
     }
 }
@@ -545,8 +564,11 @@ was.";
 
 /// Whether `haystack` contains `word` as a whole word (both already lowercased).
 fn contains_word(haystack: &str, word: &str) -> bool {
+    // Split on separators, but keep hyphen and apostrophe WORD-INTERNAL — else
+    // "all-clear", "no-one" and "y'all" leak the determiners "all"/"no" and misfire the
+    // quantifier. Both straight and curly apostrophes.
     haystack
-        .split(|c: char| !c.is_alphanumeric())
+        .split(|c: char| !c.is_alphanumeric() && !matches!(c, '-' | '\'' | '\u{2019}'))
         .any(|token| token == word)
 }
 
@@ -576,27 +598,70 @@ fn infer_aspect(proposition: &str) -> Inferred {
     // predicate reads as what it DID (function). Crude on purpose — peira has no parser
     // for meaning, so this is confirmable, not decided.
     let lower = proposition.to_lowercase();
-    if lower.contains(" is a ") || lower.contains(" is an ") || lower.contains(" are ") {
+    // Substance = a predicate NOMINAL: "X is/are a/an <noun>". Bare " are " was the bug —
+    // it fired on passive voice ("the logs are wiped"), the commonest forensic register,
+    // which is a FUNCTION claim about what was done. Requiring the article keeps passive
+    // voice out of substance; the residual copular cases ("it is a fact that …") are why
+    // this stays confirmable.
+    let substance = lower.contains(" is a ")
+        || lower.contains(" is an ")
+        || lower.contains(" are a ")
+        || lower.contains(" are an ");
+    if substance {
         Inferred {
             field: "aspect",
             value: "substance",
-            inferred_from: "a copular \"is a / are\" — a claim about what something IS".to_owned(),
+            inferred_from: "a predicate nominal \"is/are a/an …\" — a claim about what \
+something IS (confirm: passive voice can resemble this)"
+                .to_owned(),
             confirm: true,
         }
     } else {
         Inferred {
             field: "aspect",
             value: "function",
-            inferred_from: "an action predicate — what something DID, not what it is".to_owned(),
+            inferred_from: "no predicate nominal — read as a claim about what something DID"
+                .to_owned(),
             confirm: true,
         }
     }
 }
 
-fn infer_rung(findings: &[Violation]) -> Inferred {
-    // REUSE the lint's verb knowledge rather than a parallel table: if the proposition
-    // trips the forbidden-verb lint, it reads above the association rung, and inferring it
-    // there makes the RUNG gate FIRE on the draft — surfacing the over-claim, not hiding it.
+/// A causal marker in the proposition — a claim of causation, which reads above the
+/// association rung whether or not it uses a proving verb. Negation is not special-cased:
+/// "X did not cause Y" asserts non-causation, which needs the same rung to establish.
+fn causal_marker(proposition: &str) -> Option<&'static str> {
+    const WORDS: [&str; 6] = [
+        "caused",
+        "causes",
+        "causing",
+        "prevented",
+        "prevents",
+        "preventing",
+    ];
+    const PHRASES: [&str; 6] = [
+        "because",
+        "due to",
+        "leads to",
+        "led to",
+        "results in",
+        "resulted in",
+    ];
+    let lower = proposition.to_lowercase();
+    if let Some(w) = WORDS.iter().find(|w| contains_word(&lower, w)) {
+        return Some(w);
+    }
+    PHRASES.iter().copied().find(|p| lower.contains(p))
+}
+
+fn infer_rung(proposition: &str, findings: &[Violation]) -> Inferred {
+    // A proving verb (the forbidden-verb lint, reused rather than a parallel table) is
+    // epistemic overreach → counterfactual. A CAUSAL marker with no proving verb is a
+    // causation claim → intervention. Either reads above the association rung, so the
+    // RUNG gate FIRES on the draft — surfacing the over-claim rather than hiding it, which
+    // is the whole point. The earlier version knew only proving verbs, so genuine causal
+    // claims ("the malware caused the outage") were floored at association and the gate
+    // stayed silent — a false LOW hiding exactly what this exists to catch.
     if findings
         .iter()
         .any(|v| v.gate == peira_lens::lints::FORBIDDEN_VERB)
@@ -609,11 +674,21 @@ reads above the association rung, so the RUNG gate will demand a protocol"
                 .to_owned(),
             confirm: true,
         }
+    } else if let Some(marker) = causal_marker(proposition) {
+        Inferred {
+            field: "causal_rung",
+            value: "intervention",
+            inferred_from: format!(
+                "a causal marker \"{marker}\" — the claim reads at the intervention rung, \
+so the RUNG gate will demand a protocol"
+            ),
+            confirm: true,
+        }
     } else {
         Inferred {
             field: "causal_rung",
             value: "association",
-            inferred_from: "no proving verb present — the safe floor".to_owned(),
+            inferred_from: "no proving or causal language present — the safe floor".to_owned(),
             confirm: true,
         }
     }
@@ -622,21 +697,36 @@ reads above the association rung, so the RUNG gate will demand a protocol"
 /// Terms the author explicitly put in double quotes — a strong, unambiguous signal, unlike
 /// guessing noun phrases, which peira has no model to do. Curly and straight quotes both.
 fn quoted_terms(proposition: &str) -> Vec<String> {
-    let mut terms = Vec::new();
+    fn flush(current: &mut String, terms: &mut Vec<String>) {
+        let t = current.trim();
+        if !t.is_empty() && !terms.iter().any(|e| e == t) {
+            terms.push(t.to_owned());
+        }
+        current.clear();
+    }
+    let mut terms: Vec<String> = Vec::new();
     let mut current = String::new();
     let mut inside = false;
     for ch in proposition.chars() {
-        if matches!(ch, '"' | '\u{201C}' | '\u{201D}') {
-            if inside {
-                let t = current.trim();
-                if !t.is_empty() && !terms.iter().any(|e| e == t) {
-                    terms.push(t.to_owned());
+        match ch {
+            // Straight quote is non-directional: toggle open/close.
+            '"' => {
+                if inside {
+                    flush(&mut current, &mut terms);
                 }
-                current.clear();
+                inside = !inside;
             }
-            inside = !inside;
-        } else if inside {
-            current.push(ch);
+            // Curly quotes are DIRECTIONAL. Treating all three glyphs as interchangeable
+            // toggles let a stray closing quote — common in copy-pasted prose — open a
+            // span, turning the following words into a fabricated term.
+            '\u{201C}' => inside = true,
+            '\u{201D}' if inside => {
+                flush(&mut current, &mut terms);
+                inside = false;
+            }
+            '\u{201D}' => {} // stray close outside a span: ignore, do not open one
+            _ if inside => current.push(ch),
+            _ => {}
         }
     }
     terms
@@ -657,7 +747,7 @@ pub fn propose(prose: &str) -> ProposeReport {
     let inferred = vec![
         infer_quantifier(&proposition),
         infer_aspect(&proposition),
-        infer_rung(&findings),
+        infer_rung(&proposition, &findings),
     ];
 
     // The blanks, each labelled with the gate that will demand it. These are the enforced
@@ -923,12 +1013,30 @@ that does not exist, cited as though it does"
             gates(&vault("bounded")).findings.is_empty(),
             "the bounded vault is clean"
         );
+
+        // F3.1: the survey must carry the ENFORCED GATE pack, not only lints. The old
+        // assertion (any subject == c-overclaim) was satisfied by a masking FORBIDDEN-VERB
+        // lint while every gate finding — including the PEIR-GATE-UNASSESSED no-verdict
+        // state — was silently dropped. Assert the survey is a superset of the gate-pack
+        // codes the per-node examine surfaces, so a lint can no longer mask their absence.
+        let g = vault("overclaim");
+        let survey: std::collections::BTreeSet<&str> =
+            gates(&g).findings.iter().map(|f| f.code).collect();
+        let per_node = examine(&g, &NodeId::new("c-overclaim")).unwrap();
+        for gate_code in per_node
+            .findings
+            .iter()
+            .map(|f| f.code)
+            .filter(|c| !c.contains("LINT"))
+        {
+            assert!(
+                survey.contains(gate_code),
+                "the whole-vault survey dropped the enforced-gate finding {gate_code}"
+            );
+        }
         assert!(
-            gates(&vault("overclaim"))
-                .findings
-                .iter()
-                .any(|f| f.subject == "c-overclaim"),
-            "the over-claim must appear in the survey"
+            survey.contains("PEIR-GATE-UNASSESSED"),
+            "the no-verdict state must survive the survey, not collapse into a clean"
         );
     }
 
@@ -1209,14 +1317,19 @@ that does not exist, cited as though it does"
         assert_eq!(by_field.get("falsifier"), Some(&"PEIR-FALSIFIER-MISSING"));
     }
 
-    /// No evidentiary KEY (grade/by/via) and no `grade=`/`via=` value may appear anywhere.
+    /// No evidentiary KEY (grade/by/via) and no `grade=`/`by=`/`via=` value may appear
+    /// anywhere. All three tokens — the guard's scope note promises all three, and an
+    /// earlier version enforced only `grade=`/`via=`, letting `by=` (authorship
+    /// attribution) through.
     fn authors_no_evidence(v: &serde_json::Value) -> bool {
         match v {
             serde_json::Value::Object(m) => m.iter().all(|(k, val)| {
                 !["grade", "by", "via"].contains(&k.as_str()) && authors_no_evidence(val)
             }),
             serde_json::Value::Array(a) => a.iter().all(authors_no_evidence),
-            serde_json::Value::String(s) => !s.contains("grade=") && !s.contains("via="),
+            serde_json::Value::String(s) => {
+                !s.contains("grade=") && !s.contains("by=") && !s.contains("via=")
+            }
             _ => true,
         }
     }
@@ -1234,10 +1347,121 @@ that does not exist, cited as though it does"
         }
     }
 
+    /// The guard's NEGATIVE control: prove each of grade=/by=/via= actually turns it red,
+    /// on the exact echo path (propose copies the proposition verbatim). Without this the
+    /// string arm never fired in any test, so the missing `by=` clause shipped unnoticed —
+    /// a control never seen to fail is not known to work.
+    #[test]
+    fn the_evidence_guard_goes_red_on_each_of_grade_by_via() {
+        for token in ["grade=G4", "by=analyst", "via=perception"] {
+            let payload = serde_json::json!({ "proposition": format!("x {token} y") });
+            assert!(
+                !authors_no_evidence(&payload),
+                "the guard must reject a value containing `{token}`"
+            );
+        }
+        assert!(
+            authors_no_evidence(&serde_json::json!({ "proposition": "no evidence grammar here" })),
+            "control: a clean value passes"
+        );
+    }
+
     /// And it mints no score.
     #[test]
     fn propose_mints_no_score() {
         let v = serde_json::to_value(propose("The Amcache entry proves execution.")).unwrap();
         assert!(has_no_score_key(&v), "a score field was minted: {v}");
+    }
+
+    /// F4.2: a causal claim must read ABOVE association so the RUNG gate fires — the
+    /// earlier version knew only proving verbs and floored causal claims at association,
+    /// hiding the over-claim it exists to surface.
+    #[test]
+    fn infer_rung_fires_on_causal_claims_not_only_proving_verbs() {
+        for prose in [
+            "The malware caused the outage.",
+            "Because of the exploit, the server fell over.",
+            "The patch prevented the breach.",
+        ] {
+            assert_eq!(
+                inferred_value(&propose(prose), "causal_rung"),
+                "intervention",
+                "causal claim floored at association: {prose:?}"
+            );
+        }
+        assert_eq!(
+            inferred_value(&propose("The tool proves execution."), "causal_rung"),
+            "counterfactual",
+            "a proving verb still reads counterfactual"
+        );
+        assert_eq!(
+            inferred_value(
+                &propose("The record shows catalogued presence."),
+                "causal_rung"
+            ),
+            "association",
+            "a plain descriptive claim is still the safe floor"
+        );
+    }
+
+    /// F4.1: passive voice (" are …") is the majority forensic register and is a FUNCTION
+    /// claim — it must not be labelled substance.
+    #[test]
+    fn infer_aspect_reads_passive_voice_as_function() {
+        for prose in [
+            "The logs are wiped.",
+            "Processes are terminated.",
+            "The users are authenticated.",
+        ] {
+            assert_eq!(
+                inferred_value(&propose(prose), "aspect"),
+                "function",
+                "passive voice mislabelled substance: {prose:?}"
+            );
+        }
+        assert_eq!(
+            inferred_value(&propose("The file is a copy of the original."), "aspect"),
+            "substance",
+            "a genuine predicate nominal is still substance"
+        );
+    }
+
+    /// F4.4: hyphens and apostrophes are word-internal — "all-clear"/"no-one"/"y'all" must
+    /// not leak the universal determiners.
+    #[test]
+    fn contains_word_keeps_hyphens_and_apostrophes_word_internal() {
+        for prose in [
+            "All-clear was declared.",
+            "No-one was harmed.",
+            "Y'all know the drill.",
+        ] {
+            assert_eq!(
+                inferred_value(&propose(prose), "quantifier"),
+                "singular",
+                "a hyphen/apostrophe leaked a determiner: {prose:?}"
+            );
+        }
+        assert_eq!(
+            inferred_value(&propose("Every host was compromised."), "quantifier"),
+            "universal",
+            "a real universal still fires"
+        );
+    }
+
+    /// F4.5: a stray CLOSING curly quote must not open a span and fabricate a term.
+    #[test]
+    fn quoted_terms_ignores_a_stray_closing_quote() {
+        let stray = propose("close-first \u{201D} then \u{201C}");
+        assert!(
+            stray.candidate_terms.is_empty(),
+            "a stray close-quote fabricated a term: {:?}",
+            stray.candidate_terms
+        );
+        let paired = propose("the record establishes \u{201C}presence\u{201D}");
+        assert_eq!(
+            paired.candidate_terms,
+            vec!["presence"],
+            "a real curly pair extracts"
+        );
     }
 }
