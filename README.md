@@ -64,6 +64,10 @@ Twenty-three lenses are catalogued; thirteen are enforced today. `peira lens` li
 name and phase; `peira lens <ID>` shows one in full — its failure mode, its gates, its sources,
 and a worked example. For a catalogued lens the example is of the failure, since it owns no gate.
 
+For these lenses biting on a *real* over-claim — peira run on a conclusion from its own
+adversarial audit, refusing it as a universal negative and demanding it be bounded before it
+would freeze — see [`examples/self-examination-vault`](examples/self-examination-vault).
+
 ## The invariant
 
 **A node has no `status` field and no `confidence` field.** Not "you shouldn't write

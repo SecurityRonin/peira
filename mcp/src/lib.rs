@@ -1227,19 +1227,24 @@ that does not exist, cited as though it does"
     /// gate change that breaks it should fail the build, not silently make its README
     /// false. This is the "deliverables are compiled from source" rule applied to a doc.
     #[test]
-    fn the_documented_example_vault_stays_freezable() {
-        let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../examples/prefetch-vault");
-        let g = load_vault(&root).expect("the example vault loads");
-        assert!(
-            gates(&g).findings.is_empty(),
-            "the example vault must be clean: {:?}",
-            gates(&g).findings
-        );
-        let frozen = freeze(&g, &NodeId::new("c-prefetch")).expect("a claim");
-        assert!(
-            matches!(frozen, FreezeReport::Frozen { .. }),
-            "the example claim must freeze: {frozen:?}"
-        );
+    fn the_documented_example_vaults_stay_freezable() {
+        for (dir, claim) in [
+            ("../examples/prefetch-vault", "c-prefetch"),
+            ("../examples/self-examination-vault", "c-mints-bounded"),
+        ] {
+            let root = Path::new(env!("CARGO_MANIFEST_DIR")).join(dir);
+            let g = load_vault(&root).unwrap_or_else(|e| panic!("{dir} loads: {e}"));
+            assert!(
+                gates(&g).findings.is_empty(),
+                "{dir} must be clean: {:?}",
+                gates(&g).findings
+            );
+            let frozen = freeze(&g, &NodeId::new(claim)).expect("a claim");
+            assert!(
+                matches!(frozen, FreezeReport::Frozen { .. }),
+                "{dir}/{claim} must freeze: {frozen:?}"
+            );
+        }
     }
 
     // ── Tier 3 — propose ──────────────────────────────────────────────────────
