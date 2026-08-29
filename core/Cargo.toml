@@ -1,6 +1,6 @@
 [package]
 name = "peira-core"
-version = "0.1.0"
+version = "0.1.1"
 description = "Typed node/edge model, vault parser and argumentation graph for peira — a knowledge system whose promotion gates are classical critical-thinking moves."
 edition.workspace = true
 rust-version.workspace = true

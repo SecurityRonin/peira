@@ -1,6 +1,6 @@
 [package]
 name = "peira-lens"
-version = "0.1.0"
+version = "0.1.1"
 description = "The peira lens catalogue — classical critical-thinking examinations (Socratic, Toulmin, catuskoti, 體用, 白馬非馬, Ship of Theseus) as typed, cited, machine-checkable gates."
 edition.workspace = true
 rust-version.workspace = true
