@@ -21,10 +21,10 @@ repository = "https://github.com/SecurityRonin/peira"
 readme = "README.md"
 
 [workspace.dependencies]
-peira-core = { path = "core", version = "0.1.0" }
-peira-lens = { path = "lens", version = "0.1.0" }
-peira-citation = { path = "citation", version = "0.1.0" }
-peira-index = { path = "index", version = "0.1.0" }
+peira-core = { path = "core", version = "0.1.1" }
+peira-lens = { path = "lens", version = "0.1.1" }
+peira-citation = { path = "citation", version = "0.1.1" }
+peira-index = { path = "index", version = "0.1.1" }
 serde = { version = "1", features = ["derive"] }
 # Maintained fork of the archived serde_yaml (RUSTSEC unmaintained advisory).
 # Chosen over serde-saphyr (1.0.1, young, wide dep graph) and saphyr (0.0.x, and

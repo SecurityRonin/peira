@@ -10,6 +10,21 @@ messages on `main`. Do not hand-edit released sections.
 
 ## [Unreleased]
 
+## [0.1.1](https://github.com/SecurityRonin/peira/compare/peira-citation-v0.1.0...peira-citation-v0.1.1) - 2026-08-29
+
+### Added
+
+- *(mcp)* Tier 4 — freeze / verify, with refusal as a result
+
+### Documentation
+
+- *(examples)* a second example vault — peira examines its own audit
+- link the worked example vault from the README
+
+### Fixed
+
+- *(citation)* tolerate a leading BOM in Packet::from_document
+
 ## [0.1.0](https://github.com/SecurityRonin/peira/releases/tag/peira-citation-v0.1.0) - 2026-08-23
 
 ### Added
