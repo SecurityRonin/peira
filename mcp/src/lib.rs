@@ -1247,6 +1247,37 @@ that does not exist, cited as though it does"
         }
     }
 
+    /// The refusal example (`examples/blocked-vault`) must stay BLOCKED — the symmetric
+    /// guard to the freezable test above. Its README shows the verbatim refusal, and quotes
+    /// each of these codes; a gate change that let the over-claim through would silently make
+    /// that README false. The example exists to be refused.
+    #[test]
+    fn the_documented_blocked_example_stays_blocked() {
+        let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../examples/blocked-vault");
+        let g = load_vault(&root).unwrap_or_else(|e| panic!("blocked-vault loads: {e}"));
+
+        assert!(
+            !gates(&g).findings.is_empty(),
+            "the refusal example must not go clean — its README shows it blocked"
+        );
+
+        let violations = match freeze(&g, &NodeId::new("c-prefetch-draft")).expect("a claim") {
+            FreezeReport::Blocked { violations, .. } => violations,
+            other => panic!("c-prefetch-draft must be blocked, not {other:?}"),
+        };
+        let codes: Vec<&str> = violations.iter().map(|v| v.code).collect();
+        for code in [
+            "PEIR-WARRANT-MISSING",
+            "PEIR-CAUSAL-RUNG-UNREACHED",
+            "PEIR-BOUNDARIES-MISSING",
+            "PEIR-RIVALS-UNENUMERATED",
+            "PEIR-FALSIFIER-MISSING",
+            "PEIR-LINT-FORBIDDEN-VERB",
+        ] {
+            assert!(codes.contains(&code), "README quotes {code}; got {codes:?}");
+        }
+    }
+
     // ── Tier 3 — propose ──────────────────────────────────────────────────────
 
     fn inferred_value<'a>(r: &'a ProposeReport, field: &str) -> &'a str {
