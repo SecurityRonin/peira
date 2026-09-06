@@ -1,0 +1,30 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "peira",
+  "description": "The peira critical-thinking checker for Claude Code — the anti-summarization pass and the peira MCP server.",
+  "owner": {
+    "name": "Security Ronin",
+    "url": "https://github.com/SecurityRonin"
+  },
+  "plugins": [
+    {
+      "name": "peira",
+      "source": "./plugin",
+      "description": "The anti-summarization pass as a skill, peira's version-stamped method docs, and the peira MCP server that refuses to promote an unexamined claim. Requires the peira-mcp binary on PATH.",
+      "version": "0.1.0",
+      "metadata": {
+        "categories": [
+          "productivity"
+        ],
+        "tags": [
+          "critical-thinking",
+          "anti-summarization",
+          "reasoning",
+          "claim-checking",
+          "mcp",
+          "forensics"
+        ]
+      }
+    }
+  ]
+}
