@@ -38,7 +38,9 @@ scaffolds a vault with one deliberately over-stated example claim, so the third
 command has something to report the first time you run it. For a complete vault
 that *passes* — a bounded claim, the term it rests on, and a supporting
 observation, walked from an over-stated draft through to a frozen packet — see
-[`examples/prefetch-vault`](examples/prefetch-vault).
+[`examples/prefetch-vault`](examples/prefetch-vault). To see the *draft* it starts
+from — the same scenario over-stated, refused with its reasons, and the diff that
+clears it — see [`examples/blocked-vault`](examples/blocked-vault).
 
 ## The idea
 
