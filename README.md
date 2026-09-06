@@ -60,7 +60,7 @@ as a rule about a claim graph, each becomes machine-checkable:
 | ACH | confirmation by consistency | a causal claim names something it was tested against |
 | 不可得因 anupalabdhi | an absence certified by a search that could not have found it | absence claims need an instrument with a positive control |
 
-Twenty-three lenses are catalogued; thirteen are enforced today. `peira lens` lists them by
+Twenty-seven lenses are catalogued; thirteen are enforced today. `peira lens` lists them by
 name and phase; `peira lens <ID>` shows one in full — its failure mode, its gates, its sources,
 and a worked example. For a catalogued lens the example is of the failure, since it owns no gate.
 
@@ -113,8 +113,9 @@ Full transcript in [`docs/validation.md`](docs/validation.md).
 
 - **[The method](docs/method/)** — the discipline peira mechanises, written out so the tool stands
   alone: the [six structures of investigative error and the coverage map](docs/method/README.md),
-  the [claim-grading standard](docs/method/claim-grading.md), and
-  [reporting to a tribunal](docs/method/expert-witness.md)
+  the [claim-grading standard](docs/method/claim-grading.md),
+  [reporting to a tribunal](docs/method/expert-witness.md), and the
+  [anti-summarization pass](docs/method/anti-summarization.md) for distilling a source
 - [How it works, and where it currently does not](docs/architecture.md)
 - [Purpose and scope](docs/PRD.md)
 - [Validation](docs/validation.md)

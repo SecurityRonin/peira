@@ -797,6 +797,96 @@ follows from the attack graph, and grounded semantics refuses to pick a winner i
         ],
         phase: Phase::Enforced,
     },
+    // ── The anti-summarization pass ───────────────────────────────────────────
+    // Four lenses a distillation needs that the investigative set above does not
+    // supply. Each is catalogued, not enforced, and deliberately: "what I smoothed
+    // over" and "which error is costlier" are irreducibly judgement, and a gate that
+    // pretended to check them would be the ceremony this project exists to refuse.
+    // The full framework — the five questions these fan out from, and the crosswalk
+    // to the lenses above — is in docs/method/anti-summarization.md.
+    Lens {
+        id: "GEWU",
+        name: "格物致知 · 知行合一 — Investigate Each Thing; Knowing Proven in Doing",
+        tradition: Tradition::Chinese,
+        failure_mode: "comprehension faked by compression — a distillation you can restate but \
+could not apply to a case it has not already seen",
+        operation: "a claim carried forward from a source survives an application test — predict \
+with it, act on it, or generate a novel instance — not a paraphrase test",
+        applies_to: ARGUMENTS,
+        gates: &[],
+        worked_example: "朱熹's 格物 is exhaustive, bottom-up investigation of 理 — the opposite \
+of top-down summary. 王陽明 investigated bamboo for seven days, fell ill, and concluded 理 is \
+confirmed in action, not external cataloguing: 知行合一. A summary you cannot act on you have not \
+understood; you have only compressed.",
+        sources: &[
+            "朱熹《四書章句集注・大學章句》: 致知在格物",
+            "王陽明《傳習錄》: 知行合一",
+            "https://ctext.org/liji/da-xue",
+        ],
+        phase: Phase::Catalogued,
+    },
+    Lens {
+        id: "LACUNA",
+        name: "闕文 · The Dog That Didn't Bark — What Is Conspicuously Absent",
+        tradition: Tradition::Modern,
+        failure_mode: "a distillation reports only what the source contains, so it is structurally \
+blind to what a competent treatment of the topic would contain but this one omits — the missing \
+counter-argument, dataset, caveat, or party",
+        operation: "before a source is accepted as complete, enumerate what its topic demands and \
+mark each item the source never addresses; the gap is a finding, not a silence",
+        applies_to: ARGUMENTS,
+        gates: &[],
+        worked_example: "Holmes solves it by the dog that did NOT bark: the absence of the expected \
+reaction is the evidence. 孔子 keeps the counterpart — 「吾猶及史之闕文也」, the honest historian \
+leaves a blank where knowledge is missing rather than filling it. A summary that silently omits \
+what it never saw does the opposite, and reads as complete.",
+        sources: &[
+            "Arthur Conan Doyle, \"The Adventure of Silver Blaze\" (1892)",
+            "《論語・衛靈公》15.26: 吾猶及史之闕文也",
+        ],
+        phase: Phase::Catalogued,
+    },
+    Lens {
+        id: "IDOLA",
+        name: "Idola Mentis — Bacon's Idols of the Mind",
+        tradition: Tradition::Modern,
+        failure_mode: "the distiller's own biases treated as if the mind were a clean mirror — what \
+I wanted to find, and what I smoothed over for fluency, entering the summary unmarked",
+        operation: "a distillation records, separately from the source's faults, the reader's own: \
+the conclusion I was primed to reach, and the passage I made read cleaner than it was",
+        applies_to: ARGUMENTS,
+        gates: &[],
+        worked_example: "Bacon's four idols — Tribus (human nature), Specus (the individual's \
+cave), Fori (the words of the marketplace), Theatri (received systems). A clean chapter with \
+nothing flagged is the mirror flattering the observer, not the source being sound: peira's own \
+rule — a zero is a possible instrument failure — turned on the instrument that is the reader.",
+        sources: &[
+            "Francis Bacon, Novum Organum (1620), Bk I, Aphorisms 39–68",
+            "https://plato.stanford.edu/entries/francis-bacon/",
+        ],
+        phase: Phase::Catalogued,
+    },
+    Lens {
+        id: "BLACKSTONE",
+        name: "Blackstone's Ratio — The Asymmetry of Error",
+        tradition: Tradition::Modern,
+        failure_mode: "equal scrutiny spread across every uncertainty, when the cost of being \
+wrong runs overwhelmingly in one direction",
+        operation: "before closing, name which direction of error is costlier — false positive or \
+false negative — and concentrate the remaining doubt on the claim guarding the irreversible or \
+expensive decision",
+        applies_to: ARGUMENTS,
+        gates: &[],
+        worked_example: "\"Better that ten guilty persons escape than that one innocent suffer\" \
+is a declared preference for one error over its opposite, not indifference between them. A \
+distillation that spends the same rigour on a load-bearing claim under an irreversible decision \
+and on an incidental aside has mis-allocated its scepticism.",
+        sources: &[
+            "William Blackstone, Commentaries on the Laws of England, vol. IV (1769), ch. 27",
+            "J. Neyman & E. S. Pearson, Phil. Trans. R. Soc. A 231 (1933) 289–337",
+        ],
+        phase: Phase::Catalogued,
+    },
 ];
 
 #[cfg(test)]

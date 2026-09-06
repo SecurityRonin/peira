@@ -11,6 +11,7 @@ nearly reached, a client. The instances are domain-specific and will not recur; 
 | [`claim-grading.md`](claim-grading.md) | the normative standard: tags, independence tiers, source classes, instrument validity, the compiled-deliverable rule, confidence expression |
 | [`source-register.md`](source-register.md) | sources that fail silently: the register, its ownership split, and the controls |
 | [`expert-witness.md`](expert-witness.md) | least disclosure, the three epistemic layers, the overstatement substitution table |
+| [`anti-summarization.md`](anti-summarization.md) | the reading discipline for distilling a source: seven doors aimed at the gap, the noun-demand, and the per-finding SOURCE-FAULT/MY-LIMIT stamp |
 | this file | the six structures of investigative error, the controls, and **what peira actually enforces** |
 
 ---
@@ -245,7 +246,7 @@ diagnostic. The CONSEQUENCES named in earlier versions of this note no longer fo
 `PEIR-LINT-UNGRADED-SUPPORT` reports. What remains is that the loader is silent about the TYPO
 itself — it says the edge is unexamined, not that a word was misspelt. Architecture defect 9.
 
-## The ten that are catalogued and enforce nothing
+## The fourteen that are catalogued and enforce nothing
 
 Named, sourced, given a worked example — and owning no gate. A meta-test asserts that a catalogued
 lens has none, so the catalogue cannot quietly imply an examination it does not perform. Listed in
@@ -254,7 +255,6 @@ full because a reader would otherwise have no way to tell an omission from a del
 | Lens | | The failure it names |
 |---|---|---|
 | `ELENCHUS` | ἔλεγχος elenchus — Socratic Cross-Examination | premises that were never examined because nobody asked |
-| `ACH` | Analysis of Competing Hypotheses | confirmation by consistency — collecting evidence that fits the favoured hypothesis without asking what it rules out |
 | `PANCAVAYAVA` | पञ्चावयव pañcāvayava — The Five-Membered Argument | a reason that looks valid but is unestablished, contradictory, inconclusive, counterbalanced, or already defeated |
 | `STEELMAN` | Rapoport's Rules — Steelman First | attacking a position its holder would not recognise |
 | `DOUBLECRUX` | Double Crux | disagreement that circles because the load-bearing belief was never located |
@@ -262,15 +262,26 @@ full because a reader would otherwise have no way to tell an omission from a del
 | `AUFHEBUNG` | Aufhebung — Synthesis That Preserves | a synthesis that quietly discards what it claimed to reconcile |
 | `THESEUS` | Ship of Theseus — Amend or Supersede | silent identity drift: a claim's meaning changes across edits while its id, and everything citing it, stays put |
 | `CHESTERTON` | Chesterton's Fence | removing something without recovering why it was put there |
+| `ABHASA` | 似因・似宗 — The Semblance Taxonomies | a thesis or reason with the form of proof and not the force of it |
 | `ERDI` | 二諦 — The Two Truths, and Court Mode | a courtroom sentence that asserts more than the graph behind it supports |
+| `GEWU` | 格物致知·知行合一 — Investigate Each Thing; Knowing Proven in Doing | comprehension faked by compression — restated, but not applicable to an unseen case |
+| `LACUNA` | 闕文 · The Dog That Didn't Bark | a distillation blind to omission — what a competent treatment would contain but this one leaves out |
+| `IDOLA` | Idola Mentis — Bacon's Idols of the Mind | the distiller's own bias treated as a clean mirror — what I wanted to find, what I smoothed for fluency |
+| `BLACKSTONE` | Blackstone's Ratio — The Asymmetry of Error | equal scrutiny spent where the cost of error runs overwhelmingly one way |
 
-**Socratic questioning is here, not missing** — `ELENCHUS`, with its six question families. So are
-competing-hypothesis analysis (`ACH`) and the preservation of rejected alternatives (`MACHLOKET`).
-Each is specified and unmechanised: read them as a reading list for what to ask by hand, not as
-checks the tool performs.
+The last four are the [anti-summarization pass](anti-summarization.md): the questions a reader asks
+while distilling a source, catalogued rather than enforced because *what did I smooth over* and
+*which error costs more* are irreducibly judgement, and a gate that pretended to check them would be
+the ceremony this project exists to refuse.
 
-**Ten of twenty catalogued lenses are enforced.** A lens marked catalogued owns no gates, and a
-meta-test asserts that — so the catalogue cannot quietly imply an examination it does not perform.
+**Socratic questioning is here, not missing** — `ELENCHUS`, with its six question families. So is
+the steelman of the opposing case (`STEELMAN`) and the preservation of rejected alternatives
+(`MACHLOKET`). Each is specified and unmechanised: read them as a reading list for what to ask by
+hand, not as checks the tool performs.
+
+**Thirteen of twenty-seven lenses are enforced.** The other fourteen are catalogued — named,
+sourced, owning no gate — and a meta-test asserts that, so the catalogue cannot quietly imply an
+examination it does not perform.
 
 See [`../architecture.md`](../architecture.md) for the defects an adversarial audit found in the
 enforced set. Several rules above are correct in the code and lost at an aggregation point.
