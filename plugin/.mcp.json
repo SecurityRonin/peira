@@ -1,0 +1,7 @@
+{
+  "mcpServers": {
+    "peira": {
+      "command": "peira-mcp"
+    }
+  }
+}
