@@ -1,0 +1,29 @@
+title: peira
+description: >-
+  A knowledge system that refuses to promote a claim you have not examined — with gates
+  drawn from Socratic elenchus, the Diamond Sutra, Nyāya, Madhyamaka and the causal ladder.
+url: https://securityronin.github.io
+baseurl: /peira
+
+markdown: kramdown
+kramdown:
+  input: GFM
+  syntax_highlighter: rouge
+permalink: pretty
+
+# Internal working docs — not part of the public site.
+exclude:
+  - strategy/
+  - background/
+  - releasing.md
+  - PRD.md
+  - Gemfile
+  - Gemfile.lock
+
+# Apply the site layout to every page that does not name one (the method docs,
+# privacy, terms). Generated lens pages declare `layout: lens` themselves.
+defaults:
+  - scope:
+      path: ""
+    values:
+      layout: default
