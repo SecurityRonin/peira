@@ -64,6 +64,11 @@ Twenty-seven lenses are catalogued; thirteen are enforced today. `peira lens` li
 name and phase; `peira lens <ID>` shows one in full — its failure mode, its gates, its sources,
 and a worked example. For a catalogued lens the example is of the failure, since it owns no gate.
 
+`peira method` prints the reasoning the tool checks for, embedded in the binary so it travels
+without the repository. `peira method anti-summarization` emits that document behind a line
+naming the peira version it came from — so a copy made from it records which peira it matches,
+rather than drifting silently.
+
 For these lenses biting on a *real* over-claim — peira run on a conclusion from its own
 adversarial audit, refusing it as a universal negative and demanding it be bounded before it
 would freeze — see [`examples/self-examination-vault`](examples/self-examination-vault).
