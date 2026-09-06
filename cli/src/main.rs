@@ -420,7 +420,10 @@ fn cmd_lens(id: Option<String>) -> Result<u8, String> {
 /// reasoning peira checks for without needing the repository. `include_str!` makes the
 /// embedded copy byte-identical to the file, so binary and repo cannot drift: a doc edit
 /// that is not rebuilt does not ship, and one that is rebuilt travels here verbatim.
-const METHODS: &[(&str, &str)] = &[];
+const METHODS: &[(&str, &str)] = &[(
+    "anti-summarization",
+    include_str!("../../docs/method/anti-summarization.md"),
+)];
 
 /// The embedded body of a method document, or `None` if the name is unknown.
 fn method_doc(name: &str) -> Option<&'static str> {
@@ -448,8 +451,8 @@ fn cmd_method(name: Option<String>) -> Result<u8, String> {
         println!("\n  `peira method <name>` prints one, version-stamped for regeneration.");
         return Ok(exit::OK);
     };
-    let body =
-        method_doc(&name).ok_or_else(|| format!("no method `{name}`; run `peira method` to list them"))?;
+    let body = method_doc(&name)
+        .ok_or_else(|| format!("no method `{name}`; run `peira method` to list them"))?;
     println!("{}", method_header(&name));
     print!("{body}");
     Ok(exit::OK)
@@ -635,13 +638,49 @@ mod tests {
         let doc = method_doc("anti-summarization")
             .expect("peira must expose the anti-summarization method for regeneration");
         for door in [
-            "Direction", "Words", "Ground", "Rivals", "Breaks", "Silence", "Transfer",
+            "Direction",
+            "Words",
+            "Ground",
+            "Rivals",
+            "Breaks",
+            "Silence",
+            "Transfer",
         ] {
             assert!(doc.contains(door), "method doc is missing a door: {door}");
         }
         assert!(
             method_doc("no-such-method").is_none(),
             "an unknown method must not resolve"
+        );
+    }
+
+    /// The command prints a known method and the listing, and refuses an unknown name
+    /// with an error (exit 2) rather than a silent success.
+    #[test]
+    fn cmd_method_prints_known_and_refuses_unknown() {
+        assert_eq!(
+            cmd_method(Some("anti-summarization".to_owned())).expect("a known method prints"),
+            exit::OK
+        );
+        assert_eq!(cmd_method(None).expect("the listing prints"), exit::OK);
+        assert!(
+            cmd_method(Some("nope".to_owned())).is_err(),
+            "an unknown method is an error, not a clean exit"
+        );
+    }
+
+    /// The stamp carries the peira version and the exact regenerate command, so a block
+    /// compiled from it records which peira it came from.
+    #[test]
+    fn method_header_carries_version_and_regen_command() {
+        let h = method_header("anti-summarization");
+        assert!(
+            h.contains(env!("CARGO_PKG_VERSION")),
+            "the stamp must name the peira version: {h}"
+        );
+        assert!(
+            h.contains("peira method anti-summarization"),
+            "the stamp must name how to regenerate: {h}"
         );
     }
 
