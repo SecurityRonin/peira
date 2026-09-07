@@ -10,7 +10,7 @@
 
 **Enforced gates:** `PEIR-FUNCTION-AS-SUBSTANCE`
 
-**Worked example:** "Amcache is an execution artifact" (substance) resting only on "Amcache recorded this path" (function). The record is a thing the artifact did; the claim is about what it is.
+**Worked example:** A smoke alarm sounding is what the device did; "there is a fire" is a claim about what is — and burnt toast sets it off just as well. The alarm reports its function; that a fire exists is a substance claim the sound alone does not carry.
 
 **Sources:**
 - 程頤《易傳序》: 體用一源，顯微無間

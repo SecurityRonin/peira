@@ -31,7 +31,7 @@ These block a citation packet deterministically — no model in the loop:
 
 ## Worked example
 
-"This Amcache entry proves execution" is a rung-3 assertion resting on rung-1 data, with no Windows build named. Nothing was intervened on; nothing was compared against a world where the file was only copied.
+Ice-cream sales and drownings rise together, but "ice cream causes drowning" is a rung-3 claim resting on rung-1 correlation — the common cause is summer. Nothing was intervened on, and no world was compared where sales were forced up out of season.
 
 ## Sources
 

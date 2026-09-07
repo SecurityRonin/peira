@@ -10,7 +10,7 @@
 
 **Enforced gates:** `PEIR-CLASS-EXTENSION-UNDECLARED`
 
-**Worked example:** "Amcache entries indicate execution" quantifies over every entry, having examined one. Gongsun Long's point is that the class and the qualified subclass are not interchangeable, however natural the slide feels.
+**Worked example:** One white horse was examined, and the claim is made of horses at large. 公孫龍's 白馬非馬 turns on exactly this: "white horse" and "horse" have different extensions, so what holds of the qualified subclass need not hold of the class, however natural the plural feels.
 
 **Sources:**
 - 《公孫龍子·白馬論》: 白馬非馬

@@ -32,7 +32,7 @@ These block a citation packet deterministically — no model in the loop:
 
 ## Worked example
 
-An Amcache InventoryApplicationFile entry supports "the user ran it" and "the appraiser catalogued it, unrun" equally, because the appraiser writes one either way. A case resting on it alone has argued for neither side — 共不定, cell 1 of the 九句因. One Prefetch .pf with a run counter decides the contest, and passes the gate.
+The classic inference — "the hill has fire, because it has smoke" — holds because smoke is absent wherever fire is absent (no fire, no smoke). "He has a fever, so he has the flu" fails the same test: fever attends a hundred illnesses, present even where there is no flu (異品), so it discriminates nothing — 共不定, cell 1 of the 九句因.
 
 ## Sources
 

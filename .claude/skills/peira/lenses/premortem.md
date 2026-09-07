@@ -10,7 +10,7 @@
 
 **Enforced gates:** `PEIR-FALSIFIER-MISSING`
 
-**Worked example:** Assume it is a year later and the conclusion collapsed; say what did it. A claim with no answer is not yet a claim.
+**Worked example:** Popper's mark of a real claim: "all swans are white" says something because a single black swan would refute it. Assume it is a year on and the conclusion collapsed — name what did it. A claim nothing could ever count against is a belief wearing a claim's clothes.
 
 **Sources:**
 - Gary Klein, Harvard Business Review, September 2007, "Performing a Project Premortem"

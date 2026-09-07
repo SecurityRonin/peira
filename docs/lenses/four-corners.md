@@ -30,7 +30,7 @@ These block a citation packet deterministically — no model in the loop:
 
 ## Worked example
 
-"executed / not executed" omits the corner that actually fits an Amcache record: catalogued without execution — neither cleanly one nor the other.
+"Is light a wave or a particle?" forces two corners, and each is wrong alone — the physics needed the third: it is both. 四句 keeps all four (is, is-not, both, neither) open until the question earns a collapse.
 
 ## Sources
 

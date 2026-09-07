@@ -30,7 +30,7 @@ These block a citation packet deterministically — no model in the loop:
 
 ## Worked example
 
-Assume it is a year later and the conclusion collapsed; say what did it. A claim with no answer is not yet a claim.
+Popper's mark of a real claim: "all swans are white" says something because a single black swan would refute it. Assume it is a year on and the conclusion collapsed — name what did it. A claim nothing could ever count against is a belief wearing a claim's clothes.
 
 ## Sources
 

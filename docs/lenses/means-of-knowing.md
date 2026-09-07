@@ -30,7 +30,7 @@ These block a citation packet deterministically — no model in the loop:
 
 ## Worked example
 
-Two parsers agreeing on a hive is śabda corroboration, not pratyakṣa. If they vendor the same decoding library they are not independent at all, and no count of them reaches G4.
+Two newspapers running the same wire story are śabda — testimony — not two eyes on the event (pratyakṣa). Sharing one source, they are a single line of evidence however many mastheads carry it, and no tally of them reaches direct knowledge.
 
 ## Sources
 

@@ -10,7 +10,7 @@
 
 **Enforced gates:** `PEIR-ABSENCE-UNCONTROLLED`
 
-**Worked example:** "The binary was never executed — no Prefetch file exists." On a Server SKU with SysMain disabled, no execution would ever have written one, so the search could not have found the thing it reports missing. Non-perception establishes absence only of the perceptible; of the imperceptible it establishes nothing.
+**Worked example:** You may say "there is no elephant in the room" — one would be seen. You may not say "there are no bacteria" from a look, because the eye cannot resolve them, so finding none reports the instrument, not the room. Non-perception establishes absence only of the perceptible; of the imperceptible it establishes nothing.
 
 **Sources:**
 - Dharmakīrti, Nyāyabindu II.12–20 (the dṛśya restriction at II.13); tr. Th. Stcherbatsky, Buddhist Logic vol. II (1930)

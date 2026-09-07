@@ -30,7 +30,7 @@ These block a citation packet deterministically — no model in the loop:
 
 ## Worked example
 
-"The binary was never executed — no Prefetch file exists." On a Server SKU with SysMain disabled, no execution would ever have written one, so the search could not have found the thing it reports missing. Non-perception establishes absence only of the perceptible; of the imperceptible it establishes nothing.
+You may say "there is no elephant in the room" — one would be seen. You may not say "there are no bacteria" from a look, because the eye cannot resolve them, so finding none reports the instrument, not the room. Non-perception establishes absence only of the perceptible; of the imperceptible it establishes nothing.
 
 ## Sources
 
