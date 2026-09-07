@@ -57,7 +57,7 @@ pub fn build(graph: &Graph, path: &Path) -> rusqlite::Result<()> {
              grade      TEXT,
              graded_by  TEXT,
              proposed   TEXT,
-             pramana    TEXT
+             means    TEXT
          );
          CREATE TABLE grounded (
              node_id TEXT PRIMARY KEY
@@ -116,7 +116,7 @@ fn write_nodes(tx: &rusqlite::Transaction<'_>, graph: &Graph) -> rusqlite::Resul
 fn write_edges(tx: &rusqlite::Transaction<'_>, graph: &Graph) -> rusqlite::Result<()> {
     {
         let mut edge_stmt = tx.prepare(
-            "INSERT INTO edges (from_id, to_id, kind, grade, graded_by, proposed, pramana)
+            "INSERT INTO edges (from_id, to_id, kind, grade, graded_by, proposed, means)
              VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
         )?;
         for edge in graph.edges() {
@@ -127,7 +127,7 @@ fn write_edges(tx: &rusqlite::Transaction<'_>, graph: &Graph) -> rusqlite::Resul
                 edge.grade().map(peira_core::Grade::as_str),
                 edge.grader(),
                 edge.grade_proposed.map(peira_core::Grade::as_str),
-                edge.pramana.map(peira_core::Pramana::as_str),
+                edge.means.map(peira_core::Means::as_str),
             ])?;
         }
     }
@@ -203,7 +203,7 @@ pub fn defeated_claims(conn: &Connection) -> rusqlite::Result<Vec<NodeId>> {
 pub fn testimony_edges(conn: &Connection) -> rusqlite::Result<Vec<(NodeId, NodeId)>> {
     let mut stmt = conn.prepare(
         "SELECT from_id, to_id FROM edges
-          WHERE pramana = 'testimony'
+          WHERE means = 'testimony'
        ORDER BY from_id, to_id",
     )?;
     let rows = stmt.query_map([], |row| {

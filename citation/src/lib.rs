@@ -1065,7 +1065,7 @@ fn declared_format(body: &str) -> u32 {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use peira_core::{parse_node, Edge, Grade, Pramana};
+    use peira_core::{parse_node, Edge, Grade, Means};
 
     fn node(src: &str) -> Node {
         parse_node(src).expect("fixture parses")
@@ -1091,7 +1091,7 @@ mod tests {
         g.insert_edge(
             Edge::new(NodeId::new(obs), NodeId::new(id), EdgeKind::Supports)
                 .graded_by(Grade::G2, "a-reviewer")
-                .via(Pramana::Perception),
+                .via(Means::Perception),
         );
     }
 
@@ -1119,7 +1119,7 @@ stipulated: the OS recorded this path in Amcache\n---\n",
         g.insert_edge(
             Edge::new(NodeId::new("o1"), NodeId::new("c1"), EdgeKind::Supports)
                 .graded_by(Grade::G2, "a-reviewer")
-                .via(Pramana::Perception),
+                .via(Means::Perception),
         );
         g.insert_edge(Edge::new(
             NodeId::new("c1"),
@@ -1462,12 +1462,12 @@ aspect: function\n---\n",
         clean.insert_edge(
             Edge::new(NodeId::new("o2"), NodeId::new("c2"), EdgeKind::Supports)
                 .graded_by(Grade::G2, "a-reviewer")
-                .via(Pramana::Perception),
+                .via(Means::Perception),
         );
         clean.insert_edge(
             Edge::new(NodeId::new("c1"), NodeId::new("c2"), EdgeKind::DependsOn)
                 .graded_by(Grade::G2, "a-reviewer")
-                .via(Pramana::Inference),
+                .via(Means::Inference),
         );
         assert!(
             freeze(&clean, &NodeId::new("c1")).is_ok(),
@@ -1615,7 +1615,7 @@ falsifier:\n  - a sweep shown never to write this table\n---\n"
                 g.insert_edge(
                     Edge::new(NodeId::new("o3"), NodeId::new("def"), EdgeKind::Supports)
                         .graded_by(Grade::G2, "a-reviewer")
-                        .via(Pramana::Perception),
+                        .via(Means::Perception),
                 );
             }
             freeze(&g, &NodeId::new("c1"))
@@ -1792,7 +1792,7 @@ stipulated: the entry proves the file was executed\n---\n",
 
     /// A packet must not rest on ungraded evidence.
     ///
-    /// `Grade` and `Pramana` are stored inseparably from the grader, and the ceiling
+    /// `Grade` and `Means` are stored inseparably from the grader, and the ceiling
     /// gate caps what a means of knowing can carry — but nothing required a support
     /// edge to be graded at all. An ungraded, unattributed edge supported promotion
     /// exactly as well as reviewed direct perception, so the whole grading apparatus
@@ -2272,7 +2272,7 @@ letter suppressed the disclosure:\n{}",
         grown.insert_edge(
             Edge::new(NodeId::new("o9"), NodeId::new("c1"), EdgeKind::Supports)
                 .graded_by(Grade::G2, "a-reviewer")
-                .via(Pramana::Perception),
+                .via(Means::Perception),
         );
         match verify(&grown, &p) {
             Verification::DigestMismatch {

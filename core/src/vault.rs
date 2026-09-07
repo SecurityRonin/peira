@@ -3,10 +3,10 @@
 //! Edges are declared in frontmatter as lists of target ids under the edge's own
 //! name — `supports: [o1, o2]`, `judged_by: [60.01]` — and the loader turns them
 //! into typed edges. Evidence edges may instead be written as mappings carrying
-//! `to`, `grade`, `graded_by` and `pramana`.
+//! `to`, `grade`, `graded_by` and `means`.
 
 use crate::{
-    edge::{Edge, EdgeKind, Grade, Pramana},
+    edge::{Edge, EdgeKind, Grade, Means},
     graph::Graph,
     node::{parse_node, NodeId, ParseError},
 };
@@ -97,7 +97,7 @@ fn edge_from_spec(from: &NodeId, spec: &str, kind: EdgeKind) -> Edge {
             // straight through it.
             "by" if !value.trim().is_empty() => grader = Some(value.trim().to_owned()),
             "via" => {
-                if let Some(p) = Pramana::from_str_opt(value) {
+                if let Some(p) = Means::from_str_opt(value) {
                     edge = edge.via(p);
                 }
             }
@@ -389,7 +389,7 @@ measured_by: [i1]\n---\n",
         assert_eq!(e.to, NodeId::new("c1"));
         assert_eq!(e.grade(), Some(Grade::G2));
         assert_eq!(e.grader(), Some("albert"));
-        assert_eq!(e.pramana, Some(Pramana::Perception));
+        assert_eq!(e.means, Some(Means::Perception));
     }
 
     #[test]
@@ -503,10 +503,7 @@ measured_by: [i1]\n---\n",
         );
         assert_eq!(e.to, NodeId::new("c1"), "the edge itself survives");
         assert_eq!(e.grade(), None, "an unparseable grade settles nothing");
-        assert_eq!(
-            e.pramana, None,
-            "an unrecognised means of knowing is dropped"
-        );
+        assert_eq!(e.means, None, "an unrecognised means of knowing is dropped");
     }
 
     #[test]

@@ -20,7 +20,7 @@ pub mod graph;
 pub mod node;
 pub mod vault;
 
-pub use edge::{Edge, EdgeKind, Grade, Pramana};
+pub use edge::{Edge, EdgeKind, Grade, Means};
 pub use graph::Graph;
 pub use node::{parse_node, Fields, Node, NodeId, NodeKind, ParseError};
 pub use vault::{load, VaultError};

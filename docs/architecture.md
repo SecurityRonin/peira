@@ -106,7 +106,7 @@ How each half of the discipline maps onto the machinery, honestly:
 | Record before you report | There is no prose write path into a packet: `freeze` renders it from the graph, and the parser refuses `status:` and `confidence:` outright | **enforced** |
 | Correct at the source, then rebuild | `verify` re-derives from the vault and compares digests. An edit that reaches the rendered body surfaces as `DigestMismatch`; one confined to unrendered fields — a grade, a `via=`, a `measured_by:` — changes no digest. A `by=` edit is NOT one of those: the Provenance section renders `Credited:` into the body, so changing who is credited surfaces as `DigestMismatch`. An edit confined to the `Packet format:` line is named as the edit it is, since no older renderer could emit a body identical to today's | **enforced, narrow — defect 8** |
 | Mark supersession, never silently overwrite | `supersedes:` and `retracts:` edges are read by `PEIR-LINT-RETRACTED`, by the grounded extension, and by the packet's standing line | **enforced** |
-| The deliverable is a projection, never the whole | A packet renders a fixed projection: the claim's title and warrant, the ids and titles of its direct supporters, contradictors and limiters, boundaries, falsifiers, and the term moments. Grades, graders, pramāṇas and instrument links are not in it — so they are not under the digest either | by construction — **and the digest inherits the narrowness (defect 8)** |
+| The deliverable is a projection, never the whole | A packet renders a fixed projection: the claim's title and warrant, the ids and titles of its direct supporters, contradictors and limiters, boundaries, falsifiers, and the term moments. Grades, graders, means of knowing and instrument links are not in it — so they are not under the digest either | by construction — **and the digest inherits the narrowness (defect 8)** |
 | If it cannot be regenerated, it is not compiled — it is a fork | `Verified` means exactly: the rendered body re-derived byte-identically from the source | **enforced** |
 
 The derived index is the same discipline in miniature: `peira index` drops and rebuilds the
@@ -213,10 +213,10 @@ peira keeps them apart, because a claim can be quoted **and** unverified at once
 flowchart LR
     subgraph MOK["How you know — rides on the EDGE, authored"]
         direction TB
-        P1["perception — pratyakṣa"] --> C1["ceiling G3"]
-        P2["inference — anumāna"] --> C2["ceiling G2"]
-        P3["comparison — upamāna"] --> C3["ceiling G1"]
-        P4["testimony — śabda"] --> C4["ceiling G1"]
+        P1["perception"] --> C1["ceiling G3"]
+        P2["inference"] --> C2["ceiling G2"]
+        P3["comparison"] --> C3["ceiling G1"]
+        P4["testimony"] --> C4["ceiling G1"]
     end
 
     subgraph ST["What state it is in — DERIVED, never authored"]
@@ -234,13 +234,13 @@ status` never reads whether anyone signed; `review_ready` asserts readiness for 
 review happened. An empty blocking list no longer hides gates that reached no verdict:
 `Unassessed` reaches the aggregation and blocks as `PEIR-GATE-UNASSESSED`.
 
-**The ceiling refuses G4 to any single edge that declares a pramāṇa** — multiple materially
+**The ceiling refuses G4 to any single edge that declares a means of knowing** — multiple materially
 independent convergent lines are a property of the graph, not of one piece of evidence, and no
-pramāṇa's ceiling reaches G4. That refusal is the entire mechanism. **Retraction:** this document
+means-of-knowing ceiling reaches G4. That refusal is the entire mechanism. **Retraction:** this document
 previously said a G4 "can never be asserted — only earned". Both halves were false. No graph
 operation computes convergence or derives a grade from it — nothing earns G4 — and the loader
 constructs a settled G4 edge directly from `grade=G4 by=…`, so the only G4 the system can hold is
-an asserted one. The same false sentence stands in the doc comment on `Pramana::grade_ceiling`
+an asserted one. The same false sentence stands in the doc comment on `Means::grade_ceiling`
 (defect register).
 
 **Omitting the declaration no longer evades it.** An edge that declares a grade and no `via=`
@@ -415,7 +415,7 @@ finders**, then direct reproduction:
 | Defect | Lenses finding it independently | Outside critic | Reproduced |
 |---|---|---|---|
 | `Unassessed` dropped | 4 of 5 | yes | yes |
-| pramāṇa ceiling opt-in | 5 of 5 | yes | yes |
+| means-of-knowing ceiling opt-in | 5 of 5 | yes | yes |
 | safe statement quotes authored prose | 3 of 5 | yes | reproduced, and FIXED — see defect 5 |
 
 ---
@@ -432,7 +432,7 @@ A sixth audit round (2026-08-19) is recorded after them.
 | # | Defect | Status |
 |---|---|---|
 | 1 | `Unassessed` is discarded at aggregation; a packet freezes over gates that reached no verdict, asserting "All enforced gates pass" — and `peira status` prints the same sentence over an empty blocking list. `permits_promotion()` has no production caller | **reproduced, FIXED** |
-| 2 | The pramāṇa ceiling binds only edges that declare `via=`; omit it and one settled edge sits at G4 | **reproduced, FIXED** |
+| 2 | The means-of-knowing ceiling binds only edges that declare `via=`; omit it and one settled edge sits at G4 | **reproduced, FIXED** |
 | 3 | `supersedes:` and `retracts:` edges are accepted, recorded and read by nothing — the structural synonym for the refused `status: withdrawn`. A withdrawn claim still freezes | **reproduced, FIXED** |
 | 4 | Settled grades are operationally vacuous: an ungraded, unattributed edge supports promotion as well as reviewed perception. The `UNREVIEWED-GRADE` lint fires only on a *proposed* grade; a wholly ungraded edge trips nothing | **reproduced, FIXED** |
 | 5 | The generated safe statement renders author-written `as_used`/`not_essence`/`stipulated` prose verbatim, and the forbidden-verb lint scans only a node's title and body — never those fields | **reproduced, FIXED** — the scan now reads the rendered body before sealing, so "rendered but unscanned" is impossible rather than enumerable |
@@ -442,13 +442,13 @@ Four smaller findings worth naming because of their shape:
 - **`quantifier: all`** — an unrecognised spelling — made the 白馬非馬 gate return
   `NotApplicable`, silently disabling a check instead of showing the value verbatim. **FIXED:** an
   unrecognised quantifier now reaches no verdict and blocks, naming the offending value.
-- A test comment in `core/src/edge.rs` stated that the gates report an undeclared pramāṇa
+- A test comment in `core/src/edge.rs` stated that the gates report an undeclared means of knowing
   "separately as unassessed" when they did not. **FIXED in the code rather than the comment:**
   `grades_within_means_ceiling` now returns `Unassessed` for an undeclared means of knowing, so
   the sentence that was false has become true.
 - The crate doc comment in `lens/src/lib.rs` states that domain packs "depend down onto this
   crate". **No domain pack exists.** Unbuilt architecture stated in the present tense.
-- The doc comment on `Pramana::grade_ceiling` in `core/src/edge.rs` states that encoding the
+- The doc comment on `Means::grade_ceiling` in `core/src/edge.rs` states that encoding the
   ceiling "means a G4 can never be asserted, only earned". **It can be asserted, and nothing earns
   it** — the loader constructs a settled G4 edge directly, and no graph operation computes
   convergence. A comment describing behaviour the code does not have, in the same file as the one
@@ -463,7 +463,7 @@ panel, established four more — each checked against the code it cites before b
 |---|---|---|
 | 6 | `verify` read `Packet format:` from the stored body — untrusted input — and returned `FormatSuperseded`, exit 2, before any comparison. A hand edit to that one line converted *"this artifact no longer matches the record"* into *"this build cannot check it"*, so the single accusatory verdict was the one an adversary could opt out of | **CLOSED.** `verify` now normalises the format line and re-compares: if correcting the number alone makes the body byte-identical to the current rendering, the format line is the sole difference and that is an edit, reported as `DigestMismatch`. Where the body differs beyond it, staleness and alteration are genuinely indistinguishable from the artifact and it says so. The fixture asserting the old behaviour was itself wrong and was corrected |
 | 7 | `freeze` blocks only on violations whose subject is the claim being frozen. A defect on a supporting node — a privilege leak, forbidden prose, a dangling edge — stops nothing unless a claim-scoped gate re-attributes it to the claim | **CLOSED.** `violations_for` walks the evidential closure, and `evidential_closure` is now the single public definition all three commands scope by |
-| 8 | The digest covers only the rendered projection. Grades, graders, pramāṇas and `measured_by:` links are not rendered, so they change in the vault without disturbing a frozen packet; the change surfaces only if it now trips a gate, as `NoLongerFreezable` — otherwise `Verified` | **confirmed in source** |
+| 8 | The digest covers only the rendered projection. Grades, graders, means of knowing and `measured_by:` links are not rendered, so they change in the vault without disturbing a frozen packet; the change surfaces only if it now trips a gate, as `NoLongerFreezable` — otherwise `Verified` | **confirmed in source** |
 | 9 | The loader silently degrades malformed edge metadata: an unknown attribute key, an invalid `grade=` and a misspelt `via=` are dropped without a diagnostic | **PARTLY CLOSED, and the consequences named here no longer follow.** A misspelt `via=` leaves the edge with no declared means of knowing, which now reaches no verdict and blocks as `PEIR-GATE-UNASSESSED [MEANS-OF-KNOWING]`; a mangled `grade=` leaves the edge ungraded, which `PEIR-LINT-UNGRADED-SUPPORT` reports. The loader is still silent about the typo itself — it says the edge is unexamined, not that a word was misspelt |
 
 ### The sixth audit (2026-08-19)

@@ -8,7 +8,7 @@
 //! was missing. It never returns `Pass`. Silence is not consent.
 
 use crate::{GateResult, Violation};
-use peira_core::{EdgeKind, Graph, Node, NodeKind, Pramana};
+use peira_core::{EdgeKind, Graph, Means, Node, NodeKind};
 
 // ── Stable published gate codes ──────────────────────────────────────────────
 // These appear in Court Mode packets. A shipped code never changes meaning.
@@ -553,8 +553,8 @@ pub fn grades_within_means_ceiling(graph: &Graph, node: &Node) -> GateResult {
     // verdict, "this one declares no source" is the absence of one.
     let mut unassessed: Option<String> = None;
     for edge in incoming {
-        if edge.exceeds_pramana_ceiling() {
-            let (Some(grade), Some(pramana)) = (edge.grade(), edge.pramana) else {
+        if edge.exceeds_means_ceiling() {
+            let (Some(grade), Some(means)) = (edge.grade(), edge.means) else {
                 continue;
             };
             return block(
@@ -562,17 +562,17 @@ pub fn grades_within_means_ceiling(graph: &Graph, node: &Node) -> GateResult {
                 "MEANS-OF-KNOWING",
                 node,
                 format!(
-                    "edge {} → {} is graded {grade} on {pramana}, whose ceiling is {}",
+                    "edge {} → {} is graded {grade} on {means}, whose ceiling is {}",
                     edge.from,
                     edge.to,
-                    pramana.grade_ceiling()
+                    means.grade_ceiling()
                 ),
                 "lower the grade, or obtain evidence of a kind that earns it — corroboration \
 between tools is testimony, not perception",
             );
         }
         if unassessed.is_none() {
-            if let (Some(grade), None) = (edge.grade(), edge.pramana) {
+            if let (Some(grade), None) = (edge.grade(), edge.means) {
                 unassessed = Some(format!(
                     "edge {} → {} is settled at {grade} but declares no means of knowing, \
 so no ceiling applies to it",
@@ -971,13 +971,13 @@ fn rests_on_inference(graph: &Graph, node: &Node) -> bool {
                 .edges_from(&node.id)
                 .filter(|e| e.kind == EdgeKind::DependsOn),
         )
-        .any(|e| e.pramana == Some(Pramana::Inference))
+        .any(|e| e.means == Some(Means::Inference))
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use peira_core::{parse_node, Edge, Grade, NodeId, Pramana};
+    use peira_core::{parse_node, Edge, Grade, Means, NodeId};
 
     fn node(src: &str) -> Node {
         parse_node(src).expect("fixture parses")
@@ -995,7 +995,7 @@ mod tests {
     /// not win.
     #[test]
     fn an_inference_surveys_the_dissimilar_cases_and_cites_a_positive_instance() {
-        let build = |via: Pramana, fields: &str| {
+        let build = |via: Means, fields: &str| {
             let mut g = Graph::new();
             g.insert_node(node(&format!(
                 "---\nid: c1\ntype: claim\ntitle: The binary was executed\n{fields}---\n"
@@ -1013,7 +1013,7 @@ mod tests {
             )
         };
 
-        let (v, sa) = build(Pramana::Inference, "");
+        let (v, sa) = build(Means::Inference, "");
         assert!(
             matches!(v, GateResult::Unassessed { .. }),
             "an inference that never surveyed the dissimilar cases reaches no verdict"
@@ -1030,7 +1030,7 @@ the entry is present anyway\n",
             "sapaksa:\n",
             "  - run-2026-08-11: known execution on a clean VM produced the entry\n"
         );
-        let (v, sa) = build(Pramana::Inference, surveyed);
+        let (v, sa) = build(Means::Inference, surveyed);
         assert!(matches!(v, GateResult::Pass), "control: a survey exists");
         assert!(
             matches!(sa, GateResult::Pass),
@@ -1038,7 +1038,7 @@ the entry is present anyway\n",
         );
 
         // Scope control — the one that decides whether this is doctrine or ceremony.
-        let (v, sa) = build(Pramana::Perception, "");
+        let (v, sa) = build(Means::Perception, "");
         assert!(
             matches!(v, GateResult::NotApplicable),
             "perception owes no dissimilar-case survey — trairūpya is about anumāna"
@@ -1601,7 +1601,7 @@ as_used: a\nnot_essence: b\nstipulated: c\n---\n"
             } else {
                 Edge::new(NodeId::new("o3"), NodeId::new("c1"), kind)
             };
-            g.insert_edge(e.graded_by(Grade::G4, "eve").via(Pramana::Testimony));
+            g.insert_edge(e.graded_by(Grade::G4, "eve").via(Means::Testimony));
             let n = g.node(&NodeId::new("c1")).expect("c1").clone();
             grades_within_means_ceiling(&g, &n)
         };
@@ -1787,7 +1787,7 @@ reached no verdict and must not report one"
 
     /// A settled grade must declare how it was known.
     ///
-    /// `exceeds_pramana_ceiling` compares grade against ceiling only when BOTH are
+    /// `exceeds_means_ceiling` compares grade against ceiling only when BOTH are
     /// present, so omitting `via=` removed the cap entirely: a single edge could
     /// settle at G4 — a grade defined as multiple materially independent convergent
     /// lines — on one document somebody wrote. The cap bound only authors polite
@@ -1817,7 +1817,7 @@ reached no verdict and must not report one"
             vec![
                 Edge::new(NodeId::new("o1"), NodeId::new("c1"), EdgeKind::Supports)
                     .graded_by(Grade::G3, "a-reviewer")
-                    .via(Pramana::Perception),
+                    .via(Means::Perception),
             ],
         );
         assert!(
@@ -2047,7 +2047,7 @@ from this image\n---\n",
             vec![claim.clone(), obs],
             vec![
                 Edge::new(NodeId::new("o1"), NodeId::new("c1"), EdgeKind::Supports)
-                    .via(Pramana::Testimony)
+                    .via(Means::Testimony)
                     .graded_by(Grade::G3, "albert"),
             ],
         );
@@ -2212,7 +2212,7 @@ from this image\n---\n",
             vec![claim.clone(), obs],
             vec![
                 Edge::new(NodeId::new("o1"), NodeId::new("c1"), EdgeKind::Supports)
-                    .via(Pramana::Inference)
+                    .via(Means::Inference)
                     .graded_by(Grade::G2, "albert"),
             ],
         );
