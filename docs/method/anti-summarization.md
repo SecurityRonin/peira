@@ -119,7 +119,7 @@ give it a comfortable exit.
 
 A richer question set risks each door earning a fluent "nothing here" until the ceremony defeats the
 fluency it was built to fight. The noun-demand blocks most of that; the rest is
-[`README.md`](README.md)'s controlling idea, made a rule of the pass:
+[`six-structures.md`](six-structures.md)'s controlling idea, made a rule of the pass:
 
 - **An all-empty pass is a tell of a *skipped* pass, not a flawless source.** On non-trivial
   material, empty across every door means re-run, not celebrate — the same reason a `GateResult` is
@@ -160,7 +160,7 @@ The five survive as a mnemonic; the seven are the working doors.
 
 peira distinguishes what it **enforces** (deterministic gates over the graph) from what it
 **catalogues** (named, sourced, given a worked example, owning no gate — a reading list for what to
-ask by hand). See [`README.md` §"What peira actually enforces"](README.md).
+ask by hand). See [`README.md` §"What peira actually enforces"](six-structures.md).
 
 The four lenses this pass adds — `KNOW-BY-DOING`, `LACUNA`, `IDOLA`, `BLACKSTONE` — are **catalogued, not
 enforced, and deliberately.** *What did I smooth over*, *what would a competent treatment contain*,

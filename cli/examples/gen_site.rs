@@ -210,7 +210,8 @@ identified. {} are catalogued; {} are **enforced** as deterministic gates today,
 /// so they own no page; the table in the method doc documents each one. A plain backtick
 /// scan — no regex dependency.
 fn link_gate_codes(body: &str) -> String {
-    const ANCHOR: &str = "{{ '/method/README/' | relative_url }}#what-peira-actually-enforces";
+    const ANCHOR: &str =
+        "{{ '/method/six-structures/' | relative_url }}#what-peira-actually-enforces";
     let mut out = String::with_capacity(body.len());
     let mut rest = body;
     while let Some(start) = rest.find("`PEIR-") {
@@ -290,7 +291,10 @@ fn doors_page() -> String {
     // to the enforcement table, where each gate and lint is documented.
     body = link_gate_codes(&body);
     body = body
-        .replace("](README.md)", "]({{ '/method/' | relative_url }})")
+        .replace(
+            "](six-structures.md)",
+            "]({{ '/method/six-structures/' | relative_url }})",
+        )
         .replace(
             "](claim-grading.md)",
             "]({{ '/method/claim-grading/' | relative_url }})",
