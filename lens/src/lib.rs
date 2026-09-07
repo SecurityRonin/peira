@@ -637,9 +637,11 @@ id, and everything citing it, stays put",
 decision",
         applies_to: ARGUMENTS,
         gates: &[],
-        worked_example: "forensicnomicon's ChangeType already types this for artifacts, and its \
-BehaviorChanged variant — semantics changed without format change — is exactly the drift that \
-leaves every downstream citation pointing at something it no longer says.",
+        worked_example: "Theseus's ship has every plank replaced yet keeps its name and its \
+berth; whether it is still the same ship cannot be settled without a rule for identity across \
+change. A claim edited past its evidence is that ship — the id and every citation stay put while \
+the proposition drifts. When the IAU redefined \"planet\" in 2006 and Pluto fell out, every \
+earlier \"nine planets\" silently came to mean something its readers never wrote.",
         sources: &[
             "Plutarch, Life of Theseus 23.1",
             "https://plato.stanford.edu/entries/identity-over-time/",
