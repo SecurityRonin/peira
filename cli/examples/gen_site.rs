@@ -210,11 +210,15 @@ identified. {} are catalogued; {} are **enforced** as deterministic gates today,
 /// front matter is prepended, and every backtick-wrapped lens code becomes a link.
 fn doors_page() -> String {
     let mut body = include_str!("../../docs/method/anti-summarization.md").to_owned();
+    // The canonical doc references lenses by their peira code (`ZHENGMING`), because that
+    // is the identifier the CLI and packets print. On the site the code is never a label:
+    // link text is the English name, and the original script that already follows in the
+    // doc stays as etymology. Romanization does not appear.
     for lens in CATALOG {
         let needle = format!("`{}`", lens.id);
         let link = format!(
-            "[`{}`]({{{{ '/lenses/{}/' | relative_url }}}})",
-            lens.id,
+            "[{}]({{{{ '/lenses/{}/' | relative_url }}}})",
+            display(lens.id).0,
             lens.id.to_lowercase()
         );
         body = body.replace(&needle, &link);

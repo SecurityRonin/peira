@@ -19,21 +19,14 @@ the loop, naming the tradition that identified each mistake.
 ## Two ways in
 
 <div class="cards">
+  <h3><a href="{{ '/doors/' | relative_url }}">→ The seven doors</a></h3>
+  <p>The <strong>anti-summarization pass</strong>: seven probing questions for distilling any source without letting compression smooth away its contradictions, unsupported claims, and omissions. Each door leads to the lenses behind it.</p>
 
-### → [The seven doors]({{ '/doors/' | relative_url }})
-The **anti-summarization pass**: seven probing questions for distilling any source without
-letting compression smooth away its contradictions, unsupported claims, and omissions. Each
-door leads to the lenses behind it.
+  <h3><a href="{{ '/lenses/' | relative_url }}">→ The lens catalogue</a></h3>
+  <p>Twenty-seven <strong>named ways of being wrong</strong>, each from a critical-thinking tradition. Thirteen are enforced as deterministic gates; the rest are catalogued readings. Every one carries a worked example and authoritative sources.</p>
 
-### → [The lens catalogue]({{ '/lenses/' | relative_url }})
-Twenty-seven **named ways of being wrong**, each from a critical-thinking tradition. Thirteen
-are enforced as deterministic gates; the rest are catalogued readings. Every one carries a
-worked example and authoritative sources.
-
-### → [The method]({{ '/method/' | relative_url }})
-The reasoning peira mechanises, written out so the tool stands alone: the six structures of
-investigative error, the claim-grading standard, and reporting to a tribunal.
-
+  <h3><a href="{{ '/method/' | relative_url }}">→ The method</a></h3>
+  <p>The reasoning peira mechanises, written out so the tool stands alone: the six structures of investigative error, the claim-grading standard, and reporting to a tribunal.</p>
 </div>
 
 ## What a gate looks like
