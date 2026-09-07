@@ -47,12 +47,12 @@ flowchart TB
 | # | Door | The question | Routes to |
 |---|---|---|---|
 | 1 | **Direction** | Which way do I want this to come out, and which way hurts more if I'm wrong? | `BLACKSTONE`, `IDOLA` (bias) |
-| 2 | **Words** | What is the yardstick, and do the words hold still? | `CRITERION` 立極, `RECTIFY-NAME` 正名, `SUBSTANCE-FUNCTION` 體用 |
-| 3 | **Ground** | How does it know, and can that way of knowing reach this far? | `TOULMIN`, `MEANS-OF-KNOWING`, `RUNG` (causal), `NON-PERCEPTION` 不可得因, `PEIR-LINT-ORPHAN-CLAIM`/`-UNGROUNDED-CHAIN`, `PEIR-LINT-FALSE-INDEPENDENCE` |
-| 4 | **Rivals** | What else would look exactly like this, and who got left out of the ring? | `ACH`, `THREE-MARKS` 因三相, `FOUR-CORNERS` 四句, `STEELMAN`, `PRESERVE-MINORITY` |
-| 5 | **Breaks** | Where does it break — on its own pages, against the world, after a date, past a case? | `DUNG`, `SYNTHESIS`, `PEIR-BOUNDARIES-MISSING` (under `RUNG`), `WHITE-HORSE` 白馬非馬, `PREMORTEM`, `THESEUS` |
-| 6 | **Silence** | What should be here and isn't, and what was cut without a reason on record? | `LACUNA` 闕文, `CHESTERTON` |
-| 7 | **Transfer** | Can I run it on a case the source never mentions? | `KNOW-BY-DOING` 格物致知·知行合一 |
+| 2 | **Words** | What is the yardstick, and do the words hold still? | `CRITERION`, `RECTIFY-NAME`, `SUBSTANCE-FUNCTION` |
+| 3 | **Ground** | How does it know, and can that way of knowing reach this far? | `TOULMIN`, `MEANS-OF-KNOWING`, `RUNG` (causal), `NON-PERCEPTION`, `PEIR-LINT-ORPHAN-CLAIM`, `PEIR-LINT-UNGROUNDED-CHAIN`, `PEIR-LINT-FALSE-INDEPENDENCE` |
+| 4 | **Rivals** | What else would look exactly like this, and who got left out of the ring? | `ACH`, `THREE-MARKS`, `FOUR-CORNERS`, `STEELMAN`, `PRESERVE-MINORITY` |
+| 5 | **Breaks** | Where does it break — on its own pages, against the world, after a date, past a case? | `DUNG`, `SYNTHESIS`, `PEIR-BOUNDARIES-MISSING` (under `RUNG`), `WHITE-HORSE`, `PREMORTEM`, `THESEUS` |
+| 6 | **Silence** | What should be here and isn't, and what was cut without a reason on record? | `LACUNA`, `CHESTERTON` |
+| 7 | **Transfer** | Can I run it on a case the source never mentions? | `KNOW-BY-DOING` |
 
 **The order is load-bearing.** Direction first, so the scrutiny budget is aimed before it is spent.
 Words before Ground, because you cannot weigh support for a claim whose terms float. Ground before

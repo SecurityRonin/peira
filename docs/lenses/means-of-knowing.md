@@ -12,7 +12,7 @@ nav_exclude: true
 
 # The Means of Knowing <span class="script">प्रमाण</span>
 
-<p class="lens-meta"><code class="lens-code">MEANS-OF-KNOWING</code> · Indian — Nyāya and the pramāṇa epistemology · <strong>Enforced — owns a gate</strong></p>
+<p class="lens-meta"><code class="lens-code">MEANS-OF-KNOWING</code> · Indian — Nyāya and the प्रमाण epistemology · <strong>Enforced — owns a gate</strong></p>
 
 ## The failure it names
 
