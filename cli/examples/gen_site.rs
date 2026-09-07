@@ -502,31 +502,6 @@ fn skill_playbook(lens: &Lens) -> String {
     out
 }
 
-/// Old (romanized) lens slugs mapped to their new English slug. Each emits a redirect
-/// stub so a bookmarked `/lenses/zhengming/` still lands on the renamed page. Historical
-/// by nature — a one-time record of the id anglicisation, not derivable from the catalogue.
-const REDIRECTS: &[(&str, &str)] = &[
-    ("liji", "criterion"),
-    ("zhengming", "rectify-name"),
-    ("tiyong", "substance-function"),
-    ("baima", "white-horse"),
-    ("catuskoti", "four-corners"),
-    ("pramana", "means-of-knowing"),
-    ("pancavayava", "five-members"),
-    ("trairupya", "three-marks"),
-    ("anupalabdhi", "non-perception"),
-    ("abhasa", "semblance"),
-    ("gewu", "know-by-doing"),
-    ("erdi", "two-truths"),
-    ("machloket", "preserve-minority"),
-    ("elenchus", "cross-examine"),
-    ("aufhebung", "synthesis"),
-];
-
-fn redirect_stub(new_slug: &str) -> String {
-    format!("---\nlayout: redirect\nredirect_to: /lenses/{new_slug}/\nsitemap: false\n---\n")
-}
-
 fn run() -> std::io::Result<usize> {
     let out_root = std::env::args()
         .nth(1)
@@ -542,9 +517,6 @@ fn run() -> std::io::Result<usize> {
     }
     write_file(&lenses_dir.join("index.md"), &index_page())?;
     write_file(&out_root.join("doors.md"), &doors_page())?;
-    for (old, new) in REDIRECTS {
-        write_file(&lenses_dir.join(format!("{old}.md")), &redirect_stub(new))?;
-    }
 
     // The Claude Code skill, compiled from the same catalogue. Its playbook filenames
     // are the (new) lens slugs, so the old-slug playbooks are cleared first.
