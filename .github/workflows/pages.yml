@@ -26,15 +26,15 @@ jobs:
       - uses: Swatinem/rust-cache@9bdad043e88c75890e36ad3bbc8d27f0090dd609
       - name: Regenerate the site from the catalogue
         run: cargo run -q -p peira-cli --example gen_site -- docs
-      - name: Fail if the committed pages drifted from the catalogue
+      - name: Fail if the committed pages or skill drifted from the catalogue
         run: |
           # Stage first so a NEW lens page (untracked) is caught, not only a modified one.
-          git add -A -- docs/lenses docs/doors.md
-          if ! git diff --cached --quiet -- docs/lenses docs/doors.md; then
-            echo "::error::docs/lenses or docs/doors.md is out of date — run:"
+          git add -A -- docs/lenses docs/doors.md .claude/skills/peira
+          if ! git diff --cached --quiet -- docs/lenses docs/doors.md .claude/skills/peira; then
+            echo "::error::docs/lenses, docs/doors.md or .claude/skills/peira is out of date — run:"
             echo "::error::  cargo run -p peira-cli --example gen_site -- docs"
             echo "::error::and commit the result."
-            git diff --cached -- docs/lenses docs/doors.md | head -80
+            git diff --cached -- docs/lenses docs/doors.md .claude/skills/peira | head -80
             exit 1
           fi
 

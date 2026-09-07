@@ -82,6 +82,32 @@ Two doors do more than list sub-checks:
 
 ---
 
+## Compact form — for a summarize prompt
+
+The seven doors above carry their crosswalk to the lenses. Stripped of that, they distil to a
+prompt you can append after any "summarize X" instruction — the working descendant of the original
+five questions, doing the same job with the gap-aim, the noun-demand, and the species tag intact:
+
+> Before trusting this summary, run the seven doors on it. Each looks at the **gap** between your
+> summary and the source, and every answer must be a concrete thing — a term, a number, a name, a
+> missing item, a case — never "nothing":
+>
+> 1. **Direction** — which way do I *want* this to come out, and which way is costlier to be wrong?
+> 2. **Words** — what is the standard being used, and does each key term keep one meaning?
+> 3. **Ground** — how does each load-bearing claim *know*, and can that way of knowing reach this far?
+> 4. **Rivals** — what else would fit this same evidence, and whose best counter-case is missing?
+> 5. **Breaks** — where does it break: against itself, against the world, after a date, past an edge case?
+> 6. **Silence** — what is absent that a real treatment would include, and what was dropped with no reason given?
+> 7. **Transfer** — can I apply this to a case the source never mentions, or only restate it?
+>
+> Tag each finding `[SOURCE FAULT]` (the material's) or `[MY LIMIT]` (mine). If every door comes
+> back "nothing," you skipped the pass — run it again.
+
+`peira method anti-summarization` prints this document, so the compact form travels with the
+binary.
+
+---
+
 ## The noun-demand
 
 Every non-empty answer is a **noun**, and the noun names where it was found: a *yardstick* (the

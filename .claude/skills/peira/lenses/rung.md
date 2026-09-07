@@ -1,69 +1,19 @@
-# Causal Ladder — Earn the Rung
+# Earn the Rung
 
-**Gates:** `PEIR-CAUSAL-RUNG-UNREACHED`, `PEIR-BOUNDARIES-MISSING`
-**Failure mode:** asserting interventional or counterfactual conclusions from
-observational data — and stating a conclusion with no conditions under which it would
-change.
+<!-- Generated from peira_lens::CATALOG by cli/examples/gen_site.rs. Edit the lens in lens/src/lib.rs and regenerate. -->
 
-Pearl's ladder has three rungs, and evidence from one cannot license a claim on another:
+**peira code:** `RUNG` · **Modern — analytic and scientific method** · **Enforced** — owns a gate
 
-| Rung | | What it takes |
-|---|---|---|
-| 1 | **association** — seeing | observation |
-| 2 | **intervention** — doing | a controlled protocol, actually executed |
-| 3 | **counterfactual** — imagining | rung-2 evidence plus a model of the alternative |
+**Failure mode:** asserting intervention or counterfactual conclusions from observational data, and stating a conclusion with no boundary conditions
 
-## What fires this
+**What it does:** a claim above the association rung requires an executed protocol supporting it; every claim declares its boundaries
 
-`causal_rung: intervention` or `counterfactual` with no supporting node of kind `run` —
-that is, nothing was ever executed. And separately, any claim with no `boundaries:`.
+**Enforced gates:** `PEIR-CAUSAL-RUNG-UNREACHED`, `PEIR-BOUNDARIES-MISSING`
 
-A claim that declares no rung at all returns `Unassessed`. Not a pass.
+**Worked example:** "This Amcache entry proves execution" is a rung-3 assertion resting on rung-1 data, with no Windows build named. Nothing was intervened on; nothing was compared against a world where the file was only copied.
 
-## What to look for
+**Sources:**
+- Judea Pearl, The Book of Why (2018), ch. 1 — the ladder of causation
+- Austin Bradford Hill, Proc. R. Soc. Med. 58 (1965) 295
 
-"Proves execution" is a rung-3 assertion: it says that had the file only been copied,
-the record would be absent. Nothing in the vault compares those two worlds. The data is
-rung 1.
-
-The test matrix the Vibe doc specifies is what rung 2 actually costs: clean baseline,
-copy without launch, install, inventory pass, antimalware scan, explicit execution,
-deletion after introduction — each on a pinned build, with negative controls and
-repeated runs. *"The operator did not double-click it"* is not a control.
-
-## What to write
-
-Either restate at the rung the evidence reaches:
-
-```yaml
-causal_rung: association
-```
-
-or add the protocol and its execution:
-
-```markdown
----
-id: r1
-type: run
-title: Controlled launch on 22H2, snapshot-reverted
-protocol: p-amcache-matrix
-environment: "Windows 11 22H2 build 22621.3007, VM snapshot S1"
-supports: ["c-execution grade=G3 by=albert via=perception"]
----
-```
-
-## Boundaries
-
-Every claim declares them, and each should carry its citation rather than being a bare
-string — `version_history.rs` in forensicnomicon is the model: a change is recorded with
-both the version it took effect in *and* a reference.
-
-```yaml
-boundaries:
-  - Windows 10 1809 and later, where InventoryApplicationFile is populated
-  - Amcache.hve as acquired; not a reconstructed or merged hive
-  - Says nothing about builds where the population mechanism differs
-```
-
-The last one matters most. A boundary that names what the claim does **not** cover is
-worth more than three that restate what it does.
+Run `peira lens RUNG` for this entry in the tool.

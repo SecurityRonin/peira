@@ -1,49 +1,19 @@
-# Toulmin — Name the Warrant
+# Name the Warrant
 
-**Gate:** `PEIR-WARRANT-MISSING`
-**Failure mode:** the unstated warrant — grounds and claim are given, and the rule
-connecting them never is.
+<!-- Generated from peira_lens::CATALOG by cli/examples/gen_site.rs. Edit the lens in lens/src/lib.rs and regenerate. -->
 
-Toulmin's observation is that arguments fail at the *warrant* far more often than at the
-data, and that the warrant is the part nobody writes down. Writing it down is usually
-enough to see the problem.
+**peira code:** `TOULMIN` · **Modern — analytic and scientific method** · **Enforced** — owns a gate
 
-## What fires this
+**Failure mode:** the unstated warrant: grounds and claim are given, the rule connecting them never is
 
-A claim has no `warrant:` — or has one that is blank. The gate distinguishes those two,
-because a blank field is a different defect from a missing one: somebody started.
+**What it does:** `warrant` is a required field, not an optional one
 
-## What to look for
+**Enforced gates:** `PEIR-WARRANT-MISSING`
 
-State the inference as a bare syllogism and read the middle line aloud:
+**Worked example:** From "the hive holds this path" to "the program ran" there is an unwritten rule licensing the step. Written down, it is visibly false.
 
-- **Grounds:** the hive holds a record for this path.
-- **Warrant:** *…therefore the program ran.*
-- **Claim:** the program ran.
+**Sources:**
+- Stephen Toulmin, The Uses of Argument (1958), ch. 3
+- <https://plato.stanford.edu/entries/reasoning-defeasible/>
 
-The warrant, written out, is `a catalogue record implies execution` — visibly false the
-moment it is a sentence rather than an assumption.
-
-Compare a sound one:
-
-- **Grounds:** the hive holds a record for this path.
-- **Warrant:** a catalogue entry evidences that Windows recorded the path and file
-  identity; it licenses a statement about recording, and nothing beyond it.
-- **Claim:** the record establishes catalogued presence.
-
-## What to write
-
-```yaml
-warrant: >-
-  A catalogue entry evidences that Windows recorded the path and file identity. It
-  licenses a statement about recording, and nothing beyond it.
-```
-
-## Watch for
-
-A warrant that restates the claim ("the warrant is that this proves execution") satisfies
-the field and defeats the purpose. The test: could someone accept your grounds, accept
-your warrant, and still reject your claim? If yes, the warrant is not yet doing its job.
-
-Backing, qualifier and rebuttal are the rest of the Toulmin apparatus. The gate requires
-only the warrant, because it is the one that is always missing.
+Run `peira lens TOULMIN` for this entry in the tool.
