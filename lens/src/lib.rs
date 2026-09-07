@@ -744,6 +744,7 @@ no flu (異品), so it discriminates nothing — 共不定, cell 1 of the 九句
             "商羯羅主《因明入正理論》玄奘譯 (647), T32n1630: 「因有三相…謂遍是宗法性、同品定有性、異品遍無性」",
             "陳那《因明正理門論本》玄奘譯, T32n1628",
             "法稱《正理滴論》II.5–7; tr. Th. Stcherbatsky, Buddhist Logic vol. II (1930)",
+            "R. Hayes, Dignāga on the Interpretation of Signs (Kluwer 1988), ch. 4",
             "https://plato.stanford.edu/entries/logic-india/",
         ],
         background: "陳那's three marks of a valid reason (因三相) set what a reason must bear to prove anything: present in the case at issue, present in at least one similar case, and absent from every dissimilar case. The third is load-bearing — a reason that also occurs where the thesis is false proves nothing — which 陳那 mapped exhaustively in the 九句因 (the wheel of reasons). The lens enforces it: evidence common to a claim and its rival is not diagnostic.",
@@ -795,6 +796,8 @@ admission that assent was never obtained).",
             "商羯羅主《因明入正理論》T32n1630 — 似因十四過 (不成四・不定六・相違四), 似宗九過",
             "M. Tachikawa, \"A Sixth-Century Manual of Indian Logic\", J. Indian Philosophy 1 \
 (1971) 111–145",
+            "S. Katsura, \"The theory of anaikāntika in Buddhist logic\", in Studies in the \
+Buddhist Epistemological Tradition (Vienna 1991)",
             "https://plato.stanford.edu/entries/logic-india/",
         ],
         background: "Indian logic catalogued the ways a proof can wear the form of validity without the force of it: the semblances of a reason (似因) and their counterpart for the thesis (似宗). 商羯羅主's 因明入正理論 (7th c., in 玄奘's translation) lists fourteen faulty reasons — unestablished, inconclusive, contradictory — beside nine faulty theses. The lens is the human screen: a reason that looks like proof is read against the taxonomy before it is trusted.",
