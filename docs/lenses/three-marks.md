@@ -12,7 +12,7 @@ nav_exclude: true
 
 # The Three Marks of a Valid Reason <span class="script">因三相</span>
 
-<p class="lens-meta"><code class="lens-code">THREE-MARKS</code> · Buddhist — Madhyamaka and Dignāgan logic · <strong>Enforced — owns a gate</strong></p>
+<p class="lens-meta"><code class="lens-code">THREE-MARKS</code> · Buddhist — 中觀 and 因明 (Buddhist logic) · <strong>Enforced — owns a gate</strong></p>
 
 ## The failure it names
 
@@ -36,12 +36,12 @@ The classic inference — "the hill has fire, because it has smoke" — holds be
 
 ## In the tradition
 
-Dignāga's trairūpya sets the three marks a reason (hetu) must bear to prove anything: present in the case at issue (pakṣadharmatā), present in at least one similar case (sapakṣa), and absent from every dissimilar case (vipakṣa). The third is load-bearing — a reason that also occurs where the thesis is false proves nothing — which Dignāga mapped exhaustively in the 九句因 (Hetucakra, the wheel of reasons). The lens enforces it: evidence common to a claim and its rival is not diagnostic.
+陳那's three marks of a valid reason (因三相) set what a reason must bear to prove anything: present in the case at issue, present in at least one similar case, and absent from every dissimilar case. The third is load-bearing — a reason that also occurs where the thesis is false proves nothing — which 陳那 mapped exhaustively in the 九句因 (the wheel of reasons). The lens enforces it: evidence common to a claim and its rival is not diagnostic.
 
 ## Sources
 
 - 商羯羅主《因明入正理論》玄奘譯 (647), T32n1630: 「因有三相…謂遍是宗法性、同品定有性、異品遍無性」
-- 陳那 Dignāga, 《因明正理門論本》玄奘譯, T32n1628
+- 陳那《因明正理門論本》玄奘譯, T32n1628
 - Dharmakīrti, Nyāyabindu II.5–7; tr. Th. Stcherbatsky, Buddhist Logic vol. II (1930)
 - R. Hayes, Dignāga on the Interpretation of Signs (Kluwer 1988), ch. 4
 - <https://plato.stanford.edu/entries/logic-india/>

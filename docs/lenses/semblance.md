@@ -12,7 +12,7 @@ nav_exclude: true
 
 # The Semblances of Proof <span class="script">似因・似宗</span>
 
-<p class="lens-meta"><code class="lens-code">SEMBLANCE</code> · Buddhist — Madhyamaka and Dignāgan logic · <strong>Catalogued — a reading, owns no gate</strong></p>
+<p class="lens-meta"><code class="lens-code">SEMBLANCE</code> · Buddhist — 中觀 and 因明 (Buddhist logic) · <strong>Catalogued — a reading, owns no gate</strong></p>
 
 ## The failure it names
 
@@ -28,7 +28,7 @@ a human screen: each load-bearing inference is read against the fourteen 似因 
 
 ## In the tradition
 
-Indian logic catalogued the ways a proof can wear the form of validity without the force of it: the hetvābhāsa, the "semblances of a reason," and their counterpart for the thesis (似宗). 商羯羅主's 因明入正理論 (7th c., in 玄奘's translation) lists fourteen faulty reasons — unestablished, inconclusive, contradictory — beside nine faulty theses. The lens is the human screen: a reason that looks like proof is read against the taxonomy before it is trusted.
+Indian logic catalogued the ways a proof can wear the form of validity without the force of it: the semblances of a reason (似因) and their counterpart for the thesis (似宗). 商羯羅主's 因明入正理論 (7th c., in 玄奘's translation) lists fourteen faulty reasons — unestablished, inconclusive, contradictory — beside nine faulty theses. The lens is the human screen: a reason that looks like proof is read against the taxonomy before it is trusted.
 
 ## Sources
 

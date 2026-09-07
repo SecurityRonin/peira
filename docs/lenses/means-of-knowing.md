@@ -12,7 +12,7 @@ nav_exclude: true
 
 # The Means of Knowing <span class="script">प्रमाण</span>
 
-<p class="lens-meta"><code class="lens-code">MEANS-OF-KNOWING</code> · Indian — Nyāya and the प्रमाण epistemology · <strong>Enforced — owns a gate</strong></p>
+<p class="lens-meta"><code class="lens-code">MEANS-OF-KNOWING</code> · Indian — classical logic and the epistemology of प्रमाण · <strong>Enforced — owns a gate</strong></p>
 
 ## The failure it names
 
@@ -30,15 +30,15 @@ These block a citation packet deterministically — no model in the loop:
 
 ## Worked example
 
-Two newspapers running the same wire story are śabda — testimony — not two eyes on the event (pratyakṣa). Sharing one source, they are a single line of evidence however many mastheads carry it, and no tally of them reaches direct knowledge.
+Two newspapers running the same wire story are testimony, not two eyes on the event. Sharing one source, they are a single line of evidence however many mastheads carry it, and no tally of them reaches direct knowledge.
 
 ## In the tradition
 
-In Nyāya epistemology a pramāṇa is a means of valid knowledge, and the school counts four: perception (pratyakṣa), inference (anumāna), comparison (upamāna) and testimony (śabda). The Buddhist logicians Dignāga and Dharmakīrti (5th–7th c.) pared these to two — perception and inference — folding testimony into inference, and holding that no source certifies more than its own kind supports. The lens keeps that ceiling: testimony cannot be promoted to observation, and repetition of one source is not independence.
+In classical Indian epistemology a प्रमाण is a means of valid knowledge, counted as four: perception, inference, comparison and testimony. The Buddhist logicians 陳那 and 法稱 (5th–7th c.) pared these to two — perception and inference — folding testimony into inference, and holding that no source certifies more than its own kind supports. The lens keeps that ceiling: testimony cannot be promoted to observation, and repetition of one source is not independence.
 
 ## Sources
 
-- Nyāya Sūtra 1.1.3 (pratyakṣa, anumāna, upamāna, śabda)
+- Nyāya Sūtra 1.1.3 (perception, inference, comparison, testimony)
 - <https://plato.stanford.edu/entries/epistemology-india/>
 
 <p class="back"><a href="{{ '/lenses/' | relative_url }}">← All lenses</a> · <a href="{{ '/doors/' | relative_url }}">The seven doors</a></p>

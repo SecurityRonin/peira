@@ -34,7 +34,7 @@ One white horse was examined, and the claim is made of horses at large. 公孫�
 
 ## In the tradition
 
-公孫龍 Gongsun Long (fl. 284–259 BCE), of the Warring-States 名家 (School of Names), argued in the 白馬論 that "a white horse is not a horse": "horse" names a shape and "white horse" a shape-with-colour, so the two pick out different things and cannot be swapped. Usually taught as sophistry, its point is the one the lens enforces — natural language slides between a class and a qualified subclass.
+公孫龍 (fl. 284–259 BCE), of the Warring-States 名家 (the School of Names), argued in the 白馬論 that a white horse is not a horse: "horse" names a shape and "white horse" a shape-with-colour, so the two pick out different things and cannot be swapped. Usually taught as sophistry, its point is the one the lens enforces — natural language slides between a class and a qualified subclass.
 
 ## Sources
 

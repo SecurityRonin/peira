@@ -12,7 +12,7 @@ nav_exclude: true
 
 # The Two Truths <span class="script">二諦</span>
 
-<p class="lens-meta"><code class="lens-code">TWO-TRUTHS</code> · Buddhist — Madhyamaka and Dignāgan logic · <strong>Catalogued — a reading, owns no gate</strong></p>
+<p class="lens-meta"><code class="lens-code">TWO-TRUTHS</code> · Buddhist — 中觀 and 因明 (Buddhist logic) · <strong>Catalogued — a reading, owns no gate</strong></p>
 
 ## The failure it names
 
@@ -28,7 +28,7 @@ The conventional register (世俗諦) is what may be said aloud; the ultimate re
 
 ## In the tradition
 
-Nāgārjuna, Mūlamadhyamakakārikā 24.8–10: the Buddha's teaching rests on two truths — the conventional (saṃvṛti-satya), what may be said in ordinary terms, and the ultimate (paramārtha-satya), how things finally stand — and the ultimate is reached only by way of the conventional. peira's Court Mode is exactly that translation, one-directional: the statement said aloud may only lose strength against the fully-bounded graph, never gain it.
+龍樹, in his root verses on the Middle Way (24.8–10): the Buddha's teaching rests on two truths — the conventional (世俗諦), what may be said in ordinary terms, and the ultimate (勝義諦), how things finally stand — and the ultimate is reached only by way of the conventional. peira's Court Mode is exactly that translation, one-directional: the statement said aloud may only lose strength against the fully-bounded graph, never gain it.
 
 ## Sources
 

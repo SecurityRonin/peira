@@ -28,7 +28,7 @@ Holmes solves it by the dog that did NOT bark: the absence of the expected react
 
 ## In the tradition
 
-Two sources meet here. 孔子 Confucius, Analects 15.26: 「吾猶及史之闕文也」— he could still recall when a scribe left a blank (闕文) rather than fill a gap he could not vouch for. And Conan Doyle's "Silver Blaze" (1892), where Holmes cracks the case by the dog that did not bark: the absence of the expected is the evidence. A distillation sees neither unbidden — it reports what is present, so an omission has to be hunted.
+Two sources meet here. 孔子, in the Analects (15.26): 「吾猶及史之闕文也」— he could still recall when a scribe left a blank (闕文) rather than fill a gap he could not vouch for. And Conan Doyle's "Silver Blaze" (1892), where Holmes cracks the case by the dog that did not bark: the absence of the expected is the evidence. A distillation sees neither unbidden — it reports what is present, so an omission has to be hunted.
 
 ## Sources
 

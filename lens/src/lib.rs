@@ -344,7 +344,7 @@ reader cannot tell what would count against it.",
             "https://ctext.org/wiki.pl?if=en&chapter=592302",
             "https://iep.utm.edu/neo-confucian-philosophy/",
         ],
-        background: "立極 — to establish the pole — is from 周敦頤 Zhou Dunyi (1017–1073) and his 太極圖說: 「聖人定之以中正仁義而主靜，立人極焉」, the sage fixing the human pole by a stated standard. The lens borrows the move, not the metaphysics: a judgement must set the pole it is measured against, or the word carries the verdict and nothing can check it.",
+        background: "立極 — to establish the pole — is from 周敦頤 (1017–1073) and his 太極圖說: 「聖人定之以中正仁義而主靜，立人極焉」, the sage fixing the human pole by a stated standard. The lens borrows the move, not the metaphysics: a judgement must set the pole it is measured against, or the word carries the verdict and nothing can check it.",
         phase: Phase::Enforced,
     },
     Lens {
@@ -367,12 +367,12 @@ under a stated sense.",
         sources: &[
             "《金剛般若波羅蜜經》: 所謂佛法者，即非佛法，是名佛法",
             "https://ctext.org/analects/zi-lu (論語·子路: 必也正名乎)",
-            "陳那 Dignāga, 集量論 Pramāṇasamuccaya ch. 5 (遮詮/anyāpoha) — a term excludes what \
+            "陳那, 集量論 ch. 5 (遮詮) — a term excludes what \
 it is not, which is the 即非 moment reached from Buddhist epistemology; `not_essence` is that \
-obligation mechanised, so apoha earns no separate entry",
+obligation mechanised, so this earns no separate entry",
             "https://plato.stanford.edu/entries/confucius/",
         ],
-        background: "正名, the rectification of names, is stated in Analects 13.3: asked what he would do first to govern, Confucius answers 「必也正名乎」— if names are not rectified, speech does not accord with reality and nothing is accomplished. The lens joins it to the Diamond Sutra's 所謂 X・即非 X・是名 X and to Dignāga's apoha (5th–6th c.), on which a word means by excluding what it is not — three traditions on one discipline: fix the term before it does the arguing.",
+        background: "正名, the rectification of names, is stated in the Analects (13.3): asked what he would do first to govern, 孔子 answers 「必也正名乎」— if names are not rectified, speech does not accord with reality and nothing is accomplished. The lens joins it to the 金剛經's 所謂 X・即非 X・是名 X and to 陳那's doctrine that a word means by excluding what it is not — three traditions on one discipline: fix the term before it does the arguing.",
         phase: Phase::Enforced,
     },
     Lens {
@@ -400,7 +400,7 @@ that a fire exists is a substance claim the sound alone does not carry.",
             "程頤《易傳序》: 體用一源，顯微無間",
             "https://plato.stanford.edu/entries/neo-confucianism/",
         ],
-        background: "體用 (ti-yong, substance and function) has roots in early Confucian and Daoist texts, was first used systematically by 王弼 Wang Bi (226–249) in his commentary on the Daodejing, and spread as a hermeneutic partly through Buddhism. 程頤 Cheng Yi's Neo-Confucian formula 「體用一源，顯微無間」— substance and function are one source, the manifest and the subtle without gap — is its classic statement. The lens takes only the distinction: what a thing is (體) is not settled by what it did (用).",
+        background: "體用 (substance and function) has roots in early Confucian and Daoist texts, was first used systematically by 王弼 (226–249) in his commentary on the 道德經, and spread as a hermeneutic partly through Buddhism. 程頤's Neo-Confucian formula 「體用一源，顯微無間」— substance and function are one source, the manifest and the subtle without gap — is its classic statement. The lens takes only the distinction: what a thing is (體) is not settled by what it did (用).",
         phase: Phase::Enforced,
     },
     Lens {
@@ -421,12 +421,12 @@ what holds of the qualified subclass need not hold of the class, however natural
             "《公孫龍子·白馬論》: 白馬非馬",
             "https://plato.stanford.edu/entries/school-names/",
         ],
-        background: "公孫龍 Gongsun Long (fl. 284–259 BCE), of the Warring-States 名家 (School of Names), argued in the 白馬論 that \"a white horse is not a horse\": \"horse\" names a shape and \"white horse\" a shape-with-colour, so the two pick out different things and cannot be swapped. Usually taught as sophistry, its point is the one the lens enforces — natural language slides between a class and a qualified subclass.",
+        background: "公孫龍 (fl. 284–259 BCE), of the Warring-States 名家 (the School of Names), argued in the 白馬論 that a white horse is not a horse: \"horse\" names a shape and \"white horse\" a shape-with-colour, so the two pick out different things and cannot be swapped. Usually taught as sophistry, its point is the one the lens enforces — natural language slides between a class and a qualified subclass.",
         phase: Phase::Enforced,
     },
     Lens {
         id: "FOUR-CORNERS",
-        name: "四句 catuṣkoṭi — The Four Corners",
+        name: "四句 — The Four Corners",
         tradition: Tradition::Buddhist,
         failure_mode: "collapsing a contested question into a binary before the other positions \
 have been stated",
@@ -443,7 +443,7 @@ open until the question earns a collapse.",
             "Nāgārjuna, Mūlamadhyamakakārikā 1.1, 18.8",
             "https://plato.stanford.edu/entries/nagarjuna/",
         ],
-        background: "The catuṣkoṭi (चतुष्कोटि, \"four corners\") sets out four alternatives on a proposition: that it holds, that it fails to hold, that it does both, and that it does neither. It predates Madhyamaka — the Pali canon has the Buddha decline all four on the \"undeclared\" questions (avyākata), as in the Aggi-Vacchagotta Sutta on the fate of an awakened one after death. Nāgārjuna (c. 150–250 CE) makes it a method in the Mūlamadhyamakakārikā; his use is not uniform, but the signature move denies all four, as in the opening verse refusing that anything arises from itself, from another, from both, or from neither (MMK 1.1).",
+        background: "The four-cornered logic (四句; चतुष्कोटि) sets out four alternatives on a proposition: that it holds, that it fails to hold, that it does both, and that it does neither. It predates 中觀 — the early canon has the Buddha decline all four on the \"undeclared\" questions, as in the Aggi-Vacchagotta Sutta on the fate of an awakened one after death. 龍樹 (c. 150–250 CE) makes it a method in his root verses on the Middle Way; his use is not uniform, but the signature move denies all four, as in the opening verse refusing that anything arises from itself, from another, from both, or from neither.",
         phase: Phase::Enforced,
     },
     Lens {
@@ -470,7 +470,7 @@ subject. Written down, a warrant can be checked or shown false; left unwritten, 
     },
     Lens {
         id: "MEANS-OF-KNOWING",
-        name: "प्रमाण pramāṇa — Type the Means of Knowing",
+        name: "प्रमाण — Type the Means of Knowing",
         tradition: Tradition::Indian,
         failure_mode: "testimony passed off as observation, and corroboration mistaken for \
 independence",
@@ -480,14 +480,14 @@ independence",
             code: gates::GRADE_EXCEEDS_MEANS,
             check: gates::grades_within_means_ceiling,
         }],
-        worked_example: "Two newspapers running the same wire story are śabda — testimony — not \
-two eyes on the event (pratyakṣa). Sharing one source, they are a single line of evidence however \
-many mastheads carry it, and no tally of them reaches direct knowledge.",
+        worked_example: "Two newspapers running the same wire story are testimony, not two eyes \
+on the event. Sharing one source, they are a single line of evidence however many mastheads carry \
+it, and no tally of them reaches direct knowledge.",
         sources: &[
-            "Nyāya Sūtra 1.1.3 (pratyakṣa, anumāna, upamāna, śabda)",
+            "Nyāya Sūtra 1.1.3 (perception, inference, comparison, testimony)",
             "https://plato.stanford.edu/entries/epistemology-india/",
         ],
-        background: "In Nyāya epistemology a pramāṇa is a means of valid knowledge, and the school counts four: perception (pratyakṣa), inference (anumāna), comparison (upamāna) and testimony (śabda). The Buddhist logicians Dignāga and Dharmakīrti (5th–7th c.) pared these to two — perception and inference — folding testimony into inference, and holding that no source certifies more than its own kind supports. The lens keeps that ceiling: testimony cannot be promoted to observation, and repetition of one source is not independence.",
+        background: "In classical Indian epistemology a प्रमाण is a means of valid knowledge, counted as four: perception, inference, comparison and testimony. The Buddhist logicians 陳那 and 法稱 (5th–7th c.) pared these to two — perception and inference — folding testimony into inference, and holding that no source certifies more than its own kind supports. The lens keeps that ceiling: testimony cannot be promoted to observation, and repetition of one source is not independence.",
         phase: Phase::Enforced,
     },
     Lens {
@@ -523,7 +523,7 @@ was intervened on, and no world was compared where sales were forced up out of s
     // ── Catalogued, not yet mechanised ───────────────────────────────────────
     Lens {
         id: "CROSS-EXAMINE",
-        name: "ἔλεγχος elenchus — Socratic Cross-Examination",
+        name: "ἔλεγχος — Socratic Cross-Examination",
         tradition: Tradition::Greek,
         failure_mode: "premises that were never examined because nobody asked",
         operation: "six question families spawn child Question nodes; none may remain open at \
@@ -537,7 +537,7 @@ dismissed.",
             "Plato, Meno 79e–86c; Gorgias 471d–479e",
             "https://plato.stanford.edu/entries/plato-ethics-shorter/",
         ],
-        background: "ἔλεγχος (elenchus) is Greek for putting-to-the-test, and it is Socrates' method in Plato's early dialogues (Euthyphro, Laches, Charmides, Meno, Gorgias): from the interlocutor's own admissions he draws claims that jointly contradict the thesis under test, so the position falls under premises its holder granted, not under Socrates' own. The lens keeps the move — a claim is examined by the questions its own commitments must answer.",
+        background: "ἔλεγχος — putting-to-the-test — is Socrates' method in Plato's early dialogues (Euthyphro, Laches, Charmides, Meno, Gorgias): from the interlocutor's own admissions he draws claims that jointly contradict the thesis under test, so the position falls under premises its holder granted, not under Socrates' own. The lens keeps the move — a claim is examined by the questions its own commitments must answer.",
         phase: Phase::Catalogued,
     },
     Lens {
@@ -567,24 +567,25 @@ verdict toward neither; gathering more of it only feels like progress.",
     },
     Lens {
         id: "FIVE-MEMBERS",
-        name: "पञ्चावयव pañcāvayava — The Five-Membered Argument",
+        name: "पञ्चावयव — The Five-Membered Argument",
         tradition: Tradition::Indian,
         failure_mode: "a reason that looks valid but is unestablished, contradictory, \
 inconclusive, counterbalanced, or already defeated",
         operation: "arguments take the five members, and reasons are screened against the \
-hetvābhāsa taxonomy",
+taxonomy of faulty reasons (似因)",
         applies_to: ARGUMENTS,
         gates: &[],
-        worked_example: "pratijñā, hetu, udāharaṇa, upanaya, nigamana — with the reason tested \
-for asiddha, viruddha, anaikāntika, satpratipakṣa and bādhita. 世親 Vasubandhu's 如實論 argues \
-this five-member form carrying only a proto-因三相: the 古因明 stage, and the precursor to 陳那's \
-reduction to three members (THREE-MARKS, SEMBLANCE), never its originator.",
+        worked_example: "The five members — thesis, reason, example, application, conclusion — \
+with the reason screened for the classic faults: unestablished, contradictory, inconclusive, \
+counterbalanced, already-defeated. 世親's 如實論 argues this five-member form carrying only a \
+proto-因三相: the 古因明 stage, and the precursor to 陳那's reduction to three members \
+(THREE-MARKS, SEMBLANCE), never its originator.",
         sources: &[
             "Nyāya Sūtra 1.1.32–1.1.39; 1.2.4–1.2.9",
             "世親《如實論・反質難品》真諦譯 c. 550, T32n1633 — the 古因明 five-member form",
             "https://plato.stanford.edu/entries/logic-india/",
         ],
-        background: "The Nyāya Sūtra sets a public demonstration in five members — the thesis (pratijñā), the reason (hetu), an example (udāharaṇa), the application (upanaya) and the conclusion (nigamana) — and screens the reason against the fallacy list (hetvābhāsa). 世親 Vasubandhu's 如實論 carries this older five-member form (古因明) before 陳那 Dignāga reduced it to three. The lens keeps the demand that an argument show all its members, not merely assert its conclusion.",
+        background: "The classical Indian demonstration has five members — the thesis, the reason, an example, the application and the conclusion — and screens the reason against the fallacy list. 世親's 如實論 carries this older five-member form (古因明) before 陳那 reduced it to three. The lens keeps the demand that an argument show all its members, not merely assert its conclusion.",
         phase: Phase::Catalogued,
     },
     Lens {
@@ -620,7 +621,7 @@ not yet about anything checkable.",
     },
     Lens {
         id: "PRESERVE-MINORITY",
-        name: "מחלוקת machloket — Preserve the Minority",
+        name: "מחלוקת — Preserve the Minority",
         tradition: Tradition::Jewish,
         failure_mode: "deleting the losing argument, so the reasoning that rejected it becomes \
 unreviewable",
@@ -741,12 +742,12 @@ has the flu\" fails the same test: fever attends a hundred illnesses, present ev
 no flu (異品), so it discriminates nothing — 共不定, cell 1 of the 九句因.",
         sources: &[
             "商羯羅主《因明入正理論》玄奘譯 (647), T32n1630: 「因有三相…謂遍是宗法性、同品定有性、異品遍無性」",
-            "陳那 Dignāga, 《因明正理門論本》玄奘譯, T32n1628",
+            "陳那《因明正理門論本》玄奘譯, T32n1628",
             "Dharmakīrti, Nyāyabindu II.5–7; tr. Th. Stcherbatsky, Buddhist Logic vol. II (1930)",
             "R. Hayes, Dignāga on the Interpretation of Signs (Kluwer 1988), ch. 4",
             "https://plato.stanford.edu/entries/logic-india/",
         ],
-        background: "Dignāga's trairūpya sets the three marks a reason (hetu) must bear to prove anything: present in the case at issue (pakṣadharmatā), present in at least one similar case (sapakṣa), and absent from every dissimilar case (vipakṣa). The third is load-bearing — a reason that also occurs where the thesis is false proves nothing — which Dignāga mapped exhaustively in the 九句因 (Hetucakra, the wheel of reasons). The lens enforces it: evidence common to a claim and its rival is not diagnostic.",
+        background: "陳那's three marks of a valid reason (因三相) set what a reason must bear to prove anything: present in the case at issue, present in at least one similar case, and absent from every dissimilar case. The third is load-bearing — a reason that also occurs where the thesis is false proves nothing — which 陳那 mapped exhaustively in the 九句因 (the wheel of reasons). The lens enforces it: evidence common to a claim and its rival is not diagnostic.",
         phase: Phase::Enforced,
     },
     Lens {
@@ -772,7 +773,7 @@ Stcherbatsky, Buddhist Logic vol. II (1930)",
             "呂澂《因明入正理論講解》中華書局 (1983) — the received Chinese terminology",
             "https://plato.stanford.edu/entries/dharmakiirti/",
         ],
-        background: "Dharmakīrti (7th c.) admits non-perception (anupalabdhi) as a way to establish absence (abhāva) — but only under the perceivability condition (dṛśyānupalabdhi): the thing, were it present, would have been perceived; the apparatus works; the conditions suffice. Of the imperceptible (adṛśya) it proves nothing. The lens keeps the restriction: \"none found\" is evidence of absence only when the search could have found the thing.",
+        background: "法稱 (7th c.) admits non-perception (不可得) as a way to establish absence — but only under the perceivability condition: the thing, were it present, would have been perceived; the apparatus works; the conditions suffice. Of the imperceptible it proves nothing. The lens keeps the restriction: \"none found\" is evidence of absence only when the search could have found the thing.",
         phase: Phase::Enforced,
     },
     Lens {
@@ -799,7 +800,7 @@ admission that assent was never obtained).",
 Buddhist Epistemological Tradition (Vienna 1991)",
             "https://plato.stanford.edu/entries/logic-india/",
         ],
-        background: "Indian logic catalogued the ways a proof can wear the form of validity without the force of it: the hetvābhāsa, the \"semblances of a reason,\" and their counterpart for the thesis (似宗). 商羯羅主's 因明入正理論 (7th c., in 玄奘's translation) lists fourteen faulty reasons — unestablished, inconclusive, contradictory — beside nine faulty theses. The lens is the human screen: a reason that looks like proof is read against the taxonomy before it is trusted.",
+        background: "Indian logic catalogued the ways a proof can wear the form of validity without the force of it: the semblances of a reason (似因) and their counterpart for the thesis (似宗). 商羯羅主's 因明入正理論 (7th c., in 玄奘's translation) lists fourteen faulty reasons — unestablished, inconclusive, contradictory — beside nine faulty theses. The lens is the human screen: a reason that looks like proof is read against the taxonomy before it is trusted.",
         phase: Phase::Catalogued,
     },
     Lens {
@@ -817,7 +818,7 @@ between them, and it may only ever lose strength, never gain it.",
             "Nāgārjuna, Mūlamadhyamakakārikā 24.8–24.10",
             "https://plato.stanford.edu/entries/twotruths-india/",
         ],
-        background: "Nāgārjuna, Mūlamadhyamakakārikā 24.8–10: the Buddha's teaching rests on two truths — the conventional (saṃvṛti-satya), what may be said in ordinary terms, and the ultimate (paramārtha-satya), how things finally stand — and the ultimate is reached only by way of the conventional. peira's Court Mode is exactly that translation, one-directional: the statement said aloud may only lose strength against the fully-bounded graph, never gain it.",
+        background: "龍樹, in his root verses on the Middle Way (24.8–10): the Buddha's teaching rests on two truths — the conventional (世俗諦), what may be said in ordinary terms, and the ultimate (勝義諦), how things finally stand — and the ultimate is reached only by way of the conventional. peira's Court Mode is exactly that translation, one-directional: the statement said aloud may only lose strength against the fully-bounded graph, never gain it.",
         phase: Phase::Catalogued,
     },
     Lens {
@@ -865,7 +866,7 @@ understood; you have only compressed.",
             "https://ctext.org/liji/da-xue",
             "https://plato.stanford.edu/entries/wang-yangming/",
         ],
-        background: "格物致知 (\"investigate things, extend knowledge\") is from the Great Learning 大學; 朱熹 Zhu Xi (1130–1200) read it as exhausting the principle (理) in each thing. In 1492 王陽明 Wang Yangming sat before bamboo for seven days to do exactly that, found no principle and fell ill — concluding that principle is not caught by treating the world as a detached object, which became his 知行合一, the unity of knowing and acting. The lens keeps the test: what you cannot act on, you have not yet understood.",
+        background: "格物致知 (\"investigate things, extend knowledge\") is from the 大學 (the Great Learning); 朱熹 (1130–1200) read it as exhausting the principle (理) in each thing. In 1492 王陽明 sat before bamboo for seven days to do exactly that, found no principle and fell ill — concluding that principle is not caught by treating the world as a detached object, which became his 知行合一, the unity of knowing and acting. The lens keeps the test: what you cannot act on, you have not yet understood.",
         phase: Phase::Catalogued,
     },
     Lens {
@@ -887,7 +888,7 @@ what it never saw does the opposite, and reads as complete.",
             "Arthur Conan Doyle, \"The Adventure of Silver Blaze\" (1892)",
             "《論語・衛靈公》15.26: 吾猶及史之闕文也",
         ],
-        background: "Two sources meet here. 孔子 Confucius, Analects 15.26: 「吾猶及史之闕文也」— he could still recall when a scribe left a blank (闕文) rather than fill a gap he could not vouch for. And Conan Doyle's \"Silver Blaze\" (1892), where Holmes cracks the case by the dog that did not bark: the absence of the expected is the evidence. A distillation sees neither unbidden — it reports what is present, so an omission has to be hunted.",
+        background: "Two sources meet here. 孔子, in the Analects (15.26): 「吾猶及史之闕文也」— he could still recall when a scribe left a blank (闕文) rather than fill a gap he could not vouch for. And Conan Doyle's \"Silver Blaze\" (1892), where Holmes cracks the case by the dog that did not bark: the absence of the expected is the evidence. A distillation sees neither unbidden — it reports what is present, so an omission has to be hunted.",
         phase: Phase::Catalogued,
     },
     Lens {
