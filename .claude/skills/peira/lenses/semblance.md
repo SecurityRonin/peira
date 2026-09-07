@@ -15,7 +15,6 @@
 **Sources:**
 - 商羯羅主《因明入正理論》T32n1630 — 似因十四過 (不成四・不定六・相違四), 似宗九過
 - M. Tachikawa, "A Sixth-Century Manual of Indian Logic", J. Indian Philosophy 1 (1971) 111–145
-- S. Katsura, "The theory of anaikāntika in Buddhist logic", in Studies in the Buddhist Epistemological Tradition (Vienna 1991)
 - <https://plato.stanford.edu/entries/logic-india/>
 
 Run `peira lens SEMBLANCE` for this entry in the tool.

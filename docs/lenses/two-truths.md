@@ -32,7 +32,7 @@ The conventional register (世俗諦) is what may be said aloud; the ultimate re
 
 ## Sources
 
-- Nāgārjuna, Mūlamadhyamakakārikā 24.8–24.10
+- 龍樹《中論》鳩摩羅什譯 (T30n1564), 觀四諦品第二十四
 - <https://plato.stanford.edu/entries/twotruths-india/>
 
 <p class="back"><a href="{{ '/lenses/' | relative_url }}">← All lenses</a> · <a href="{{ '/doors/' | relative_url }}">The seven doors</a></p>

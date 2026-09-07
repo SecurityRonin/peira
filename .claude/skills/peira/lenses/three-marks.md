@@ -17,8 +17,7 @@
 **Sources:**
 - 商羯羅主《因明入正理論》玄奘譯 (647), T32n1630: 「因有三相…謂遍是宗法性、同品定有性、異品遍無性」
 - 陳那《因明正理門論本》玄奘譯, T32n1628
-- Dharmakīrti, Nyāyabindu II.5–7; tr. Th. Stcherbatsky, Buddhist Logic vol. II (1930)
-- R. Hayes, Dignāga on the Interpretation of Signs (Kluwer 1988), ch. 4
+- 法稱《正理滴論》II.5–7; tr. Th. Stcherbatsky, Buddhist Logic vol. II (1930)
 - <https://plato.stanford.edu/entries/logic-india/>
 
 Run `peira lens THREE-MARKS` for this entry in the tool.
