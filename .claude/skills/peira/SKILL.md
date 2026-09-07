@@ -51,7 +51,7 @@ exists to produce. Write the evidence instead.
    | `PEIR-CLASS-EXTENSION-UNDECLARED` | 白馬非馬 | [baima.md](lenses/baima.md) |
    | `PEIR-CORNERS-UNADDRESSED` | 四句 | [catuskoti.md](lenses/catuskoti.md) |
    | `PEIR-WARRANT-MISSING` | Toulmin | [toulmin.md](lenses/toulmin.md) |
-   | `PEIR-GRADE-EXCEEDS-PRAMANA` | pramāṇa | [pramana.md](lenses/pramana.md) |
+   | `PEIR-GRADE-EXCEEDS-MEANS` | pramāṇa | [pramana.md](lenses/pramana.md) |
    | `PEIR-CAUSAL-RUNG-UNREACHED`, `PEIR-BOUNDARIES-MISSING` | Causal ladder | [rung.md](lenses/rung.md) |
 
    `peira lens <ID>` prints the failure mode, the operation and a worked example

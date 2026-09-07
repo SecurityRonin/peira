@@ -444,7 +444,7 @@ Four smaller findings worth naming because of their shape:
   unrecognised quantifier now reaches no verdict and blocks, naming the offending value.
 - A test comment in `core/src/edge.rs` stated that the gates report an undeclared pramāṇa
   "separately as unassessed" when they did not. **FIXED in the code rather than the comment:**
-  `grades_within_pramana_ceiling` now returns `Unassessed` for an undeclared means of knowing, so
+  `grades_within_means_ceiling` now returns `Unassessed` for an undeclared means of knowing, so
   the sentence that was false has become true.
 - The crate doc comment in `lens/src/lib.rs` states that domain packs "depend down onto this
   crate". **No domain pack exists.** Unbuilt architecture stated in the present tense.

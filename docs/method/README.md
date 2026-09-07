@@ -123,15 +123,15 @@ to prevent.
 | A universal quantifier declares its extension | `PEIR-CLASS-EXTENSION-UNDECLARED` (白馬非馬) | **checked when declared** ⁴ |
 | A contested question addresses all four corners | `PEIR-CORNERS-UNADDRESSED` (四句) | **enforced** |
 | The rule licensing grounds → claim is written down | `PEIR-WARRANT-MISSING` (Toulmin) | **enforced** |
-| Evidence grade is capped by means of knowing | `PEIR-GRADE-EXCEEDS-PRAMANA` (pramāṇa) | **enforced** ¹ |
+| Evidence grade is capped by means of knowing | `PEIR-GRADE-EXCEEDS-MEANS` (pramāṇa) | **enforced** ¹ |
 | A causal claim earns its rung | `PEIR-CAUSAL-RUNG-UNREACHED` (Pearl) | **checked when declared** ⁴ |
 | A claim states where it holds | `PEIR-BOUNDARIES-MISSING` | **enforced** |
 | A claim states what would defeat it | `PEIR-FALSIFIER-MISSING` (Popper / premortem) | **enforced** |
-| Evidence common to both sides of a contest carries no weight | `PEIR-HETU-UNDIAGNOSTIC` (因三相, 共不定) | **enforced** ¹⁴ |
+| Evidence common to both sides of a contest carries no weight | `PEIR-REASON-UNDIAGNOSTIC` (因三相, 共不定) | **enforced** ¹⁴ |
 | A causal claim names something it was tested against | `PEIR-RIVALS-UNENUMERATED` (ACH) | **enforced** ¹⁴ |
 | Absence is certified only by a search shown able to find the thing | `PEIR-ABSENCE-UNCONTROLLED` (不可得因) | **enforced, heuristic** ¹⁵ |
-| An inference surveys the cases where the thing is absent | `PEIR-VIPAKSA-UNSURVEYED` (異品遍無性) | **checked when declared** ¹⁶ |
-| An inference cites one case where its rule was seen to hold | `PEIR-SAPAKSA-UNDECLARED` (同品定有性) | **checked when declared** ¹⁶ |
+| An inference surveys the cases where the thing is absent | `PEIR-CONTRARY-CASES-UNSURVEYED` (異品遍無性) | **checked when declared** ¹⁶ |
+| An inference cites one case where its rule was seen to hold | `PEIR-CONFIRMING-CASE-UNDECLARED` (同品定有性) | **checked when declared** ¹⁶ |
 | What survives attack is computed, not asserted | grounded extension (Dung) | **enforced** |
 | A claim with no support at all is flagged | `PEIR-LINT-ORPHAN-CLAIM` | **enforced** |
 | Support must reach the world, not only more claims | `PEIR-LINT-UNGROUNDED-CHAIN` | **enforced** |
@@ -167,7 +167,7 @@ entry admitting the reason appears in a dissimilar case IS a survey, and one sho
 共不定. Note that neither fixture vault exercises these: no edge in either declares `via=inference`,
 so a clean run there is the scope control passing and is silent on the gates themselves.
 
-¹⁴ The two interlock, and neither is complete alone. `PEIR-HETU-UNDIAGNOSTIC` is `NotApplicable`
+¹⁴ The two interlock, and neither is complete alone. `PEIR-REASON-UNDIAGNOSTIC` is `NotApplicable`
 where no rival exists — 異品遍無性 presupposes a 異品, and scoring a thin hypothesis set as
 diagnosticity is the error ACH itself warns about — so deleting the rival would buy silence.
 `PEIR-RIVALS-UNENUMERATED` is what it buys instead. The structural gate sees only cell 1 of the

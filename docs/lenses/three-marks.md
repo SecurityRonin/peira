@@ -26,9 +26,9 @@ support common to every side of a live contest carries no weight for any of them
 
 These block a citation packet deterministically — no model in the loop:
 
-- `PEIR-HETU-UNDIAGNOSTIC`
-- `PEIR-VIPAKSA-UNSURVEYED`
-- `PEIR-SAPAKSA-UNDECLARED`
+- `PEIR-REASON-UNDIAGNOSTIC`
+- `PEIR-CONTRARY-CASES-UNSURVEYED`
+- `PEIR-CONFIRMING-CASE-UNDECLARED`
 
 ## Worked example
 
