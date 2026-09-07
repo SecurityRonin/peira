@@ -12,7 +12,7 @@ nav_exclude: true
 
 # The Five-Membered Argument <span class="script">पञ्चावयव</span>
 
-<p class="lens-meta"><code class="lens-code">FIVE-MEMBERS</code> · Indian — Nyāya and the pramāṇa epistemology · <strong>Catalogued — a reading, owns no gate</strong></p>
+<p class="lens-meta"><code class="lens-code">FIVE-MEMBERS</code> · Indian — Nyāya and the प्रमाण epistemology · <strong>Catalogued — a reading, owns no gate</strong></p>
 
 ## The failure it names
 

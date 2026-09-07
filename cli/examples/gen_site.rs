@@ -62,7 +62,7 @@ fn tradition_long(t: Tradition) -> &'static str {
     match t {
         Tradition::Greek => "Greek — Socratic and Aristotelian",
         Tradition::Chinese => "Chinese — 名家, 宋明理學, and the classics",
-        Tradition::Indian => "Indian — Nyāya and the pramāṇa epistemology",
+        Tradition::Indian => "Indian — Nyāya and the प्रमाण epistemology",
         Tradition::Buddhist => "Buddhist — Madhyamaka and Dignāgan logic",
         Tradition::Jewish => "Jewish — Talmudic dispute",
         Tradition::Modern => "Modern — analytic and scientific method",
@@ -206,6 +206,29 @@ identified. {} are catalogued; {} are **enforced** as deterministic gates today,
     out
 }
 
+/// Link every `PEIR-…` gate/lint code to the enforcement table. These are not lenses,
+/// so they own no page; the table in the method doc documents each one. A plain backtick
+/// scan — no regex dependency.
+fn link_gate_codes(body: &str) -> String {
+    const ANCHOR: &str = "{{ '/method/README/' | relative_url }}#what-peira-actually-enforces";
+    let mut out = String::with_capacity(body.len());
+    let mut rest = body;
+    while let Some(start) = rest.find("`PEIR-") {
+        out.push_str(&rest[..start]);
+        let after = &rest[start + 1..]; // past the opening backtick
+        if let Some(end) = after.find('`') {
+            let code = &after[..end];
+            let _ = write!(out, "[`{code}`]({ANCHOR})");
+            rest = &after[end + 1..]; // past the closing backtick
+        } else {
+            out.push_str(&rest[start..]);
+            return out;
+        }
+    }
+    out.push_str(rest);
+    out
+}
+
 /// The seven-doors page, compiled from the canonical method doc so it cannot drift:
 /// front matter is prepended, and every backtick-wrapped lens code becomes a link.
 fn doors_page() -> String {
@@ -245,19 +268,27 @@ fn doors_page() -> String {
         .collect::<Vec<_>>()
         .join("\n");
 
-    // The canonical doc references lenses by their peira code (`RECTIFY-NAME`), because that
-    // is the identifier the CLI and packets print. On the site the code is never a label:
-    // link text is the English name, and the original script that already follows in the
-    // doc stays as etymology. Romanization does not appear.
+    // The canonical doc references lenses by their peira code (`RECTIFY-NAME`), the
+    // identifier the CLI and packets print. On the site the code is never a label: the
+    // link text is the English name, followed by the lens's own script in its native form
+    // (देवनागरी, 漢字, Ελληνικά, עברית) — never a Latin romanization. The generator owns the
+    // script so it is consistent across every lens, not ad-hoc per doc line.
     for lens in CATALOG {
+        let (name, script) = display(lens.id);
         let needle = format!("`{}`", lens.id);
-        let link = format!(
-            "[{}]({{{{ '/lenses/{}/' | relative_url }}}})",
-            display(lens.id).0,
-            lens.id.to_lowercase()
-        );
+        let slug = lens.id.to_lowercase();
+        let link = if script.is_empty() {
+            format!("[{name}]({{{{ '/lenses/{slug}/' | relative_url }}}})")
+        } else {
+            format!(
+                "[{name}]({{{{ '/lenses/{slug}/' | relative_url }}}}) <span class=\"script\">{script}</span>"
+            )
+        };
         body = body.replace(&needle, &link);
     }
+    // Gate and lint codes are not lenses, so they own no page — link every `PEIR-…` code
+    // to the enforcement table, where each gate and lint is documented.
+    body = link_gate_codes(&body);
     body = body
         .replace("](README.md)", "]({{ '/method/' | relative_url }})")
         .replace(
@@ -279,6 +310,31 @@ fn write_file(path: &std::path::Path, body: &str) -> std::io::Result<()> {
     fs::write(path, body)
 }
 
+/// Old (romanized) lens slugs mapped to their new English slug. Each emits a redirect
+/// stub so a bookmarked `/lenses/zhengming/` still lands on the renamed page. Historical
+/// by nature — a one-time record of the id anglicisation, not derivable from the catalogue.
+const REDIRECTS: &[(&str, &str)] = &[
+    ("liji", "criterion"),
+    ("zhengming", "rectify-name"),
+    ("tiyong", "substance-function"),
+    ("baima", "white-horse"),
+    ("catuskoti", "four-corners"),
+    ("pramana", "means-of-knowing"),
+    ("pancavayava", "five-members"),
+    ("trairupya", "three-marks"),
+    ("anupalabdhi", "non-perception"),
+    ("abhasa", "semblance"),
+    ("gewu", "know-by-doing"),
+    ("erdi", "two-truths"),
+    ("machloket", "preserve-minority"),
+    ("elenchus", "cross-examine"),
+    ("aufhebung", "synthesis"),
+];
+
+fn redirect_stub(new_slug: &str) -> String {
+    format!("---\nlayout: redirect\nredirect_to: /lenses/{new_slug}/\nsitemap: false\n---\n")
+}
+
 fn run() -> std::io::Result<usize> {
     let out_root = std::env::args()
         .nth(1)
@@ -294,6 +350,9 @@ fn run() -> std::io::Result<usize> {
     }
     write_file(&lenses_dir.join("index.md"), &index_page())?;
     write_file(&out_root.join("doors.md"), &doors_page())?;
+    for (old, new) in REDIRECTS {
+        write_file(&lenses_dir.join(format!("{old}.md")), &redirect_stub(new))?;
+    }
     Ok(written)
 }
 
