@@ -26,6 +26,10 @@ claim standing is the least fixed point of the characteristic function
 
 c defeats b, which reinstates a. No participant need agree; the result follows from the attack graph, and grounded semantics refuses to pick a winner in a stand-off.
 
+## In the tradition
+
+Phan Minh Dung's 1995 paper (Artificial Intelligence 77) founded abstract argumentation: arguments and an attack relation form a graph, and which arguments are acceptable is computed, not asserted — one stands if every attacker is itself defeated. The grounded extension is the least such set, and it declines to crown a winner in an unbroken stand-off. The lens uses it: a claim's standing is the fixed point of the attack graph, not whoever spoke last.
+
 ## Sources
 
 - P. M. Dung, Artificial Intelligence 77 (1995) 321–357

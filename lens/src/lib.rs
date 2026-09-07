@@ -185,6 +185,11 @@ pub struct Lens {
     pub worked_example: &'static str,
     /// Authoritative references.
     pub sources: &'static [&'static str],
+    /// A short, source-checked note on the tradition the lens comes from and a famous
+    /// usage — empty until written. Every claim here must trace to a cited source, not
+    /// to recollection; an unsourced background paragraph is the overclaim this project
+    /// exists to refuse. Rendered as an "In the tradition" section where non-empty.
+    pub background: &'static str,
     /// Enforced now, or catalogued for later.
     pub phase: Phase,
 }
@@ -338,6 +343,7 @@ reader cannot tell what would count against it.",
             "周敦頤《太極圖說》: 聖人定之以中正仁義而主靜，立人極焉",
             "https://ctext.org/wiki.pl?if=en&chapter=592302",
         ],
+        background: "立極 — to establish the pole — is from 周敦頤 Zhou Dunyi (1017–1073) and his 太極圖說: 「聖人定之以中正仁義而主靜，立人極焉」, the sage fixing the human pole by a stated standard. The lens borrows the move, not the metaphysics: a judgement must set the pole it is measured against, or the word carries the verdict and nothing can check it.",
         phase: Phase::Enforced,
     },
     Lens {
@@ -364,6 +370,7 @@ under a stated sense.",
 it is not, which is the 即非 moment reached from Buddhist epistemology; `not_essence` is that \
 obligation mechanised, so apoha earns no separate entry",
         ],
+        background: "正名, the rectification of names, is stated in Analects 13.3: asked what he would do first to govern, Confucius answers 「必也正名乎」— if names are not rectified, speech does not accord with reality and nothing is accomplished. The lens joins it to the Diamond Sutra's 所謂 X・即非 X・是名 X and to Dignāga's apoha (5th–6th c.), on which a word means by excluding what it is not — three traditions on one discipline: fix the term before it does the arguing.",
         phase: Phase::Enforced,
     },
     Lens {
@@ -391,6 +398,7 @@ that a fire exists is a substance claim the sound alone does not carry.",
             "程頤《易傳序》: 體用一源，顯微無間",
             "https://plato.stanford.edu/entries/neo-confucianism/",
         ],
+        background: "體用 (ti-yong, substance and function) has roots in early Confucian and Daoist texts, was first used systematically by 王弼 Wang Bi (226–249) in his commentary on the Daodejing, and spread as a hermeneutic partly through Buddhism. 程頤 Cheng Yi's Neo-Confucian formula 「體用一源，顯微無間」— substance and function are one source, the manifest and the subtle without gap — is its classic statement. The lens takes only the distinction: what a thing is (體) is not settled by what it did (用).",
         phase: Phase::Enforced,
     },
     Lens {
@@ -411,6 +419,7 @@ what holds of the qualified subclass need not hold of the class, however natural
             "《公孫龍子·白馬論》: 白馬非馬",
             "https://plato.stanford.edu/entries/school-names/",
         ],
+        background: "公孫龍 Gongsun Long (fl. 284–259 BCE), of the Warring-States 名家 (School of Names), argued in the 白馬論 that \"a white horse is not a horse\": \"horse\" names a shape and \"white horse\" a shape-with-colour, so the two pick out different things and cannot be swapped. Usually taught as sophistry, its point is the one the lens enforces — natural language slides between a class and a qualified subclass.",
         phase: Phase::Enforced,
     },
     Lens {
@@ -432,6 +441,7 @@ open until the question earns a collapse.",
             "Nāgārjuna, Mūlamadhyamakakārikā 1.1, 18.8",
             "https://plato.stanford.edu/entries/nagarjuna/",
         ],
+        background: "The catuṣkoṭi (चतुष्कोटि, \"four corners\") sets out four alternatives on a proposition: that it holds, that it fails to hold, that it does both, and that it does neither. It predates Madhyamaka — the Pali canon has the Buddha decline all four on the \"undeclared\" questions (avyākata), as in the Aggi-Vacchagotta Sutta on the fate of an awakened one after death. Nāgārjuna (c. 150–250 CE) makes it a method in the Mūlamadhyamakakārikā; his use is not uniform, but the signature move denies all four, as in the opening verse refusing that anything arises from itself, from another, from both, or from neither (MMK 1.1).",
         phase: Phase::Enforced,
     },
     Lens {
@@ -453,6 +463,7 @@ subject. Written down, a warrant can be checked or shown false; left unwritten, 
             "Stephen Toulmin, The Uses of Argument (1958), ch. 3",
             "https://plato.stanford.edu/entries/reasoning-defeasible/",
         ],
+        background: "Stephen Toulmin, in The Uses of Argument (1958), held that real reasoning is not the syllogism but a structure of claim, grounds, and — crucially — a warrant: the inference-licence saying why the grounds bear on the claim, itself resting on backing and softened by qualifiers and rebuttals. His own case runs from \"Harry was born in Bermuda\" to \"Harry is a British subject\" via the warrant of Bermudan law. The lens makes the warrant a required field: the step from grounds to claim must be written, not assumed.",
         phase: Phase::Enforced,
     },
     Lens {
@@ -474,6 +485,7 @@ many mastheads carry it, and no tally of them reaches direct knowledge.",
             "Nyāya Sūtra 1.1.3 (pratyakṣa, anumāna, upamāna, śabda)",
             "https://plato.stanford.edu/entries/epistemology-india/",
         ],
+        background: "In Nyāya epistemology a pramāṇa is a means of valid knowledge, and the school counts four: perception (pratyakṣa), inference (anumāna), comparison (upamāna) and testimony (śabda). The Buddhist logicians Dignāga and Dharmakīrti (5th–7th c.) pared these to two — perception and inference — folding testimony into inference, and holding that no source certifies more than its own kind supports. The lens keeps that ceiling: testimony cannot be promoted to observation, and repetition of one source is not independence.",
         phase: Phase::Enforced,
     },
     Lens {
@@ -502,6 +514,7 @@ was intervened on, and no world was compared where sales were forced up out of s
             "Judea Pearl, The Book of Why (2018), ch. 1 — the ladder of causation",
             "Austin Bradford Hill, Proc. R. Soc. Med. 58 (1965) 295",
         ],
+        background: "Judea Pearl's ladder of causation (The Book of Why, 2018) has three rungs — association (seeing), intervention (doing) and counterfactual (imagining) — and a claim on a higher rung cannot be earned from data on a lower one: correlation does not reach causation without an intervention or a model. Austin Bradford Hill's 1965 criteria were an earlier discipline for the same gap. The lens holds the ladder: a causal claim earns its rung or is restated at the rung its evidence supports.",
         phase: Phase::Enforced,
     },
     // ── Catalogued, not yet mechanised ───────────────────────────────────────
@@ -521,6 +534,7 @@ dismissed.",
             "Plato, Meno 79e–86c; Gorgias 471d–479e",
             "https://plato.stanford.edu/entries/plato-ethics-shorter/",
         ],
+        background: "ἔλεγχος (elenchus) is Greek for putting-to-the-test, and it is Socrates' method in Plato's early dialogues (Euthyphro, Laches, Charmides, Meno, Gorgias): from the interlocutor's own admissions he draws claims that jointly contradict the thesis under test, so the position falls under premises its holder granted, not under Socrates' own. The lens keeps the move — a claim is examined by the questions its own commitments must answer.",
         phase: Phase::Catalogued,
     },
     Lens {
@@ -545,6 +559,7 @@ verdict toward neither; gathering more of it only feels like progress.",
             "Richards J. Heuer Jr., Psychology of Intelligence Analysis (CIA CSI, 1999), ch. 8",
             "https://www.cia.gov/resources/csi/books-monographs/psychology-of-intelligence-analysis-2/",
         ],
+        background: "Richards J. Heuer Jr. built ACH for CIA analysts (Psychology of Intelligence Analysis, 1999): list the hypotheses first, then score each piece of evidence by how well it discriminates among them — because the mind fixates on a favoured hypothesis and gathers what fits it. Evidence consistent with every hypothesis has no diagnostic value, however much accrues. The lens enforces it: a causal claim must name what it was tested against.",
         phase: Phase::Enforced,
     },
     Lens {
@@ -566,6 +581,7 @@ reduction to three members (THREE-MARKS, SEMBLANCE), never its originator.",
             "世親《如實論・反質難品》真諦譯 c. 550, T32n1633 — the 古因明 five-member form",
             "https://plato.stanford.edu/entries/logic-india/",
         ],
+        background: "The Nyāya Sūtra sets a public demonstration in five members — the thesis (pratijñā), the reason (hetu), an example (udāharaṇa), the application (upanaya) and the conclusion (nigamana) — and screens the reason against the fallacy list (hetvābhāsa). 世親 Vasubandhu's 如實論 carries this older five-member form (古因明) before 陳那 Dignāga reduced it to three. The lens keeps the demand that an argument show all its members, not merely assert its conclusion.",
         phase: Phase::Catalogued,
     },
     Lens {
@@ -582,6 +598,7 @@ saying a word against it.",
             "Daniel Dennett, Intuition Pumps and Other Tools for Thinking (2013), ch. 3",
             "Anatol Rapoport, Fights, Games and Debates (1960)",
         ],
+        background: "Anatol Rapoport's rules for criticism, popularised by Daniel Dennett (Intuition Pumps and Other Tools for Thinking, 2013), begin: state your opponent's position so clearly and fairly that they say \"thank you, I wish I'd put it that way\" — and only then criticise. The steelman is the straw man's opposite. The lens keeps it: an attack on a position must first restate it in a form its holder would accept.",
         phase: Phase::Catalogued,
     },
     Lens {
@@ -595,6 +612,7 @@ saying a word against it.",
         worked_example: "If neither side can name what would change their mind, the dispute is \
 not yet about anything checkable.",
         sources: &["https://www.lesswrong.com/posts/exa5kmvopeRyfJgCy/double-crux-a-strategy-for-resolving-disagreement"],
+        background: "Double Crux, developed at CFAR and set out on LessWrong (2016), is a method for a disagreement that circles: each side finds the belief that, if it flipped, would flip their conclusion too — the shared crux — and the argument moves there rather than everywhere at once. If neither side can name what would change its mind, the dispute is not yet about anything checkable. The lens keeps the demand: locate the load-bearing belief before arguing.",
         phase: Phase::Catalogued,
     },
     Lens {
@@ -613,6 +631,7 @@ and loses the case.",
             "Mishnah Eduyot 1:5–1:6",
             "https://www.sefaria.org/Mishnah_Eduyot.1.5",
         ],
+        background: "Rabbinic tradition preserves the losing side of a dispute. The Mishnah (Eduyot 1:5–6) asks why it records minority opinions that were overruled, and answers: so a later court, finding the reasoning apt, may rely on them — a rejected view is kept, not erased. Pirkei Avot distinguishes a מחלוקת for the sake of heaven, which endures, from one that is not. The lens follows: rejecting a claim requires recording the rejected position, so the reasoning that dismissed it stays reviewable.",
         phase: Phase::Catalogued,
     },
     Lens {
@@ -629,6 +648,7 @@ lift up. A synthesis citing only one parent has merely picked a side.",
             "Hegel, Wissenschaft der Logik, Bk I §§185–188",
             "https://plato.stanford.edu/entries/hegel-dialectics/",
         ],
+        background: "Hegel's aufheben fuses three senses at once — to cancel, to preserve, and to lift up — so a sublation (Aufhebung) negates a stage's limitation while keeping its content and raising it into a new unity, not splitting the difference. (The tidy \"thesis–antithesis–synthesis\" triad is not Hegel's: it comes from Fichte, was codified by Chalybäus in 1843 after Hegel's death, and Hegel rejected such schematisation.) The lens keeps the demand: a synthesis must carry forward what it claims to reconcile from both parents, not quietly drop one.",
         phase: Phase::Catalogued,
     },
     Lens {
@@ -650,6 +670,7 @@ earlier \"nine planets\" silently came to mean something its readers never wrote
             "Plutarch, Life of Theseus 23.1",
             "https://plato.stanford.edu/entries/identity-over-time/",
         ],
+        background: "Plutarch (Life of Theseus 23.1) reports the ship the Athenians preserved by replacing each decayed plank, and the philosophers' question: is it the same ship? Hobbes sharpened it — gather the discarded planks, rebuild a second ship, and which is Theseus's? The puzzle is identity persisting under change while the name stays fixed. The lens keeps that edge: editing a claim's proposition while its id and every citation stay put is silent identity drift, and forces an amend-or-supersede choice.",
         phase: Phase::Catalogued,
     },
     Lens {
@@ -663,6 +684,7 @@ earlier \"nine planets\" silently came to mean something its readers never wrote
         worked_example: "Before the fence comes down, the reason it went up must be stated — \
 not because the reason is necessarily good, but because not knowing it is not an argument.",
         sources: &["G. K. Chesterton, The Thing (1929), ch. 4 \"The Drift from Domesticity\""],
+        background: "G. K. Chesterton's parable (The Thing, 1929, \"The Drift from Domesticity\"): if a fence stands across a road and a reformer cannot see why, the answer is not \"clear it away\" but \"go and find out why it was put there\" — only then may it come down. Not knowing the reason is not an argument against it. The lens keeps the rule: removing or superseding something requires first recovering the reason it existed.",
         phase: Phase::Catalogued,
     },
     Lens {
@@ -683,6 +705,7 @@ name what did it. A claim nothing could ever count against is a belief wearing a
             "Gary Klein, Harvard Business Review, September 2007, \"Performing a Project Premortem\"",
             "Karl Popper, Logik der Forschung (1934), §6",
         ],
+        background: "Two disciplines meet. Karl Popper (Logik der Forschung, 1934) made falsifiability the mark of an empirical claim: it must forbid something, so that some possible observation could refute it. Gary Klein's premortem (Harvard Business Review, 2007) turns the stance prospective — assume the plan has already failed and say what killed it. The lens requires the falsifier: a claim must state what would defeat it, or it is belief, not claim.",
         phase: Phase::Enforced,
     },
     Lens {
@@ -719,6 +742,7 @@ no flu (異品), so it discriminates nothing — 共不定, cell 1 of the 九句
             "R. Hayes, Dignāga on the Interpretation of Signs (Kluwer 1988), ch. 4",
             "https://plato.stanford.edu/entries/logic-india/",
         ],
+        background: "Dignāga's trairūpya sets the three marks a reason (hetu) must bear to prove anything: present in the case at issue (pakṣadharmatā), present in at least one similar case (sapakṣa), and absent from every dissimilar case (vipakṣa). The third is load-bearing — a reason that also occurs where the thesis is false proves nothing — which Dignāga mapped exhaustively in the 九句因 (Hetucakra, the wheel of reasons). The lens enforces it: evidence common to a claim and its rival is not diagnostic.",
         phase: Phase::Enforced,
     },
     Lens {
@@ -743,6 +767,7 @@ Stcherbatsky, Buddhist Logic vol. II (1930)",
             "Dharmakīrti, Pramāṇavārttika, svārthānumāna ch.; ed. Gnoli (Rome 1960)",
             "呂澂《因明入正理論講解》中華書局 (1983) — the received Chinese terminology",
         ],
+        background: "Dharmakīrti (7th c.) admits non-perception (anupalabdhi) as a way to establish absence (abhāva) — but only under the perceivability condition (dṛśyānupalabdhi): the thing, were it present, would have been perceived; the apparatus works; the conditions suffice. Of the imperceptible (adṛśya) it proves nothing. The lens keeps the restriction: \"none found\" is evidence of absence only when the search could have found the thing.",
         phase: Phase::Enforced,
     },
     Lens {
@@ -768,6 +793,7 @@ admission that assent was never obtained).",
             "S. Katsura, \"The theory of anaikāntika in Buddhist logic\", in Studies in the \
 Buddhist Epistemological Tradition (Vienna 1991)",
         ],
+        background: "Indian logic catalogued the ways a proof can wear the form of validity without the force of it: the hetvābhāsa, the \"semblances of a reason,\" and their counterpart for the thesis (似宗). 商羯羅主's 因明入正理論 (7th c., in 玄奘's translation) lists fourteen faulty reasons — unestablished, inconclusive, contradictory — beside nine faulty theses. The lens is the human screen: a reason that looks like proof is read against the taxonomy before it is trusted.",
         phase: Phase::Catalogued,
     },
     Lens {
@@ -785,6 +811,7 @@ between them, and it may only ever lose strength, never gain it.",
             "Nāgārjuna, Mūlamadhyamakakārikā 24.8–24.10",
             "https://plato.stanford.edu/entries/twotruths-india/",
         ],
+        background: "Nāgārjuna, Mūlamadhyamakakārikā 24.8–10: the Buddha's teaching rests on two truths — the conventional (saṃvṛti-satya), what may be said in ordinary terms, and the ultimate (paramārtha-satya), how things finally stand — and the ultimate is reached only by way of the conventional. peira's Court Mode is exactly that translation, one-directional: the statement said aloud may only lose strength against the fully-bounded graph, never gain it.",
         phase: Phase::Catalogued,
     },
     Lens {
@@ -802,6 +829,7 @@ follows from the attack graph, and grounded semantics refuses to pick a winner i
             "P. M. Dung, Artificial Intelligence 77 (1995) 321–357",
             "https://doi.org/10.1016/0004-3702(94)00041-X",
         ],
+        background: "Phan Minh Dung's 1995 paper (Artificial Intelligence 77) founded abstract argumentation: arguments and an attack relation form a graph, and which arguments are acceptable is computed, not asserted — one stands if every attacker is itself defeated. The grounded extension is the least such set, and it declines to crown a winner in an unbroken stand-off. The lens uses it: a claim's standing is the fixed point of the attack graph, not whoever spoke last.",
         phase: Phase::Enforced,
     },
     // ── The anti-summarization pass ───────────────────────────────────────────
@@ -830,6 +858,7 @@ understood; you have only compressed.",
             "王陽明《傳習錄》: 知行合一",
             "https://ctext.org/liji/da-xue",
         ],
+        background: "格物致知 (\"investigate things, extend knowledge\") is from the Great Learning 大學; 朱熹 Zhu Xi (1130–1200) read it as exhausting the principle (理) in each thing. In 1492 王陽明 Wang Yangming sat before bamboo for seven days to do exactly that, found no principle and fell ill — concluding that principle is not caught by treating the world as a detached object, which became his 知行合一, the unity of knowing and acting. The lens keeps the test: what you cannot act on, you have not yet understood.",
         phase: Phase::Catalogued,
     },
     Lens {
@@ -851,6 +880,7 @@ what it never saw does the opposite, and reads as complete.",
             "Arthur Conan Doyle, \"The Adventure of Silver Blaze\" (1892)",
             "《論語・衛靈公》15.26: 吾猶及史之闕文也",
         ],
+        background: "Two sources meet here. 孔子 Confucius, Analects 15.26: 「吾猶及史之闕文也」— he could still recall when a scribe left a blank (闕文) rather than fill a gap he could not vouch for. And Conan Doyle's \"Silver Blaze\" (1892), where Holmes cracks the case by the dog that did not bark: the absence of the expected is the evidence. A distillation sees neither unbidden — it reports what is present, so an omission has to be hunted.",
         phase: Phase::Catalogued,
     },
     Lens {
@@ -871,6 +901,7 @@ rule — a zero is a possible instrument failure — turned on the instrument th
             "Francis Bacon, Novum Organum (1620), Bk I, Aphorisms 39–68",
             "https://plato.stanford.edu/entries/francis-bacon/",
         ],
+        background: "Francis Bacon, Novum Organum (1620), named four \"idols\" that distort the mind before it reasons: idola tribus (of the tribe — human nature itself), idola specus (of the cave — the individual's bent), idola fori (of the marketplace — the loose words we argue in), and idola theatri (of the theatre — inherited systems taken on stage). The lens turns them on the distiller: a clean pass with nothing flagged is the mirror flattering the observer, not proof the source is sound.",
         phase: Phase::Catalogued,
     },
     Lens {
@@ -892,6 +923,7 @@ and on an incidental aside has mis-allocated its scepticism.",
             "William Blackstone, Commentaries on the Laws of England, vol. IV (1769), ch. 27",
             "J. Neyman & E. S. Pearson, Phil. Trans. R. Soc. A 231 (1933) 289–337",
         ],
+        background: "William Blackstone, Commentaries on the Laws of England (1769), Book IV ch. 27: \"better that ten guilty persons escape than that one innocent suffer\" — a stated preference for one direction of error over the other, not indifference between them. The Neyman–Pearson framework (1933) formalised the same asymmetry as Type I versus Type II error. The lens makes it a triage: name which way it is costlier to be wrong, and spend the scrutiny there.",
         phase: Phase::Catalogued,
     },
 ];
@@ -1161,6 +1193,20 @@ caller were: {:?}",
             for s in l.sources {
                 assert!(!s.trim().is_empty(), "{} has a blank source", l.id);
             }
+        }
+    }
+
+    #[test]
+    fn every_lens_carries_a_tradition_note() {
+        // The background note is the source-checked "In the tradition" section. Once
+        // written for every lens, it stays written — a new lens must carry one too, so
+        // the catalogue cannot ship a lens with no account of where it comes from.
+        for l in CATALOG {
+            assert!(
+                l.background.trim().len() > 40,
+                "{} has no substantive background note — add its 'In the tradition' text",
+                l.id
+            );
         }
     }
 

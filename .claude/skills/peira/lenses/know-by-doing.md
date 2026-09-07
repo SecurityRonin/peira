@@ -10,6 +10,8 @@
 
 **Worked example:** 朱熹's 格物 is exhaustive, bottom-up investigation of 理 — the opposite of top-down summary. 王陽明 investigated bamboo for seven days, fell ill, and concluded 理 is confirmed in action, not external cataloguing: 知行合一. A summary you cannot act on you have not understood; you have only compressed.
 
+**In the tradition:** 格物致知 ("investigate things, extend knowledge") is from the Great Learning 大學; 朱熹 Zhu Xi (1130–1200) read it as exhausting the principle (理) in each thing. In 1492 王陽明 Wang Yangming sat before bamboo for seven days to do exactly that, found no principle and fell ill — concluding that principle is not caught by treating the world as a detached object, which became his 知行合一, the unity of knowing and acting. The lens keeps the test: what you cannot act on, you have not yet understood.
+
 **Sources:**
 - 朱熹《四書章句集注・大學章句》: 致知在格物
 - 王陽明《傳習錄》: 知行合一

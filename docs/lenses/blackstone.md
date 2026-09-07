@@ -26,6 +26,10 @@ before closing, name which direction of error is costlier — false positive or 
 
 "Better that ten guilty persons escape than that one innocent suffer" is a declared preference for one error over its opposite, not indifference between them. A distillation that spends the same rigour on a load-bearing claim under an irreversible decision and on an incidental aside has mis-allocated its scepticism.
 
+## In the tradition
+
+William Blackstone, Commentaries on the Laws of England (1769), Book IV ch. 27: "better that ten guilty persons escape than that one innocent suffer" — a stated preference for one direction of error over the other, not indifference between them. The Neyman–Pearson framework (1933) formalised the same asymmetry as Type I versus Type II error. The lens makes it a triage: name which way it is costlier to be wrong, and spend the scrutiny there.
+
 ## Sources
 
 - William Blackstone, Commentaries on the Laws of England, vol. IV (1769), ch. 27
