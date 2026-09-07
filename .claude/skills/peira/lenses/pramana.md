@@ -1,6 +1,6 @@
 # प्रमाण pramāṇa — Type the Means of Knowing
 
-**Gate:** `PEIR-GRADE-EXCEEDS-PRAMANA`
+**Gate:** `PEIR-GRADE-EXCEEDS-MEANS`
 **Failure mode:** testimony passed off as observation, and corroboration mistaken for
 independence.
 

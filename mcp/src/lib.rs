@@ -942,7 +942,7 @@ it claims an examination nothing performs"
         let one = catalogue(Some("THREE-MARKS")).lenses;
         assert_eq!(one.len(), 1);
         assert_eq!(one[0].id, "THREE-MARKS");
-        assert!(one[0].gates.contains(&"PEIR-HETU-UNDIAGNOSTIC"));
+        assert!(one[0].gates.contains(&"PEIR-REASON-UNDIAGNOSTIC"));
 
         assert!(
             catalogue(Some("NOT-A-LENS")).lenses.is_empty(),

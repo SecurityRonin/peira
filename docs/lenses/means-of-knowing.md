@@ -26,7 +26,7 @@ evidence is typed, and each type caps the grade an edge may carry
 
 These block a citation packet deterministically — no model in the loop:
 
-- `PEIR-GRADE-EXCEEDS-PRAMANA`
+- `PEIR-GRADE-EXCEEDS-MEANS`
 
 ## Worked example
 

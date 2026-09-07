@@ -26,7 +26,7 @@ pub const CORNERS_UNADDRESSED: &str = "PEIR-CORNERS-UNADDRESSED";
 /// Toulmin: the rule licensing grounds → claim was never written down.
 pub const WARRANT_MISSING: &str = "PEIR-WARRANT-MISSING";
 /// pramāṇa: an edge graded above what its means of knowing allows.
-pub const GRADE_EXCEEDS_PRAMANA: &str = "PEIR-GRADE-EXCEEDS-PRAMANA";
+pub const GRADE_EXCEEDS_MEANS: &str = "PEIR-GRADE-EXCEEDS-MEANS";
 /// Pearl: an interventional or counterfactual claim with no executed protocol.
 pub const CAUSAL_RUNG_UNREACHED: &str = "PEIR-CAUSAL-RUNG-UNREACHED";
 /// A conclusion stated with no conditions under which it would change.
@@ -34,15 +34,15 @@ pub const BOUNDARIES_MISSING: &str = "PEIR-BOUNDARIES-MISSING";
 /// Premortem: a claim with nothing that could ever count against it.
 pub const FALSIFIER_MISSING: &str = "PEIR-FALSIFIER-MISSING";
 /// 因三相 (異品遍無性): every line of support is shared with a live rival.
-pub const HETU_UNDIAGNOSTIC: &str = "PEIR-HETU-UNDIAGNOSTIC";
+pub const REASON_UNDIAGNOSTIC: &str = "PEIR-REASON-UNDIAGNOSTIC";
 /// ACH: a causal claim with no competing explanation written down.
 pub const RIVALS_UNENUMERATED: &str = "PEIR-RIVALS-UNENUMERATED";
 /// 不可得因: an absence certified by a search never shown able to find the thing.
 pub const ABSENCE_UNCONTROLLED: &str = "PEIR-ABSENCE-UNCONTROLLED";
 /// 因三相 (異品遍無性): an inference that never surveyed the dissimilar cases.
-pub const VIPAKSA_UNSURVEYED: &str = "PEIR-VIPAKSA-UNSURVEYED";
+pub const CONTRARY_CASES_UNSURVEYED: &str = "PEIR-CONTRARY-CASES-UNSURVEYED";
 /// 因三相 (同品定有性): an inference rule with no known instance.
-pub const SAPAKSA_UNDECLARED: &str = "PEIR-SAPAKSA-UNDECLARED";
+pub const CONFIRMING_CASE_UNDECLARED: &str = "PEIR-CONFIRMING-CASE-UNDECLARED";
 
 /// Words that turn a description into a judgement.
 ///
@@ -525,7 +525,7 @@ the part that turns out to be false",
 // ── pramāṇa ──────────────────────────────────────────────────────────────────
 
 /// No edge may be graded above what its means of knowing allows.
-pub fn grades_within_pramana_ceiling(graph: &Graph, node: &Node) -> GateResult {
+pub fn grades_within_means_ceiling(graph: &Graph, node: &Node) -> GateResult {
     // EVIDENCE edges only. A rival's `contradicts` carrying a bad grade is the rival's
     // defect, and blocking the claim it attacks punishes the victim for someone else's
     // frontmatter — a finding must land on the node that can fix it.
@@ -558,7 +558,7 @@ pub fn grades_within_pramana_ceiling(graph: &Graph, node: &Node) -> GateResult {
                 continue;
             };
             return block(
-                GRADE_EXCEEDS_PRAMANA,
+                GRADE_EXCEEDS_MEANS,
                 "MEANS-OF-KNOWING",
                 node,
                 format!(
@@ -722,7 +722,7 @@ fn live_rivals<'a>(graph: &'a Graph, node: &Node) -> Vec<&'a Node> {
 /// 因三相, third characteristic (異品遍無性): evidence must be absent where the claim
 /// is false. Its structural limiting case — every supporter shared with a live rival —
 /// is 共不定 (sādhāraṇa-anaikāntika), and needs no declaration to detect.
-pub fn hetu_undiagnostic(graph: &Graph, node: &Node) -> GateResult {
+pub fn reason_undiagnostic(graph: &Graph, node: &Node) -> GateResult {
     if !under_promotion(graph, node) {
         return GateResult::NotApplicable;
     }
@@ -763,7 +763,7 @@ pub fn hetu_undiagnostic(graph: &Graph, node: &Node) -> GateResult {
                 .collect::<Vec<_>>()
                 .join(", ");
             return block(
-                HETU_UNDIAGNOSTIC,
+                REASON_UNDIAGNOSTIC,
                 "THREE-MARKS",
                 node,
                 format!(
@@ -921,7 +921,7 @@ fn asserts_absence(node: &Node) -> bool {
 }
 
 /// 異品遍無性: in what known circumstances does this evidence occur WITHOUT the thing?
-pub fn vipaksa_surveyed(graph: &Graph, node: &Node) -> GateResult {
+pub fn contrary_cases_surveyed(graph: &Graph, node: &Node) -> GateResult {
     if !under_promotion(graph, node) || !rests_on_inference(graph, node) {
         return GateResult::NotApplicable;
     }
@@ -938,7 +938,7 @@ what known circumstances does this kind of evidence occur WITHOUT the thing infe
 }
 
 /// 同品定有性: has anyone ever seen this reason and this property co-occur?
-pub fn sapaksa_declared(graph: &Graph, node: &Node) -> GateResult {
+pub fn confirming_case_declared(graph: &Graph, node: &Node) -> GateResult {
     if !under_promotion(graph, node) || !rests_on_inference(graph, node) {
         return GateResult::NotApplicable;
     }
@@ -1007,7 +1007,10 @@ mod tests {
                 Edge::new(NodeId::new("o1"), NodeId::new("c1"), EdgeKind::Supports).via(via),
             );
             let n = g.node(&NodeId::new("c1")).expect("c1").clone();
-            (vipaksa_surveyed(&g, &n), sapaksa_declared(&g, &n))
+            (
+                contrary_cases_surveyed(&g, &n),
+                confirming_case_declared(&g, &n),
+            )
         };
 
         let (v, sa) = build(Pramana::Inference, "");
@@ -1123,7 +1126,7 @@ absence claim"
 
     /// An explanation with nothing to beat has not been tested against anything.
     ///
-    /// This is the other half of the 共不定 interlock: `PEIR-HETU-UNDIAGNOSTIC` is
+    /// This is the other half of the 共不定 interlock: `PEIR-REASON-UNDIAGNOSTIC` is
     /// `NotApplicable` where no rival exists, so deleting the rival would buy silence.
     /// It buys this instead.
     #[test]
@@ -1211,7 +1214,7 @@ causal_rung: counterfactual\n---\n",
                 ));
             }
             let n = g.node(&NodeId::new("c1")).expect("c1").clone();
-            hetu_undiagnostic(&g, &n)
+            reason_undiagnostic(&g, &n)
         };
 
         assert!(
@@ -1600,7 +1603,7 @@ as_used: a\nnot_essence: b\nstipulated: c\n---\n"
             };
             g.insert_edge(e.graded_by(Grade::G4, "eve").via(Pramana::Testimony));
             let n = g.node(&NodeId::new("c1")).expect("c1").clone();
-            grades_within_pramana_ceiling(&g, &n)
+            grades_within_means_ceiling(&g, &n)
         };
 
         assert!(
@@ -1805,7 +1808,7 @@ reached no verdict and must not report one"
             ],
         );
         assert!(
-            !grades_within_pramana_ceiling(&graded_no_pramana, &claim).permits_promotion(),
+            !grades_within_means_ceiling(&graded_no_pramana, &claim).permits_promotion(),
             "a G4 settled with no declared means of knowing must not permit promotion"
         );
 
@@ -1818,7 +1821,7 @@ reached no verdict and must not report one"
             ],
         );
         assert!(
-            grades_within_pramana_ceiling(&graded_with_pramana, &claim).permits_promotion(),
+            grades_within_means_ceiling(&graded_with_pramana, &claim).permits_promotion(),
             "a grade within its declared ceiling still passes"
         );
 
@@ -1831,7 +1834,7 @@ reached no verdict and must not report one"
             )],
         );
         assert!(
-            grades_within_pramana_ceiling(&ungraded, &claim).permits_promotion(),
+            grades_within_means_ceiling(&ungraded, &claim).permits_promotion(),
             "an ungraded edge asserts nothing and is the lint pack's business, not this gate's"
         );
     }
@@ -2048,9 +2051,9 @@ from this image\n---\n",
                     .graded_by(Grade::G3, "albert"),
             ],
         );
-        let v = grades_within_pramana_ceiling(&g, &claim);
+        let v = grades_within_means_ceiling(&g, &claim);
         let v = v.violation().expect("must block");
-        assert_eq!(v.gate, GRADE_EXCEEDS_PRAMANA);
+        assert_eq!(v.gate, GRADE_EXCEEDS_MEANS);
         assert!(v.detail.contains("G3"), "{}", v.detail);
         assert!(v.detail.contains("testimony"), "{}", v.detail);
     }
@@ -2192,11 +2195,11 @@ from this image\n---\n",
     }
 
     #[test]
-    fn a_node_with_no_incoming_edges_is_out_of_scope_for_pramana() {
+    fn a_node_with_no_incoming_edges_is_out_of_scope_for_means() {
         let n = node("---\nid: c1\ntype: claim\ntitle: t\n---\n");
         let g = graph_of(vec![n.clone()], vec![]);
         assert_eq!(
-            grades_within_pramana_ceiling(&g, &n),
+            grades_within_means_ceiling(&g, &n),
             GateResult::NotApplicable
         );
     }
@@ -2213,7 +2216,7 @@ from this image\n---\n",
                     .graded_by(Grade::G2, "albert"),
             ],
         );
-        assert_eq!(grades_within_pramana_ceiling(&g, &claim), GateResult::Pass);
+        assert_eq!(grades_within_means_ceiling(&g, &claim), GateResult::Pass);
     }
 
     #[test]

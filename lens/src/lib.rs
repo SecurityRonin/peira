@@ -461,8 +461,8 @@ independence",
         operation: "evidence is typed, and each type caps the grade an edge may carry",
         applies_to: &[],
         gates: &[Gate {
-            code: gates::GRADE_EXCEEDS_PRAMANA,
-            check: gates::grades_within_pramana_ceiling,
+            code: gates::GRADE_EXCEEDS_MEANS,
+            check: gates::grades_within_means_ceiling,
         }],
         worked_example: "Two parsers agreeing on a hive is śabda corroboration, not pratyakṣa. \
 If they vendor the same decoding library they are not independent at all, and no count of them \
@@ -689,16 +689,16 @@ them",
         applies_to: &[],
         gates: &[
             Gate {
-                code: gates::HETU_UNDIAGNOSTIC,
-                check: gates::hetu_undiagnostic,
+                code: gates::REASON_UNDIAGNOSTIC,
+                check: gates::reason_undiagnostic,
             },
             Gate {
-                code: gates::VIPAKSA_UNSURVEYED,
-                check: gates::vipaksa_surveyed,
+                code: gates::CONTRARY_CASES_UNSURVEYED,
+                check: gates::contrary_cases_surveyed,
             },
             Gate {
-                code: gates::SAPAKSA_UNDECLARED,
-                check: gates::sapaksa_declared,
+                code: gates::CONFIRMING_CASE_UNDECLARED,
+                check: gates::confirming_case_declared,
             },
         ],
         worked_example: "An Amcache InventoryApplicationFile entry supports \"the user ran it\" \
@@ -1097,7 +1097,7 @@ gate instead — `under_promotion` is the shared predicate.",
             let subject = NodeId::new("c1");
             let blocked = examine_graph(&g)
                 .iter()
-                .any(|v| v.gate == gates::HETU_UNDIAGNOSTIC && v.subject == subject);
+                .any(|v| v.gate == gates::REASON_UNDIAGNOSTIC && v.subject == subject);
             assert_eq!(
                 blocked, must_block,
                 "cell {cell}: {shared} shared / {unshared} unshared supporters"
@@ -1140,7 +1140,7 @@ gate instead — `under_promotion` is the shared predicate.",
 
         let found = examine_graph(&g);
         assert!(
-            found.iter().any(|v| v.gate == gates::HETU_UNDIAGNOSTIC),
+            found.iter().any(|v| v.gate == gates::REASON_UNDIAGNOSTIC),
             "共不定 was computed and then discarded in transit; violations reaching the \
 caller were: {:?}",
             found.iter().map(|v| v.gate).collect::<Vec<_>>()
