@@ -119,7 +119,7 @@ Full transcript in [`docs/validation.md`](docs/validation.md).
 ## Documentation
 
 - **[The method](docs/method/)** — the discipline peira mechanises, written out so the tool stands
-  alone: the [six structures of investigative error and the coverage map](docs/method/README.md),
+  alone: the [six structures of investigative error and the coverage map](docs/method/six-structures.md),
   the [claim-grading standard](docs/method/claim-grading.md),
   [reporting to a tribunal](docs/method/expert-witness.md), and the
   [anti-summarization pass](docs/method/anti-summarization.md) for distilling a source
