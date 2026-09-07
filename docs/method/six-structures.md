@@ -123,7 +123,7 @@ to prevent.
 | A universal quantifier declares its extension | `PEIR-CLASS-EXTENSION-UNDECLARED` (白馬非馬) | **checked when declared** ⁴ |
 | A contested question addresses all four corners | `PEIR-CORNERS-UNADDRESSED` (四句) | **enforced** |
 | The rule licensing grounds → claim is written down | `PEIR-WARRANT-MISSING` (Toulmin) | **enforced** |
-| Evidence grade is capped by means of knowing | `PEIR-GRADE-EXCEEDS-MEANS` (pramāṇa) | **enforced** ¹ |
+| Evidence grade is capped by means of knowing | `PEIR-GRADE-EXCEEDS-MEANS` (प्रमाण) | **enforced** ¹ |
 | A causal claim earns its rung | `PEIR-CAUSAL-RUNG-UNREACHED` (Pearl) | **checked when declared** ⁴ |
 | A claim states where it holds | `PEIR-BOUNDARIES-MISSING` | **enforced** |
 | A claim states what would defeat it | `PEIR-FALSIFIER-MISSING` (Popper / premortem) | **enforced** |
@@ -157,10 +157,10 @@ to prevent.
 | **Extraordinary claims need extraordinary evidence** | — | **not mechanised** |
 | **The prosecutor's fallacy** | — | **not mechanised** |
 | **Custody and pedigree of an observation** | — | **not mechanised** |
-¹⁶ Triggered by an evidence edge declaring `via=inference`, because trairūpya is the theory of
-anumāna and of nothing else — a claim resting on perception owes neither field, and demanding one
+¹⁶ Triggered by an evidence edge declaring `via=inference`, because the three-marks doctrine is
+the theory of inference and of nothing else — a claim resting on perception owes neither field, and demanding one
 would be the checker refusing a sentence it has no doctrine against. Omitting `via=` is not an
-escape: a settled grade with no declared pramāṇa already blocks as `PEIR-GATE-UNASSESSED`. Both are
+escape: a settled grade with no declared means of knowing already blocks as `PEIR-GATE-UNASSESSED`. Both are
 surveys in the trust class of `boundaries:` and `falsifier:` — presence is checked, truth is not —
 and neither demands the author assert exceptionless absence, which would itself be an overclaim. An
 entry admitting the reason appears in a dissimilar case IS a survey, and one showing the warrant is
@@ -237,7 +237,7 @@ field declared *falsely* is a different matter and is reported by
 separately by `PEIR-LINT-UNGRADED-SUPPORT`, on claims and on any hypothesis something leans on.
 ⁶ Compares the grader against `author:` only when the claim declares one; with `author:` absent
 there is nothing to compare and the lint reports nothing.
-⁷ The digest covers the packet's rendered body only. Grades, graders, pramāṇas and `measured_by:`
+⁷ The digest covers the packet's rendered body only. Grades, graders, means of knowing and `measured_by:`
 links are not rendered, so they change without disturbing it — architecture defect 8.
 ⁸ The loader drops an unknown edge attribute, an invalid `grade=` and a misspelt `via=` without a
 diagnostic. The CONSEQUENCES named in earlier versions of this note no longer follow: a misspelt
@@ -254,11 +254,11 @@ full because a reader would otherwise have no way to tell an omission from a del
 
 | Lens | | The failure it names |
 |---|---|---|
-| `CROSS-EXAMINE` | ἔλεγχος elenchus — Socratic Cross-Examination | premises that were never examined because nobody asked |
-| `FIVE-MEMBERS` | पञ्चावयव pañcāvayava — The Five-Membered Argument | a reason that looks valid but is unestablished, contradictory, inconclusive, counterbalanced, or already defeated |
+| `CROSS-EXAMINE` | ἔλεγχος — Socratic Cross-Examination | premises that were never examined because nobody asked |
+| `FIVE-MEMBERS` | पञ्चावयव — The Five-Membered Argument | a reason that looks valid but is unestablished, contradictory, inconclusive, counterbalanced, or already defeated |
 | `STEELMAN` | Rapoport's Rules — Steelman First | attacking a position its holder would not recognise |
 | `DOUBLECRUX` | Double Crux | disagreement that circles because the load-bearing belief was never located |
-| `PRESERVE-MINORITY` | מחלוקת machloket — Preserve the Minority | deleting the losing argument, so the reasoning that rejected it becomes unreviewable |
+| `PRESERVE-MINORITY` | מחלוקת — Preserve the Minority | deleting the losing argument, so the reasoning that rejected it becomes unreviewable |
 | `SYNTHESIS` | Aufhebung — Synthesis That Preserves | a synthesis that quietly discards what it claimed to reconcile |
 | `THESEUS` | Ship of Theseus — Amend or Supersede | silent identity drift: a claim's meaning changes across edits while its id, and everything citing it, stays put |
 | `CHESTERTON` | Chesterton's Fence | removing something without recovering why it was put there |
