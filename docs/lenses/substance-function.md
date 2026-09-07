@@ -1,7 +1,7 @@
 ---
 layout: lens
 title: "Substance and Function"
-code: "TIYONG"
+code: "SUBSTANCE-FUNCTION"
 script: "體用"
 tradition: "Chinese"
 phase: Enforced
@@ -12,7 +12,7 @@ nav_exclude: true
 
 # Substance and Function <span class="script">體用</span>
 
-<p class="lens-meta"><code class="lens-code">TIYONG</code> · Chinese — 名家, 宋明理學, and the classics · <strong>Enforced — owns a gate</strong></p>
+<p class="lens-meta"><code class="lens-code">SUBSTANCE-FUNCTION</code> · Chinese — 名家, 宋明理學, and the classics · <strong>Enforced — owns a gate</strong></p>
 
 ## The failure it names
 

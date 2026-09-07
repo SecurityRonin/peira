@@ -1,7 +1,7 @@
 ---
 layout: lens
 title: "Investigate Each Thing; Knowing Proven in Doing"
-code: "GEWU"
+code: "KNOW-BY-DOING"
 script: "格物致知・知行合一"
 tradition: "Chinese"
 phase: Catalogued
@@ -12,7 +12,7 @@ nav_exclude: true
 
 # Investigate Each Thing; Knowing Proven in Doing <span class="script">格物致知・知行合一</span>
 
-<p class="lens-meta"><code class="lens-code">GEWU</code> · Chinese — 名家, 宋明理學, and the classics · <strong>Catalogued — a reading, owns no gate</strong></p>
+<p class="lens-meta"><code class="lens-code">KNOW-BY-DOING</code> · Chinese — 名家, 宋明理學, and the classics · <strong>Catalogued — a reading, owns no gate</strong></p>
 
 ## The failure it names
 

@@ -247,7 +247,7 @@ an asserted one. The same false sentence stands in the doc comment on `Pramana::
 reaches no verdict, and no verdict blocks:
 
 ```
-supports: ["c-bounded grade=G4 by=albert"]     PEIR-GATE-UNASSESSED [PRAMANA]
+supports: ["c-bounded grade=G4 by=albert"]     PEIR-GATE-UNASSESSED [MEANS-OF-KNOWING]
 ```
 
 The ceiling reads `Supports` and `DependsOn` alike, so spelling the edge as a declared
@@ -464,7 +464,7 @@ panel, established four more — each checked against the code it cites before b
 | 6 | `verify` read `Packet format:` from the stored body — untrusted input — and returned `FormatSuperseded`, exit 2, before any comparison. A hand edit to that one line converted *"this artifact no longer matches the record"* into *"this build cannot check it"*, so the single accusatory verdict was the one an adversary could opt out of | **CLOSED.** `verify` now normalises the format line and re-compares: if correcting the number alone makes the body byte-identical to the current rendering, the format line is the sole difference and that is an edit, reported as `DigestMismatch`. Where the body differs beyond it, staleness and alteration are genuinely indistinguishable from the artifact and it says so. The fixture asserting the old behaviour was itself wrong and was corrected |
 | 7 | `freeze` blocks only on violations whose subject is the claim being frozen. A defect on a supporting node — a privilege leak, forbidden prose, a dangling edge — stops nothing unless a claim-scoped gate re-attributes it to the claim | **CLOSED.** `violations_for` walks the evidential closure, and `evidential_closure` is now the single public definition all three commands scope by |
 | 8 | The digest covers only the rendered projection. Grades, graders, pramāṇas and `measured_by:` links are not rendered, so they change in the vault without disturbing a frozen packet; the change surfaces only if it now trips a gate, as `NoLongerFreezable` — otherwise `Verified` | **confirmed in source** |
-| 9 | The loader silently degrades malformed edge metadata: an unknown attribute key, an invalid `grade=` and a misspelt `via=` are dropped without a diagnostic | **PARTLY CLOSED, and the consequences named here no longer follow.** A misspelt `via=` leaves the edge with no declared means of knowing, which now reaches no verdict and blocks as `PEIR-GATE-UNASSESSED [PRAMANA]`; a mangled `grade=` leaves the edge ungraded, which `PEIR-LINT-UNGRADED-SUPPORT` reports. The loader is still silent about the typo itself — it says the edge is unexamined, not that a word was misspelt |
+| 9 | The loader silently degrades malformed edge metadata: an unknown attribute key, an invalid `grade=` and a misspelt `via=` are dropped without a diagnostic | **PARTLY CLOSED, and the consequences named here no longer follow.** A misspelt `via=` leaves the edge with no declared means of knowing, which now reaches no verdict and blocks as `PEIR-GATE-UNASSESSED [MEANS-OF-KNOWING]`; a mangled `grade=` leaves the edge ungraded, which `PEIR-LINT-UNGRADED-SUPPORT` reports. The loader is still silent about the typo itself — it says the edge is unexamined, not that a word was misspelt |
 
 ### The sixth audit (2026-08-19)
 

@@ -1,7 +1,7 @@
 ---
 layout: lens
 title: "The Means of Knowing"
-code: "PRAMANA"
+code: "MEANS-OF-KNOWING"
 script: "प्रमाण"
 tradition: "Indian"
 phase: Enforced
@@ -12,7 +12,7 @@ nav_exclude: true
 
 # The Means of Knowing <span class="script">प्रमाण</span>
 
-<p class="lens-meta"><code class="lens-code">PRAMANA</code> · Indian — Nyāya and the pramāṇa epistemology · <strong>Enforced — owns a gate</strong></p>
+<p class="lens-meta"><code class="lens-code">MEANS-OF-KNOWING</code> · Indian — Nyāya and the pramāṇa epistemology · <strong>Enforced — owns a gate</strong></p>
 
 ## The failure it names
 

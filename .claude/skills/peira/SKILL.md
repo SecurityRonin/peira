@@ -67,7 +67,7 @@ exists to produce. Write the evidence instead.
    id: 20260809T160000
    type: examination
    title: 體用 examination of c-overclaim
-   lens: TIYONG
+   lens: SUBSTANCE-FUNCTION
    examines: [c-overclaim]
    examined_by: claude
    ---

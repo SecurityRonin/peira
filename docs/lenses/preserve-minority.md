@@ -1,7 +1,7 @@
 ---
 layout: lens
 title: "Preserve the Minority"
-code: "MACHLOKET"
+code: "PRESERVE-MINORITY"
 script: "מחלוקת"
 tradition: "Jewish"
 phase: Catalogued
@@ -12,7 +12,7 @@ nav_exclude: true
 
 # Preserve the Minority <span class="script">מחלוקת</span>
 
-<p class="lens-meta"><code class="lens-code">MACHLOKET</code> · Jewish — Talmudic dispute · <strong>Catalogued — a reading, owns no gate</strong></p>
+<p class="lens-meta"><code class="lens-code">PRESERVE-MINORITY</code> · Jewish — Talmudic dispute · <strong>Catalogued — a reading, owns no gate</strong></p>
 
 ## The failure it names
 

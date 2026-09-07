@@ -20,7 +20,7 @@ confirmation by consistency — collecting evidence that fits the favoured hypot
 
 ## What it does
 
-an explanation above the association rung must name something it was tested against; diagnosticity is TRAIRUPYA's half of the same rule
+an explanation above the association rung must name something it was tested against; diagnosticity is THREE-MARKS's half of the same rule
 
 ## Enforced gates
 

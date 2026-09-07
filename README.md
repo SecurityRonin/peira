@@ -14,7 +14,7 @@ no model in the loop, naming the tradition that identified the mistake.
 $ peira gates vault/
 ✗ gates: 8 finding(s).
 
-  PEIR-FUNCTION-AS-SUBSTANCE [TIYONG]  c-overclaim
+  PEIR-FUNCTION-AS-SUBSTANCE [SUBSTANCE-FUNCTION]  c-overclaim
       substance claim "This Amcache entry proves execution of the suspicious binary"
       rests only on function evidence (o1, o2)
       → restate as a claim about what the thing did, or add evidence bearing on what it is

@@ -1,7 +1,7 @@
 ---
 layout: lens
 title: "The Five-Membered Argument"
-code: "PANCAVAYAVA"
+code: "FIVE-MEMBERS"
 script: "पञ्चावयव"
 tradition: "Indian"
 phase: Catalogued
@@ -12,7 +12,7 @@ nav_exclude: true
 
 # The Five-Membered Argument <span class="script">पञ्चावयव</span>
 
-<p class="lens-meta"><code class="lens-code">PANCAVAYAVA</code> · Indian — Nyāya and the pramāṇa epistemology · <strong>Catalogued — a reading, owns no gate</strong></p>
+<p class="lens-meta"><code class="lens-code">FIVE-MEMBERS</code> · Indian — Nyāya and the pramāṇa epistemology · <strong>Catalogued — a reading, owns no gate</strong></p>
 
 ## The failure it names
 
@@ -24,7 +24,7 @@ arguments take the five members, and reasons are screened against the hetvābhā
 
 ## Worked example
 
-pratijñā, hetu, udāharaṇa, upanaya, nigamana — with the reason tested for asiddha, viruddha, anaikāntika, satpratipakṣa and bādhita. 世親 Vasubandhu's 如實論 argues this five-member form carrying only a proto-因三相: the 古因明 stage, and the precursor to 陳那's reduction to three members (TRAIRUPYA, ABHASA), never its originator.
+pratijñā, hetu, udāharaṇa, upanaya, nigamana — with the reason tested for asiddha, viruddha, anaikāntika, satpratipakṣa and bādhita. 世親 Vasubandhu's 如實論 argues this five-member form carrying only a proto-因三相: the 古因明 stage, and the precursor to 陳那's reduction to three members (THREE-MARKS, SEMBLANCE), never its originator.
 
 ## Sources
 

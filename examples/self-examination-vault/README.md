@@ -21,10 +21,10 @@ A universal negative — the most dangerous claim shape, because it asserts the 
 | lens | what it demanded |
 |---|---|
 | `peira_check_prose` | flagged `proves` / `proven` / `confirmed` elsewhere in the report — observations dressed as verdicts |
-| **白馬非馬 (BAIMA)** | a `universal` quantifier with no declared **extension** — *declare what the class contains, or narrow to the case examined* |
+| **白馬非馬 (WHITE-HORSE)** | a `universal` quantifier with no declared **extension** — *declare what the class contains, or narrow to the case examined* |
 | **Toulmin** | no `warrant` |
 | **Pearl / Popper** | no `boundaries`, no `falsifier` — *as written, no observation could count against it* |
-| **不可得因 (ANUPALABDHI)** | an **absence** claim must rest on an instrument with a recorded **positive control** — proof the search could have *found* a mint if one were present |
+| **不可得因 (NON-PERCEPTION)** | an **absence** claim must rest on an instrument with a recorded **positive control** — proof the search could have *found* a mint if one were present |
 | declaration-contradiction lint | a first correction relabelled `quantifier: singular` while the sentence still said *"every"* — the class-extension gate switched off by the declaration, not the claim. peira caught the dodge. |
 
 The last one is the point: peira contradicted the person operating it, mid-correction, while he

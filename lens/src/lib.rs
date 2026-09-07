@@ -166,7 +166,7 @@ pub struct Gate {
 #[non_exhaustive]
 #[derive(Debug, Clone, Copy)]
 pub struct Lens {
-    /// Stable machine id, e.g. `LIJI`.
+    /// Stable machine id, e.g. `CRITERION`.
     pub id: &'static str,
     /// Display name, with the original term where there is one.
     pub name: &'static str,
@@ -321,7 +321,7 @@ const ARGUMENTS: &[NodeKind] = &[NodeKind::Claim, NodeKind::Hypothesis];
 /// The catalogue.
 pub static CATALOG: &[Lens] = &[
     Lens {
-        id: "LIJI",
+        id: "CRITERION",
         name: "立極 — Set the Pole",
         tradition: Tradition::Chinese,
         failure_mode: "judging something without ever declaring the standard judged against",
@@ -341,7 +341,7 @@ suspicious without ever stating the standard of suspicion, so the reader cannot 
         phase: Phase::Enforced,
     },
     Lens {
-        id: "ZHENGMING",
+        id: "RECTIFY-NAME",
         name: "正名 / 所謂 X 即非 X 是名 X — Rectify the Name",
         tradition: Tradition::Buddhist,
         failure_mode: "reifying a label into a thing, so a word does argumentative work its \
@@ -366,14 +366,14 @@ obligation mechanised, so apoha earns no separate entry",
         phase: Phase::Enforced,
     },
     Lens {
-        id: "TIYONG",
+        id: "SUBSTANCE-FUNCTION",
         name: "體用 — Substance and Function",
         tradition: Tradition::Chinese,
         failure_mode: "reporting what a thing DID as though it established what a thing IS",
         operation: "a substance claim needs at least one substance-aspect support; function \
 evidence alone cannot license it",
         // `&[]`, not ARGUMENTS. `Lens::examine` applies this BEFORE the gate runs, so a
-        // static kind list here is a kind test doing scoping — and TIYONG was the last
+        // static kind list here is a kind test doing scoping — and SUBSTANCE-FUNCTION was the last
         // enforced lens still carrying one. Relabelling a load-bearing substance claim
         // `type: observation` stripped the 體用 obligation entirely and it froze. The
         // gate already scopes itself by `under_promotion`, which asks whether the node
@@ -393,7 +393,7 @@ about what it is.",
         phase: Phase::Enforced,
     },
     Lens {
-        id: "BAIMA",
+        id: "WHITE-HORSE",
         name: "白馬非馬 — The White Horse",
         tradition: Tradition::Chinese,
         failure_mode: "sliding between a type and its tokens, or between intension and extension",
@@ -413,7 +413,7 @@ interchangeable, however natural the slide feels.",
         phase: Phase::Enforced,
     },
     Lens {
-        id: "CATUSKOTI",
+        id: "FOUR-CORNERS",
         name: "四句 catuṣkoṭi — The Four Corners",
         tradition: Tradition::Buddhist,
         failure_mode: "collapsing a contested question into a binary before the other positions \
@@ -453,7 +453,7 @@ unwritten rule licensing the step. Written down, it is visibly false.",
         phase: Phase::Enforced,
     },
     Lens {
-        id: "PRAMANA",
+        id: "MEANS-OF-KNOWING",
         name: "प्रमाण pramāṇa — Type the Means of Knowing",
         tradition: Tradition::Indian,
         failure_mode: "testimony passed off as observation, and corroboration mistaken for \
@@ -503,7 +503,7 @@ against a world where the file was only copied.",
     },
     // ── Catalogued, not yet mechanised ───────────────────────────────────────
     Lens {
-        id: "ELENCHUS",
+        id: "CROSS-EXAMINE",
         name: "ἔλεγχος elenchus — Socratic Cross-Examination",
         tradition: Tradition::Greek,
         failure_mode: "premises that were never examined because nobody asked",
@@ -527,7 +527,7 @@ dismissed.",
         failure_mode: "confirmation by consistency — collecting evidence that fits the favoured \
 hypothesis without asking what it rules out",
         operation: "an explanation above the association rung must name something it was \
-tested against; diagnosticity is TRAIRUPYA's half of the same rule",
+tested against; diagnosticity is THREE-MARKS's half of the same rule",
         // No kind list: `examine` applies one BEFORE the gate, so it is an evasion by
         // relabelling. `rivals_enumerated` scopes itself through `under_promotion`.
         applies_to: &[],
@@ -544,7 +544,7 @@ installation and with scanning, so it is not diagnostic and should carry no weig
         phase: Phase::Enforced,
     },
     Lens {
-        id: "PANCAVAYAVA",
+        id: "FIVE-MEMBERS",
         name: "पञ्चावयव pañcāvayava — The Five-Membered Argument",
         tradition: Tradition::Indian,
         failure_mode: "a reason that looks valid but is unestablished, contradictory, \
@@ -556,7 +556,7 @@ hetvābhāsa taxonomy",
         worked_example: "pratijñā, hetu, udāharaṇa, upanaya, nigamana — with the reason tested \
 for asiddha, viruddha, anaikāntika, satpratipakṣa and bādhita. 世親 Vasubandhu's 如實論 argues \
 this five-member form carrying only a proto-因三相: the 古因明 stage, and the precursor to 陳那's \
-reduction to three members (TRAIRUPYA, ABHASA), never its originator.",
+reduction to three members (THREE-MARKS, SEMBLANCE), never its originator.",
         sources: &[
             "Nyāya Sūtra 1.1.32–1.1.39; 1.2.4–1.2.9",
             "世親《如實論・反質難品》真諦譯 c. 550, T32n1633 — the 古因明 five-member form",
@@ -594,7 +594,7 @@ not yet about anything checkable.",
         phase: Phase::Catalogued,
     },
     Lens {
-        id: "MACHLOKET",
+        id: "PRESERVE-MINORITY",
         name: "מחלוקת machloket — Preserve the Minority",
         tradition: Tradition::Jewish,
         failure_mode: "deleting the losing argument, so the reasoning that rejected it becomes \
@@ -612,7 +612,7 @@ and loses the case.",
         phase: Phase::Catalogued,
     },
     Lens {
-        id: "AUFHEBUNG",
+        id: "SYNTHESIS",
         name: "Aufhebung — Synthesis That Preserves",
         tradition: Tradition::Modern,
         failure_mode: "a synthesis that quietly discards what it claimed to reconcile",
@@ -679,7 +679,7 @@ A claim with no answer is not yet a claim.",
         phase: Phase::Enforced,
     },
     Lens {
-        id: "TRAIRUPYA",
+        id: "THREE-MARKS",
         name: "因三相 — The Three Characteristics of a Valid Reason",
         tradition: Tradition::Buddhist,
         failure_mode: "a reason that also holds where the claim is false, so it proves nothing \
@@ -715,7 +715,7 @@ Prefetch .pf with a run counter decides the contest, and passes the gate.",
         phase: Phase::Enforced,
     },
     Lens {
-        id: "ANUPALABDHI",
+        id: "NON-PERCEPTION",
         name: "不可得因 — Non-Perception as a Reason",
         tradition: Tradition::Buddhist,
         failure_mode: "certifying an absence with a search never shown able to find the thing",
@@ -739,7 +739,7 @@ Stcherbatsky, Buddhist Logic vol. II (1930)",
         phase: Phase::Enforced,
     },
     Lens {
-        id: "ABHASA",
+        id: "SEMBLANCE",
         name: "似因・似宗 — The Semblance Taxonomies",
         tradition: Tradition::Buddhist,
         failure_mode: "a thesis or reason with the form of proof and not the force of it — \
@@ -764,7 +764,7 @@ Buddhist Epistemological Tradition (Vienna 1991)",
         phase: Phase::Catalogued,
     },
     Lens {
-        id: "ERDI",
+        id: "TWO-TRUTHS",
         name: "二諦 — The Two Truths, and Court Mode",
         tradition: Tradition::Buddhist,
         failure_mode: "a courtroom sentence that asserts more than the graph behind it supports",
@@ -805,7 +805,7 @@ follows from the attack graph, and grounded semantics refuses to pick a winner i
     // The full framework — the five questions these fan out from, and the crosswalk
     // to the lenses above — is in docs/method/anti-summarization.md.
     Lens {
-        id: "GEWU",
+        id: "KNOW-BY-DOING",
         name: "格物致知 · 知行合一 — Investigate Each Thing; Knowing Proven in Doing",
         tradition: Tradition::Chinese,
         failure_mode: "comprehension faked by compression — a distillation you can restate but \
@@ -997,9 +997,9 @@ reaching the caller were: {:?}",
     ///
     /// `Lens::examine` applies `applies_to` BEFORE the gate runs, so a static kind list
     /// on a gate-owning lens means relabelling a load-bearing claim `type: observation`
-    /// strips the obligation entirely. That was found on TIYONG and fixed there, and
-    /// the regression test was written for TIYONG alone — restoring `ARGUMENTS` on
-    /// CATUSKOTI passed the whole suite. The rule is a property of the catalogue, so
+    /// strips the obligation entirely. That was found on SUBSTANCE-FUNCTION and fixed there, and
+    /// the regression test was written for SUBSTANCE-FUNCTION alone — restoring `ARGUMENTS` on
+    /// FOUR-CORNERS passed the whole suite. The rule is a property of the catalogue, so
     /// it is asserted over the catalogue.
     ///
     /// A gateless lens may carry a kind list: it scopes documentation, not enforcement.
@@ -1231,13 +1231,13 @@ falsifiable, not merely plausible",
     #[test]
     fn the_eight_mvp_lenses_are_all_enforced() {
         for id in [
-            "LIJI",
-            "ZHENGMING",
-            "TIYONG",
-            "BAIMA",
-            "CATUSKOTI",
+            "CRITERION",
+            "RECTIFY-NAME",
+            "SUBSTANCE-FUNCTION",
+            "WHITE-HORSE",
+            "FOUR-CORNERS",
             "TOULMIN",
-            "PRAMANA",
+            "MEANS-OF-KNOWING",
             "RUNG",
         ] {
             let l = lens(id).unwrap_or_else(|| panic!("{id} missing from the catalogue"));
@@ -1248,7 +1248,7 @@ falsifiable, not merely plausible",
 
     #[test]
     fn lookup_finds_what_the_catalogue_holds() {
-        assert!(lens("LIJI").is_some());
+        assert!(lens("CRITERION").is_some());
         assert!(lens("NOT-A-LENS").is_none());
     }
 
@@ -1286,7 +1286,7 @@ falsifiable, not merely plausible",
         let term =
             parse_node("---\nid: 60.01\ntype: term\ntitle: presence\n---\n").expect("parses");
         let graph = Graph::new();
-        let liji = lens("LIJI").expect("LIJI exists");
+        let liji = lens("CRITERION").expect("CRITERION exists");
         assert_eq!(
             liji.examine(&graph, &term),
             vec![GateResult::NotApplicable],
@@ -1447,7 +1447,7 @@ boundaries:\n  - everywhere\nfalsifier:\n  - nothing known\n---\n",
 
         assert!(
             unassessed.len() >= 3,
-            "ZHENGMING, BAIMA and RUNG each reach no verdict here; \
+            "RECTIFY-NAME, WHITE-HORSE and RUNG each reach no verdict here; \
 examine_graph reported {} no-verdict result(s) out of {} findings",
             unassessed.len(),
             found.len()

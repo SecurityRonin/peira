@@ -1,7 +1,7 @@
 ---
 layout: lens
 title: "Socratic Cross-Examination"
-code: "ELENCHUS"
+code: "CROSS-EXAMINE"
 script: "ἔλεγχος"
 tradition: "Greek"
 phase: Catalogued
@@ -12,7 +12,7 @@ nav_exclude: true
 
 # Socratic Cross-Examination <span class="script">ἔλεγχος</span>
 
-<p class="lens-meta"><code class="lens-code">ELENCHUS</code> · Greek — Socratic and Aristotelian · <strong>Catalogued — a reading, owns no gate</strong></p>
+<p class="lens-meta"><code class="lens-code">CROSS-EXAMINE</code> · Greek — Socratic and Aristotelian · <strong>Catalogued — a reading, owns no gate</strong></p>
 
 ## The failure it names
 

@@ -54,13 +54,13 @@ flowchart TB
 
 | # | Door | The question | Routes to |
 |---|---|---|---|
-| 1 | **Direction** | Which way do I want this to come out, and which way hurts more if I'm wrong? | [The Asymmetry of Error]({{ '/lenses/blackstone/' | relative_url }}), [Bacon's Idols of the Mind]({{ '/lenses/idola/' | relative_url }}) (bias) |
-| 2 | **Words** | What is the yardstick, and do the words hold still? | [Set the Pole]({{ '/lenses/liji/' | relative_url }}) 立極, [Rectification of Names]({{ '/lenses/zhengming/' | relative_url }}) 正名, [Substance and Function]({{ '/lenses/tiyong/' | relative_url }}) 體用 |
-| 3 | **Ground** | How does it know, and can that way of knowing reach this far? | [Name the Warrant]({{ '/lenses/toulmin/' | relative_url }}), [The Means of Knowing]({{ '/lenses/pramana/' | relative_url }}), [Earn the Rung]({{ '/lenses/rung/' | relative_url }}) (causal), [Non-Perception as a Reason]({{ '/lenses/anupalabdhi/' | relative_url }}) 不可得因, `PEIR-LINT-ORPHAN-CLAIM`/`-UNGROUNDED-CHAIN`, `PEIR-LINT-FALSE-INDEPENDENCE` |
-| 4 | **Rivals** | What else would look exactly like this, and who got left out of the ring? | [Analysis of Competing Hypotheses]({{ '/lenses/ach/' | relative_url }}), [The Three Marks of a Valid Reason]({{ '/lenses/trairupya/' | relative_url }}) 因三相, [The Four Corners]({{ '/lenses/catuskoti/' | relative_url }}) 四句, [Steelman First]({{ '/lenses/steelman/' | relative_url }}), [Preserve the Minority]({{ '/lenses/machloket/' | relative_url }}) |
-| 5 | **Breaks** | Where does it break — on its own pages, against the world, after a date, past a case? | [Grounded Extension — Compute, Don't Assert]({{ '/lenses/dung/' | relative_url }}), [Synthesis That Preserves]({{ '/lenses/aufhebung/' | relative_url }}), `PEIR-BOUNDARIES-MISSING` (under [Earn the Rung]({{ '/lenses/rung/' | relative_url }})), [The White Horse Is Not a Horse]({{ '/lenses/baima/' | relative_url }}) 白馬非馬, [Premortem / Inversion]({{ '/lenses/premortem/' | relative_url }}), [Ship of Theseus — Amend or Supersede]({{ '/lenses/theseus/' | relative_url }}) |
-| 6 | **Silence** | What should be here and isn't, and what was cut without a reason on record? | [The Dog That Didn't Bark]({{ '/lenses/lacuna/' | relative_url }}) 闕文, [Chesterton's Fence]({{ '/lenses/chesterton/' | relative_url }}) |
-| 7 | **Transfer** | Can I run it on a case the source never mentions? | [Investigate Each Thing; Knowing Proven in Doing]({{ '/lenses/gewu/' | relative_url }}) 格物致知·知行合一 |
+| 1 | **Direction** | Which way do I want this to come out, and which way hurts more if I'm wrong? | • [The Asymmetry of Error]({{ '/lenses/blackstone/' | relative_url }})<br>• [Bacon's Idols of the Mind]({{ '/lenses/idola/' | relative_url }}) (bias) |
+| 2 | **Words** | What is the yardstick, and do the words hold still? | • [Set the Pole]({{ '/lenses/criterion/' | relative_url }}) 立極<br>• [Rectification of Names]({{ '/lenses/rectify-name/' | relative_url }}) 正名<br>• [Substance and Function]({{ '/lenses/substance-function/' | relative_url }}) 體用 |
+| 3 | **Ground** | How does it know, and can that way of knowing reach this far? | • [Name the Warrant]({{ '/lenses/toulmin/' | relative_url }})<br>• [The Means of Knowing]({{ '/lenses/means-of-knowing/' | relative_url }})<br>• [Earn the Rung]({{ '/lenses/rung/' | relative_url }}) (causal)<br>• [Non-Perception as a Reason]({{ '/lenses/non-perception/' | relative_url }}) 不可得因<br>• `PEIR-LINT-ORPHAN-CLAIM`/`-UNGROUNDED-CHAIN`<br>• `PEIR-LINT-FALSE-INDEPENDENCE` |
+| 4 | **Rivals** | What else would look exactly like this, and who got left out of the ring? | • [Analysis of Competing Hypotheses]({{ '/lenses/ach/' | relative_url }})<br>• [The Three Marks of a Valid Reason]({{ '/lenses/three-marks/' | relative_url }}) 因三相<br>• [The Four Corners]({{ '/lenses/four-corners/' | relative_url }}) 四句<br>• [Steelman First]({{ '/lenses/steelman/' | relative_url }})<br>• [Preserve the Minority]({{ '/lenses/preserve-minority/' | relative_url }}) |
+| 5 | **Breaks** | Where does it break — on its own pages, against the world, after a date, past a case? | • [Grounded Extension — Compute, Don't Assert]({{ '/lenses/dung/' | relative_url }})<br>• [Synthesis That Preserves]({{ '/lenses/synthesis/' | relative_url }})<br>• `PEIR-BOUNDARIES-MISSING` (under [Earn the Rung]({{ '/lenses/rung/' | relative_url }}))<br>• [The White Horse Is Not a Horse]({{ '/lenses/white-horse/' | relative_url }}) 白馬非馬<br>• [Premortem / Inversion]({{ '/lenses/premortem/' | relative_url }})<br>• [Ship of Theseus — Amend or Supersede]({{ '/lenses/theseus/' | relative_url }}) |
+| 6 | **Silence** | What should be here and isn't, and what was cut without a reason on record? | • [The Dog That Didn't Bark]({{ '/lenses/lacuna/' | relative_url }}) 闕文<br>• [Chesterton's Fence]({{ '/lenses/chesterton/' | relative_url }}) |
+| 7 | **Transfer** | Can I run it on a case the source never mentions? | • [Investigate Each Thing; Knowing Proven in Doing]({{ '/lenses/know-by-doing/' | relative_url }}) 格物致知·知行合一 |
 
 **The order is load-bearing.** Direction first, so the scrutiny budget is aimed before it is spent.
 Words before Ground, because you cannot weigh support for a claim whose terms float. Ground before
@@ -94,7 +94,7 @@ two yardsticks — process creation on p.4, and cataloguing on p.9" names someth
 written by reopening the source. A door that can be satisfied with the source closed is not doing
 the work.
 
-**A "none found" is itself an absence claim** — the pass's own [Non-Perception as a Reason]({{ '/lenses/anupalabdhi/' | relative_url }}). Write it as *"searched
+**A "none found" is itself an absence claim** — the pass's own [Non-Perception as a Reason]({{ '/lenses/non-perception/' | relative_url }}). Write it as *"searched
 [where] for [what], found none,"* never as a bare "nothing here." Door 3 (Ground) applies to the
 doors' own answers.
 
@@ -170,7 +170,7 @@ peira distinguishes what it **enforces** (deterministic gates over the graph) fr
 **catalogues** (named, sourced, given a worked example, owning no gate — a reading list for what to
 ask by hand). See [`README.md` §"What peira actually enforces"]({{ '/method/' | relative_url }}).
 
-The four lenses this pass adds — [Investigate Each Thing; Knowing Proven in Doing]({{ '/lenses/gewu/' | relative_url }}), [The Dog That Didn't Bark]({{ '/lenses/lacuna/' | relative_url }}), [Bacon's Idols of the Mind]({{ '/lenses/idola/' | relative_url }}), [The Asymmetry of Error]({{ '/lenses/blackstone/' | relative_url }}) — are **catalogued, not
+The four lenses this pass adds — [Investigate Each Thing; Knowing Proven in Doing]({{ '/lenses/know-by-doing/' | relative_url }}), [The Dog That Didn't Bark]({{ '/lenses/lacuna/' | relative_url }}), [Bacon's Idols of the Mind]({{ '/lenses/idola/' | relative_url }}), [The Asymmetry of Error]({{ '/lenses/blackstone/' | relative_url }}) — are **catalogued, not
 enforced, and deliberately.** *What did I smooth over*, *what would a competent treatment contain*,
 and *which error is costlier* cannot be settled without judgement, and a gate that pretended to
 settle them would be the ceremony peira exists to refuse — its meta-test asserts that a catalogued
@@ -178,4 +178,3 @@ lens owns no gate, precisely so the catalogue cannot imply an examination it doe
 enforceable half of each door already lives in the enforced set the routing points to: a warrant, a
 falsifier, a declared extension, a source-class ceiling. The pass asks all seven questions; peira
 mechanises the part of the answer a machine can honestly check.
-

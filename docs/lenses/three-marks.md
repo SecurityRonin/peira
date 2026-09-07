@@ -1,7 +1,7 @@
 ---
 layout: lens
 title: "The Three Marks of a Valid Reason"
-code: "TRAIRUPYA"
+code: "THREE-MARKS"
 script: "因三相"
 tradition: "Buddhist"
 phase: Enforced
@@ -12,7 +12,7 @@ nav_exclude: true
 
 # The Three Marks of a Valid Reason <span class="script">因三相</span>
 
-<p class="lens-meta"><code class="lens-code">TRAIRUPYA</code> · Buddhist — Madhyamaka and Dignāgan logic · <strong>Enforced — owns a gate</strong></p>
+<p class="lens-meta"><code class="lens-code">THREE-MARKS</code> · Buddhist — Madhyamaka and Dignāgan logic · <strong>Enforced — owns a gate</strong></p>
 
 ## The failure it names
 
