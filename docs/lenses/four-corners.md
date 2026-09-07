@@ -12,7 +12,7 @@ nav_exclude: true
 
 # The Four Corners <span class="script">四句</span>
 
-<p class="lens-meta"><code class="lens-code">FOUR-CORNERS</code> · Buddhist — Madhyamaka and Dignāgan logic · <strong>Enforced — owns a gate</strong></p>
+<p class="lens-meta"><code class="lens-code">FOUR-CORNERS</code> · Buddhist — 中觀 and 因明 (Buddhist logic) · <strong>Enforced — owns a gate</strong></p>
 
 ## The failure it names
 
@@ -34,11 +34,11 @@ These block a citation packet deterministically — no model in the loop:
 
 ## In the tradition
 
-The catuṣkoṭi (चतुष्कोटि, "four corners") sets out four alternatives on a proposition: that it holds, that it fails to hold, that it does both, and that it does neither. It predates Madhyamaka — the Pali canon has the Buddha decline all four on the "undeclared" questions (avyākata), as in the Aggi-Vacchagotta Sutta on the fate of an awakened one after death. Nāgārjuna (c. 150–250 CE) makes it a method in the Mūlamadhyamakakārikā; his use is not uniform, but the signature move denies all four, as in the opening verse refusing that anything arises from itself, from another, from both, or from neither (MMK 1.1).
+The four-cornered logic (四句; चतुष्कोटि) sets out four alternatives on a proposition: that it holds, that it fails to hold, that it does both, and that it does neither. It predates 中觀 — the early canon has the Buddha decline all four on the "undeclared" questions, as in the Aggi-Vacchagotta Sutta on the fate of an awakened one after death. 龍樹 (c. 150–250 CE) makes it a method in his root verses on the Middle Way; his use is not uniform, but the signature move denies all four, as in the opening verse refusing that anything arises from itself, from another, from both, or from neither.
 
 ## Sources
 
-- Nāgārjuna, Mūlamadhyamakakārikā 1.1, 18.8
-- <https://plato.stanford.edu/entries/nagarjuna/>
+- 龍樹《中論》鳩摩羅什譯 (T30n1564), 觀因緣品第一・觀法品第十八
+- [龍樹, Stanford Encyclopedia of Philosophy](https://plato.stanford.edu/entries/nagarjuna/)
 
 <p class="back"><a href="{{ '/lenses/' | relative_url }}">← All lenses</a> · <a href="{{ '/doors/' | relative_url }}">The seven doors</a></p>

@@ -62,8 +62,8 @@ fn tradition_long(t: Tradition) -> &'static str {
     match t {
         Tradition::Greek => "Greek — Socratic and Aristotelian",
         Tradition::Chinese => "Chinese — 名家, 宋明理學, and the classics",
-        Tradition::Indian => "Indian — Nyāya and the प्रमाण epistemology",
-        Tradition::Buddhist => "Buddhist — Madhyamaka and Dignāgan logic",
+        Tradition::Indian => "Indian — classical logic and the epistemology of प्रमाण",
+        Tradition::Buddhist => "Buddhist — 中觀 and 因明 (Buddhist logic)",
         Tradition::Jewish => "Jewish — Talmudic dispute",
         Tradition::Modern => "Modern — analytic and scientific method",
         Tradition::Formal => "Formal — argumentation theory",

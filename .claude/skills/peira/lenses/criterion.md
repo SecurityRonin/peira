@@ -12,10 +12,11 @@
 
 **Worked example:** "A healthy breakfast" names no standard — healthy for blood sugar, for weight, or for a day's hard labour? Until the pole is set, the word carries the judgement and the reader cannot tell what would count against it.
 
-**In the tradition:** 立極 — to establish the pole — is from 周敦頤 Zhou Dunyi (1017–1073) and his 太極圖說: 「聖人定之以中正仁義而主靜，立人極焉」, the sage fixing the human pole by a stated standard. The lens borrows the move, not the metaphysics: a judgement must set the pole it is measured against, or the word carries the verdict and nothing can check it.
+**In the tradition:** 立極 — to establish the pole — is from 周敦頤 (1017–1073) and his 太極圖說: 「聖人定之以中正仁義而主靜，立人極焉」, the sage fixing the human pole by a stated standard. The lens borrows the move, not the metaphysics: a judgement must set the pole it is measured against, or the word carries the verdict and nothing can check it.
 
 **Sources:**
 - 周敦頤《太極圖說》: 聖人定之以中正仁義而主靜，立人極焉
 - <https://ctext.org/wiki.pl?if=en&chapter=592302>
+- <https://iep.utm.edu/neo-confucian-philosophy/>
 
 Run `peira lens CRITERION` for this entry in the tool.

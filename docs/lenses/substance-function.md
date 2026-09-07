@@ -34,7 +34,7 @@ A smoke alarm sounding is what the device did; "there is a fire" is a claim abou
 
 ## In the tradition
 
-體用 (ti-yong, substance and function) has roots in early Confucian and Daoist texts, was first used systematically by 王弼 Wang Bi (226–249) in his commentary on the Daodejing, and spread as a hermeneutic partly through Buddhism. 程頤 Cheng Yi's Neo-Confucian formula 「體用一源，顯微無間」— substance and function are one source, the manifest and the subtle without gap — is its classic statement. The lens takes only the distinction: what a thing is (體) is not settled by what it did (用).
+體用 (substance and function) has roots in early Confucian and Daoist texts, was first used systematically by 王弼 (226–249) in his commentary on the 道德經, and spread as a hermeneutic partly through Buddhism. 程頤's Neo-Confucian formula 「體用一源，顯微無間」— substance and function are one source, the manifest and the subtle without gap — is its classic statement. The lens takes only the distinction: what a thing is (體) is not settled by what it did (用).
 
 ## Sources
 

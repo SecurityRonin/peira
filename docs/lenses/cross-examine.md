@@ -28,7 +28,7 @@ Clarification, assumption, evidence, viewpoint, implication, and the question ab
 
 ## In the tradition
 
-ἔλεγχος (elenchus) is Greek for putting-to-the-test, and it is Socrates' method in Plato's early dialogues (Euthyphro, Laches, Charmides, Meno, Gorgias): from the interlocutor's own admissions he draws claims that jointly contradict the thesis under test, so the position falls under premises its holder granted, not under Socrates' own. The lens keeps the move — a claim is examined by the questions its own commitments must answer.
+ἔλεγχος — putting-to-the-test — is Socrates' method in Plato's early dialogues (Euthyphro, Laches, Charmides, Meno, Gorgias): from the interlocutor's own admissions he draws claims that jointly contradict the thesis under test, so the position falls under premises its holder granted, not under Socrates' own. The lens keeps the move — a claim is examined by the questions its own commitments must answer.
 
 ## Sources
 
