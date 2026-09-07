@@ -1,7 +1,7 @@
 ---
 layout: lens
 title: "The White Horse Is Not a Horse"
-code: "BAIMA"
+code: "WHITE-HORSE"
 script: "白馬非馬"
 tradition: "Chinese"
 phase: Enforced
@@ -12,7 +12,7 @@ nav_exclude: true
 
 # The White Horse Is Not a Horse <span class="script">白馬非馬</span>
 
-<p class="lens-meta"><code class="lens-code">BAIMA</code> · Chinese — 名家, 宋明理學, and the classics · <strong>Enforced — owns a gate</strong></p>
+<p class="lens-meta"><code class="lens-code">WHITE-HORSE</code> · Chinese — 名家, 宋明理學, and the classics · <strong>Enforced — owns a gate</strong></p>
 
 ## The failure it names
 

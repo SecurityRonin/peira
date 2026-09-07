@@ -1,7 +1,7 @@
 ---
 layout: lens
 title: "Set the Pole"
-code: "LIJI"
+code: "CRITERION"
 script: "立極"
 tradition: "Chinese"
 phase: Enforced
@@ -12,7 +12,7 @@ nav_exclude: true
 
 # Set the Pole <span class="script">立極</span>
 
-<p class="lens-meta"><code class="lens-code">LIJI</code> · Chinese — 名家, 宋明理學, and the classics · <strong>Enforced — owns a gate</strong></p>
+<p class="lens-meta"><code class="lens-code">CRITERION</code> · Chinese — 名家, 宋明理學, and the classics · <strong>Enforced — owns a gate</strong></p>
 
 ## The failure it names
 

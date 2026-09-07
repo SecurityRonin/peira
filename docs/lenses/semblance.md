@@ -1,7 +1,7 @@
 ---
 layout: lens
 title: "The Semblances of Proof"
-code: "ABHASA"
+code: "SEMBLANCE"
 script: "似因・似宗"
 tradition: "Buddhist"
 phase: Catalogued
@@ -12,7 +12,7 @@ nav_exclude: true
 
 # The Semblances of Proof <span class="script">似因・似宗</span>
 
-<p class="lens-meta"><code class="lens-code">ABHASA</code> · Buddhist — Madhyamaka and Dignāgan logic · <strong>Catalogued — a reading, owns no gate</strong></p>
+<p class="lens-meta"><code class="lens-code">SEMBLANCE</code> · Buddhist — Madhyamaka and Dignāgan logic · <strong>Catalogued — a reading, owns no gate</strong></p>
 
 ## The failure it names
 

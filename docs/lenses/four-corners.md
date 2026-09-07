@@ -1,7 +1,7 @@
 ---
 layout: lens
 title: "The Four Corners"
-code: "CATUSKOTI"
+code: "FOUR-CORNERS"
 script: "四句"
 tradition: "Buddhist"
 phase: Enforced
@@ -12,7 +12,7 @@ nav_exclude: true
 
 # The Four Corners <span class="script">四句</span>
 
-<p class="lens-meta"><code class="lens-code">CATUSKOTI</code> · Buddhist — Madhyamaka and Dignāgan logic · <strong>Enforced — owns a gate</strong></p>
+<p class="lens-meta"><code class="lens-code">FOUR-CORNERS</code> · Buddhist — Madhyamaka and Dignāgan logic · <strong>Enforced — owns a gate</strong></p>
 
 ## The failure it names
 

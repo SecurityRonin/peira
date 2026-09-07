@@ -193,7 +193,7 @@ pub fn criterion_declared(graph: &Graph, node: &Node) -> GateResult {
     } else {
         block(
             CRITERION_UNDECLARED,
-            "LIJI",
+            "CRITERION",
             node,
             format!("evaluative claim \"{}\" declares no criterion", node.title),
             "add a `judged_by:` edge to a Criterion stating the standard applied",
@@ -239,7 +239,7 @@ pub fn key_terms_stipulated(graph: &Graph, node: &Node) -> GateResult {
         let Some(term) = graph.node(&edge.to) else {
             return block(
                 TERM_UNSTIPULATED,
-                "ZHENGMING",
+                "RECTIFY-NAME",
                 node,
                 format!("key term `{}` does not resolve to any node", edge.to),
                 "create the Term node, or correct the reference",
@@ -253,7 +253,7 @@ pub fn key_terms_stipulated(graph: &Graph, node: &Node) -> GateResult {
         if !missing.is_empty() {
             return block(
                 TERM_UNSTIPULATED,
-                "ZHENGMING",
+                "RECTIFY-NAME",
                 node,
                 format!("term `{}` is missing {}", term.id, missing.join(", ")),
                 "give the term all three moments: as_used (所謂), not_essence (即非), \
@@ -365,7 +365,7 @@ its evidence bears on substance or only on function is unknown",
     if function_only {
         block(
             FUNCTION_AS_SUBSTANCE,
-            "TIYONG",
+            "SUBSTANCE-FUNCTION",
             node,
             format!(
                 "substance claim \"{}\" rests only on function evidence ({})",
@@ -419,7 +419,7 @@ recognise — expected `universal`, `class` or `singular`",
     if node.field_list("extension").is_empty() {
         block(
             CLASS_EXTENSION_UNDECLARED,
-            "BAIMA",
+            "WHITE-HORSE",
             node,
             format!(
                 "claim quantifies `{quantifier}` over \"{}\" without declaring its extension",
@@ -476,7 +476,7 @@ pub fn four_corners_addressed(graph: &Graph, node: &Node) -> GateResult {
     } else {
         block(
             CORNERS_UNADDRESSED,
-            "CATUSKOTI",
+            "FOUR-CORNERS",
             node,
             // The DISTINCT count, and the raw one when they differ. "addresses 4 of 4"
             // over four identical entries would be the gate reporting the number it
@@ -559,7 +559,7 @@ pub fn grades_within_pramana_ceiling(graph: &Graph, node: &Node) -> GateResult {
             };
             return block(
                 GRADE_EXCEEDS_PRAMANA,
-                "PRAMANA",
+                "MEANS-OF-KNOWING",
                 node,
                 format!(
                     "edge {} → {} is graded {grade} on {pramana}, whose ceiling is {}",
@@ -705,7 +705,7 @@ or as a node that attacks it",
 /// are inherited rather than forgotten.
 ///
 /// One definition, because two gates need it and they must never disagree about what
-/// a rival is: TRAIRUPYA blocks when rivals exist and share all the evidence, ACH
+/// a rival is: THREE-MARKS blocks when rivals exist and share all the evidence, ACH
 /// blocks when none exists at all. A drift between the two spellings would open a gap
 /// between them that answers to neither.
 fn live_rivals<'a>(graph: &'a Graph, node: &Node) -> Vec<&'a Node> {
@@ -764,7 +764,7 @@ pub fn hetu_undiagnostic(graph: &Graph, node: &Node) -> GateResult {
                 .join(", ");
             return block(
                 HETU_UNDIAGNOSTIC,
-                "TRAIRUPYA",
+                "THREE-MARKS",
                 node,
                 format!(
                     "every line of support under \"{}\" ({shared}) also supports its \
@@ -859,7 +859,7 @@ whether the search could have found the thing is unknown",
 
     block(
         ABSENCE_UNCONTROLLED,
-        "ANUPALABDHI",
+        "NON-PERCEPTION",
         node,
         format!(
             "\"{}\" rests on a search that has never been shown to find the thing when \
@@ -991,7 +991,7 @@ mod tests {
     /// evidence edge declaring `via=inference`, not promotion in general.
     ///
     /// The obvious dodge, omitting `via=`, is already policed: a settled grade with no
-    /// declared pramāṇa blocks as `PEIR-GATE-UNASSESSED [PRAMANA]`. Writing less does
+    /// declared pramāṇa blocks as `PEIR-GATE-UNASSESSED [MEANS-OF-KNOWING]`. Writing less does
     /// not win.
     #[test]
     fn an_inference_surveys_the_dissimilar_cases_and_cites_a_positive_instance() {
@@ -1274,7 +1274,7 @@ causal_rung: counterfactual\n---\n",
 
     /// 體用 is owed by whatever carries the weight, not by whatever it calls itself.
     ///
-    /// TIYONG was the last ENFORCED lens still carrying a static `applies_to` kind list,
+    /// SUBSTANCE-FUNCTION was the last ENFORCED lens still carrying a static `applies_to` kind list,
     /// and `Lens::examine` applies that BEFORE the gate runs — so relabelling a
     /// load-bearing substance claim `type: observation` stripped the obligation entirely
     /// and the packet froze. The codebase's first recorded defect, still open for one
@@ -1316,7 +1316,7 @@ warrant: The table records what ran.\nquantifier: singular\ncausal_rung: associa
             // other findings in this round are about.
             crate::examine_graph(&g)
                 .into_iter()
-                .filter(|v| v.subject == NodeId::new("sub") && v.lens == "TIYONG")
+                .filter(|v| v.subject == NodeId::new("sub") && v.lens == "SUBSTANCE-FUNCTION")
                 .count()
         };
 
@@ -1359,7 +1359,7 @@ warrant: The table records what ran.\nquantifier: singular\ncausal_rung: associa
             assert!(
                 crate::examine_graph(&g)
                     .into_iter()
-                    .any(|v| v.subject == NodeId::new("sub") && v.lens == "TIYONG"),
+                    .any(|v| v.subject == NodeId::new("sub") && v.lens == "SUBSTANCE-FUNCTION"),
                 "the edge grammar the docs publish must reach the gate the docs promise"
             );
         }

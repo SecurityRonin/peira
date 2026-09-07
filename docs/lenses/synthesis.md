@@ -1,7 +1,7 @@
 ---
 layout: lens
 title: "Synthesis That Preserves"
-code: "AUFHEBUNG"
+code: "SYNTHESIS"
 script: ""
 tradition: "Modern"
 phase: Catalogued
@@ -12,7 +12,7 @@ nav_exclude: true
 
 # Synthesis That Preserves
 
-<p class="lens-meta"><code class="lens-code">AUFHEBUNG</code> · Modern — analytic and scientific method · <strong>Catalogued — a reading, owns no gate</strong></p>
+<p class="lens-meta"><code class="lens-code">SYNTHESIS</code> · Modern — analytic and scientific method · <strong>Catalogued — a reading, owns no gate</strong></p>
 
 ## The failure it names
 

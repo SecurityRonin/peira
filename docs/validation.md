@@ -38,11 +38,11 @@ is load-bearing.
 Claim: `This Amcache entry proves execution of the suspicious binary`
 
 ```
-PEIR-CRITERION-UNDECLARED       [LIJI]       judged, with no standard declared
-PEIR-GATE-UNASSESSED            [ZHENGMING]  declares no key terms, so which words are load-bearing is unknown
-PEIR-FUNCTION-AS-SUBSTANCE      [TIYONG]     what it did, stated as what it is
-PEIR-CLASS-EXTENSION-UNDECLARED [BAIMA]      one token, quantified universally
-PEIR-CORNERS-UNADDRESSED        [CATUSKOTI]  contested, addresses 0 of 4 corners
+PEIR-CRITERION-UNDECLARED       [CRITERION]       judged, with no standard declared
+PEIR-GATE-UNASSESSED            [RECTIFY-NAME]  declares no key terms, so which words are load-bearing is unknown
+PEIR-FUNCTION-AS-SUBSTANCE      [SUBSTANCE-FUNCTION]     what it did, stated as what it is
+PEIR-CLASS-EXTENSION-UNDECLARED [WHITE-HORSE]      one token, quantified universally
+PEIR-CORNERS-UNADDRESSED        [FOUR-CORNERS]  contested, addresses 0 of 4 corners
 PEIR-WARRANT-MISSING            [TOULMIN]    states no warrant
 PEIR-CAUSAL-RUNG-UNREACHED      [RUNG]       counterfactual rung, observation only
 PEIR-BOUNDARIES-MISSING         [RUNG]       no boundary conditions

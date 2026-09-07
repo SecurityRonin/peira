@@ -242,7 +242,7 @@ links are not rendered, so they change without disturbing it — architecture de
 ⁸ The loader drops an unknown edge attribute, an invalid `grade=` and a misspelt `via=` without a
 diagnostic. The CONSEQUENCES named in earlier versions of this note no longer follow: a misspelt
 `via=` leaves the edge with no declared means of knowing, which blocks as
-`PEIR-GATE-UNASSESSED [PRAMANA]`, and a mangled `grade=` leaves it ungraded, which
+`PEIR-GATE-UNASSESSED [MEANS-OF-KNOWING]`, and a mangled `grade=` leaves it ungraded, which
 `PEIR-LINT-UNGRADED-SUPPORT` reports. What remains is that the loader is silent about the TYPO
 itself — it says the edge is unexamined, not that a word was misspelt. Architecture defect 9.
 
@@ -254,17 +254,17 @@ full because a reader would otherwise have no way to tell an omission from a del
 
 | Lens | | The failure it names |
 |---|---|---|
-| `ELENCHUS` | ἔλεγχος elenchus — Socratic Cross-Examination | premises that were never examined because nobody asked |
-| `PANCAVAYAVA` | पञ्चावयव pañcāvayava — The Five-Membered Argument | a reason that looks valid but is unestablished, contradictory, inconclusive, counterbalanced, or already defeated |
+| `CROSS-EXAMINE` | ἔλεγχος elenchus — Socratic Cross-Examination | premises that were never examined because nobody asked |
+| `FIVE-MEMBERS` | पञ्चावयव pañcāvayava — The Five-Membered Argument | a reason that looks valid but is unestablished, contradictory, inconclusive, counterbalanced, or already defeated |
 | `STEELMAN` | Rapoport's Rules — Steelman First | attacking a position its holder would not recognise |
 | `DOUBLECRUX` | Double Crux | disagreement that circles because the load-bearing belief was never located |
-| `MACHLOKET` | מחלוקת machloket — Preserve the Minority | deleting the losing argument, so the reasoning that rejected it becomes unreviewable |
-| `AUFHEBUNG` | Aufhebung — Synthesis That Preserves | a synthesis that quietly discards what it claimed to reconcile |
+| `PRESERVE-MINORITY` | מחלוקת machloket — Preserve the Minority | deleting the losing argument, so the reasoning that rejected it becomes unreviewable |
+| `SYNTHESIS` | Aufhebung — Synthesis That Preserves | a synthesis that quietly discards what it claimed to reconcile |
 | `THESEUS` | Ship of Theseus — Amend or Supersede | silent identity drift: a claim's meaning changes across edits while its id, and everything citing it, stays put |
 | `CHESTERTON` | Chesterton's Fence | removing something without recovering why it was put there |
-| `ABHASA` | 似因・似宗 — The Semblance Taxonomies | a thesis or reason with the form of proof and not the force of it |
-| `ERDI` | 二諦 — The Two Truths, and Court Mode | a courtroom sentence that asserts more than the graph behind it supports |
-| `GEWU` | 格物致知·知行合一 — Investigate Each Thing; Knowing Proven in Doing | comprehension faked by compression — restated, but not applicable to an unseen case |
+| `SEMBLANCE` | 似因・似宗 — The Semblance Taxonomies | a thesis or reason with the form of proof and not the force of it |
+| `TWO-TRUTHS` | 二諦 — The Two Truths, and Court Mode | a courtroom sentence that asserts more than the graph behind it supports |
+| `KNOW-BY-DOING` | 格物致知·知行合一 — Investigate Each Thing; Knowing Proven in Doing | comprehension faked by compression — restated, but not applicable to an unseen case |
 | `LACUNA` | 闕文 · The Dog That Didn't Bark | a distillation blind to omission — what a competent treatment would contain but this one leaves out |
 | `IDOLA` | Idola Mentis — Bacon's Idols of the Mind | the distiller's own bias treated as a clean mirror — what I wanted to find, what I smoothed for fluency |
 | `BLACKSTONE` | Blackstone's Ratio — The Asymmetry of Error | equal scrutiny spent where the cost of error runs overwhelmingly one way |
@@ -274,9 +274,9 @@ while distilling a source, catalogued rather than enforced because *what did I s
 *which error costs more* are irreducibly judgement, and a gate that pretended to check them would be
 the ceremony this project exists to refuse.
 
-**Socratic questioning is here, not missing** — `ELENCHUS`, with its six question families. So is
+**Socratic questioning is here, not missing** — `CROSS-EXAMINE`, with its six question families. So is
 the steelman of the opposing case (`STEELMAN`) and the preservation of rejected alternatives
-(`MACHLOKET`). Each is specified and unmechanised: read them as a reading list for what to ask by
+(`PRESERVE-MINORITY`). Each is specified and unmechanised: read them as a reading list for what to ask by
 hand, not as checks the tool performs.
 
 **Thirteen of twenty-seven lenses are enforced.** The other fourteen are catalogued — named,

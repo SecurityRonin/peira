@@ -23,30 +23,30 @@ use std::{fs, path::PathBuf, process::ExitCode};
 /// than shipping a page with an empty title.
 fn display(code: &str) -> (&'static str, &'static str) {
     match code {
-        "LIJI" => ("Set the Pole", "立極"),
-        "ZHENGMING" => ("Rectification of Names", "正名"),
-        "TIYONG" => ("Substance and Function", "體用"),
-        "BAIMA" => ("The White Horse Is Not a Horse", "白馬非馬"),
-        "CATUSKOTI" => ("The Four Corners", "四句"),
+        "CRITERION" => ("Set the Pole", "立極"),
+        "RECTIFY-NAME" => ("Rectification of Names", "正名"),
+        "SUBSTANCE-FUNCTION" => ("Substance and Function", "體用"),
+        "WHITE-HORSE" => ("The White Horse Is Not a Horse", "白馬非馬"),
+        "FOUR-CORNERS" => ("The Four Corners", "四句"),
         "TOULMIN" => ("Name the Warrant", ""),
-        "PRAMANA" => ("The Means of Knowing", "प्रमाण"),
+        "MEANS-OF-KNOWING" => ("The Means of Knowing", "प्रमाण"),
         "RUNG" => ("Earn the Rung", ""),
-        "ELENCHUS" => ("Socratic Cross-Examination", "ἔλεγχος"),
+        "CROSS-EXAMINE" => ("Socratic Cross-Examination", "ἔλεγχος"),
         "ACH" => ("Analysis of Competing Hypotheses", ""),
-        "PANCAVAYAVA" => ("The Five-Membered Argument", "पञ्चावयव"),
+        "FIVE-MEMBERS" => ("The Five-Membered Argument", "पञ्चावयव"),
         "STEELMAN" => ("Steelman First", ""),
         "DOUBLECRUX" => ("Double Crux", ""),
-        "MACHLOKET" => ("Preserve the Minority", "מחלוקת"),
-        "AUFHEBUNG" => ("Synthesis That Preserves", ""),
+        "PRESERVE-MINORITY" => ("Preserve the Minority", "מחלוקת"),
+        "SYNTHESIS" => ("Synthesis That Preserves", ""),
         "THESEUS" => ("Ship of Theseus — Amend or Supersede", ""),
         "CHESTERTON" => ("Chesterton's Fence", ""),
         "PREMORTEM" => ("Premortem / Inversion", ""),
-        "TRAIRUPYA" => ("The Three Marks of a Valid Reason", "因三相"),
-        "ANUPALABDHI" => ("Non-Perception as a Reason", "不可得因"),
-        "ABHASA" => ("The Semblances of Proof", "似因・似宗"),
-        "ERDI" => ("The Two Truths", "二諦"),
+        "THREE-MARKS" => ("The Three Marks of a Valid Reason", "因三相"),
+        "NON-PERCEPTION" => ("Non-Perception as a Reason", "不可得因"),
+        "SEMBLANCE" => ("The Semblances of Proof", "似因・似宗"),
+        "TWO-TRUTHS" => ("The Two Truths", "二諦"),
         "DUNG" => ("Grounded Extension — Compute, Don't Assert", ""),
-        "GEWU" => (
+        "KNOW-BY-DOING" => (
             "Investigate Each Thing; Knowing Proven in Doing",
             "格物致知・知行合一",
         ),
@@ -210,7 +210,42 @@ identified. {} are catalogued; {} are **enforced** as deterministic gates today,
 /// front matter is prepended, and every backtick-wrapped lens code becomes a link.
 fn doors_page() -> String {
     let mut body = include_str!("../../docs/method/anti-summarization.md").to_owned();
-    // The canonical doc references lenses by their peira code (`ZHENGMING`), because that
+
+    // Routes on their own line: stack each route in the seven-doors table's last column
+    // as a bulleted line. Done BEFORE linkify, on the raw backticked cell, so the comma
+    // inside an English name ("Compute, Don't Assert") is never mistaken for a separator.
+    body = body
+        .lines()
+        .map(|line| {
+            let is_door_row = line
+                .strip_prefix("| ")
+                .and_then(|r| r.chars().next())
+                .is_some_and(|c| c.is_ascii_digit())
+                && line.matches('|').count() == 5;
+            if !is_door_row {
+                return line.to_owned();
+            }
+            let cells: Vec<&str> = line.trim_matches('|').split(" | ").collect();
+            if cells.len() != 4 {
+                return line.to_owned();
+            }
+            let routes = cells[3]
+                .trim()
+                .split(", ")
+                .map(|r| format!("• {r}"))
+                .collect::<Vec<_>>()
+                .join("<br>");
+            format!(
+                "| {} | {} | {} | {routes} |",
+                cells[0].trim(),
+                cells[1].trim(),
+                cells[2].trim()
+            )
+        })
+        .collect::<Vec<_>>()
+        .join("\n");
+
+    // The canonical doc references lenses by their peira code (`RECTIFY-NAME`), because that
     // is the identifier the CLI and packets print. On the site the code is never a label:
     // link text is the English name, and the original script that already follows in the
     // doc stays as etymology. Romanization does not appear.

@@ -1,7 +1,7 @@
 ---
 layout: lens
 title: "Rectification of Names"
-code: "ZHENGMING"
+code: "RECTIFY-NAME"
 script: "正名"
 tradition: "Buddhist"
 phase: Enforced
@@ -12,7 +12,7 @@ nav_exclude: true
 
 # Rectification of Names <span class="script">正名</span>
 
-<p class="lens-meta"><code class="lens-code">ZHENGMING</code> · Buddhist — Madhyamaka and Dignāgan logic · <strong>Enforced — owns a gate</strong></p>
+<p class="lens-meta"><code class="lens-code">RECTIFY-NAME</code> · Buddhist — Madhyamaka and Dignāgan logic · <strong>Enforced — owns a gate</strong></p>
 
 ## The failure it names
 

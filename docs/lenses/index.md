@@ -16,15 +16,15 @@ A gate that fails on a known-bad input, run before the conclusion is trusted.
 
 | Lens | Tradition | peira code |
 |---|---|---|
-| [Non-Perception as a Reason <span class="script">不可得因</span>]({{ '/lenses/anupalabdhi/' | relative_url }}) | Buddhist | `ANUPALABDHI` |
-| [Rectification of Names <span class="script">正名</span>]({{ '/lenses/zhengming/' | relative_url }}) | Buddhist | `ZHENGMING` |
-| [The Four Corners <span class="script">四句</span>]({{ '/lenses/catuskoti/' | relative_url }}) | Buddhist | `CATUSKOTI` |
-| [The Three Marks of a Valid Reason <span class="script">因三相</span>]({{ '/lenses/trairupya/' | relative_url }}) | Buddhist | `TRAIRUPYA` |
-| [Set the Pole <span class="script">立極</span>]({{ '/lenses/liji/' | relative_url }}) | Chinese | `LIJI` |
-| [Substance and Function <span class="script">體用</span>]({{ '/lenses/tiyong/' | relative_url }}) | Chinese | `TIYONG` |
-| [The White Horse Is Not a Horse <span class="script">白馬非馬</span>]({{ '/lenses/baima/' | relative_url }}) | Chinese | `BAIMA` |
+| [Non-Perception as a Reason <span class="script">不可得因</span>]({{ '/lenses/non-perception/' | relative_url }}) | Buddhist | `NON-PERCEPTION` |
+| [Rectification of Names <span class="script">正名</span>]({{ '/lenses/rectify-name/' | relative_url }}) | Buddhist | `RECTIFY-NAME` |
+| [The Four Corners <span class="script">四句</span>]({{ '/lenses/four-corners/' | relative_url }}) | Buddhist | `FOUR-CORNERS` |
+| [The Three Marks of a Valid Reason <span class="script">因三相</span>]({{ '/lenses/three-marks/' | relative_url }}) | Buddhist | `THREE-MARKS` |
+| [Set the Pole <span class="script">立極</span>]({{ '/lenses/criterion/' | relative_url }}) | Chinese | `CRITERION` |
+| [Substance and Function <span class="script">體用</span>]({{ '/lenses/substance-function/' | relative_url }}) | Chinese | `SUBSTANCE-FUNCTION` |
+| [The White Horse Is Not a Horse <span class="script">白馬非馬</span>]({{ '/lenses/white-horse/' | relative_url }}) | Chinese | `WHITE-HORSE` |
 | [Grounded Extension — Compute, Don't Assert]({{ '/lenses/dung/' | relative_url }}) | Formal | `DUNG` |
-| [The Means of Knowing <span class="script">प्रमाण</span>]({{ '/lenses/pramana/' | relative_url }}) | Indian | `PRAMANA` |
+| [The Means of Knowing <span class="script">प्रमाण</span>]({{ '/lenses/means-of-knowing/' | relative_url }}) | Indian | `MEANS-OF-KNOWING` |
 | [Analysis of Competing Hypotheses]({{ '/lenses/ach/' | relative_url }}) | Modern | `ACH` |
 | [Earn the Rung]({{ '/lenses/rung/' | relative_url }}) | Modern | `RUNG` |
 | [Name the Warrant]({{ '/lenses/toulmin/' | relative_url }}) | Modern | `TOULMIN` |
@@ -36,18 +36,18 @@ Specified and sourced, owning no gate; a checklist for what a machine cannot set
 
 | Lens | Tradition | peira code |
 |---|---|---|
-| [The Semblances of Proof <span class="script">似因・似宗</span>]({{ '/lenses/abhasa/' | relative_url }}) | Buddhist | `ABHASA` |
-| [The Two Truths <span class="script">二諦</span>]({{ '/lenses/erdi/' | relative_url }}) | Buddhist | `ERDI` |
-| [Investigate Each Thing; Knowing Proven in Doing <span class="script">格物致知・知行合一</span>]({{ '/lenses/gewu/' | relative_url }}) | Chinese | `GEWU` |
+| [The Semblances of Proof <span class="script">似因・似宗</span>]({{ '/lenses/semblance/' | relative_url }}) | Buddhist | `SEMBLANCE` |
+| [The Two Truths <span class="script">二諦</span>]({{ '/lenses/two-truths/' | relative_url }}) | Buddhist | `TWO-TRUTHS` |
+| [Investigate Each Thing; Knowing Proven in Doing <span class="script">格物致知・知行合一</span>]({{ '/lenses/know-by-doing/' | relative_url }}) | Chinese | `KNOW-BY-DOING` |
 | [Ship of Theseus — Amend or Supersede]({{ '/lenses/theseus/' | relative_url }}) | Greek | `THESEUS` |
-| [Socratic Cross-Examination <span class="script">ἔλεγχος</span>]({{ '/lenses/elenchus/' | relative_url }}) | Greek | `ELENCHUS` |
-| [The Five-Membered Argument <span class="script">पञ्चावयव</span>]({{ '/lenses/pancavayava/' | relative_url }}) | Indian | `PANCAVAYAVA` |
-| [Preserve the Minority <span class="script">מחלוקת</span>]({{ '/lenses/machloket/' | relative_url }}) | Jewish | `MACHLOKET` |
+| [Socratic Cross-Examination <span class="script">ἔλεγχος</span>]({{ '/lenses/cross-examine/' | relative_url }}) | Greek | `CROSS-EXAMINE` |
+| [The Five-Membered Argument <span class="script">पञ्चावयव</span>]({{ '/lenses/five-members/' | relative_url }}) | Indian | `FIVE-MEMBERS` |
+| [Preserve the Minority <span class="script">מחלוקת</span>]({{ '/lenses/preserve-minority/' | relative_url }}) | Jewish | `PRESERVE-MINORITY` |
 | [Bacon's Idols of the Mind]({{ '/lenses/idola/' | relative_url }}) | Modern | `IDOLA` |
 | [Chesterton's Fence]({{ '/lenses/chesterton/' | relative_url }}) | Modern | `CHESTERTON` |
 | [Double Crux]({{ '/lenses/doublecrux/' | relative_url }}) | Modern | `DOUBLECRUX` |
 | [Steelman First]({{ '/lenses/steelman/' | relative_url }}) | Modern | `STEELMAN` |
-| [Synthesis That Preserves]({{ '/lenses/aufhebung/' | relative_url }}) | Modern | `AUFHEBUNG` |
+| [Synthesis That Preserves]({{ '/lenses/synthesis/' | relative_url }}) | Modern | `SYNTHESIS` |
 | [The Asymmetry of Error]({{ '/lenses/blackstone/' | relative_url }}) | Modern | `BLACKSTONE` |
 | [The Dog That Didn't Bark <span class="script">闕文</span>]({{ '/lenses/lacuna/' | relative_url }}) | Modern | `LACUNA` |
 

@@ -84,7 +84,7 @@ pub fn check_prose(text: &str) -> ProseReport {
 /// One catalogue entry, as a caller needs it.
 #[derive(Debug, Clone, Serialize, schemars::JsonSchema)]
 pub struct LensEntry {
-    /// Stable id, e.g. `TRAIRUPYA`.
+    /// Stable id, e.g. `THREE-MARKS`.
     pub id: &'static str,
     /// Display name, with the original term.
     pub name: &'static str,
@@ -573,7 +573,7 @@ fn contains_word(haystack: &str, word: &str) -> bool {
 }
 
 fn infer_quantifier(proposition: &str) -> Inferred {
-    // A universal determiner makes the claim range over a class — the BAIMA question.
+    // A universal determiner makes the claim range over a class — the WHITE-HORSE question.
     const UNIVERSAL: [&str; 5] = ["every", "all", "each", "any", "no"];
     let lower = proposition.to_lowercase();
     if let Some(w) = UNIVERSAL.iter().find(|w| contains_word(&lower, w)) {
@@ -939,9 +939,9 @@ it claims an examination nothing performs"
     /// One entry by id, and an unknown id yields nothing rather than something.
     #[test]
     fn an_unknown_lens_id_returns_nothing_not_a_placeholder() {
-        let one = catalogue(Some("TRAIRUPYA")).lenses;
+        let one = catalogue(Some("THREE-MARKS")).lenses;
         assert_eq!(one.len(), 1);
-        assert_eq!(one[0].id, "TRAIRUPYA");
+        assert_eq!(one[0].id, "THREE-MARKS");
         assert!(one[0].gates.contains(&"PEIR-HETU-UNDIAGNOSTIC"));
 
         assert!(
@@ -978,7 +978,7 @@ that does not exist, cited as though it does"
 
     /// THE constraint-#2 test, end to end: a gate that reached no verdict must arrive as
     /// its own finding, never collapsed into a pass. `c-overclaim` produces a real
-    /// `PEIR-GATE-UNASSESSED` (via ZHENGMING), so this rides the whole path from graph to
+    /// `PEIR-GATE-UNASSESSED` (via RECTIFY-NAME), so this rides the whole path from graph to
     /// serialisable report.
     #[test]
     fn examine_an_overclaim_is_evidence_pending_and_the_no_verdict_code_survives() {

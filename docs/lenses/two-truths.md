@@ -1,7 +1,7 @@
 ---
 layout: lens
 title: "The Two Truths"
-code: "ERDI"
+code: "TWO-TRUTHS"
 script: "二諦"
 tradition: "Buddhist"
 phase: Catalogued
@@ -12,7 +12,7 @@ nav_exclude: true
 
 # The Two Truths <span class="script">二諦</span>
 
-<p class="lens-meta"><code class="lens-code">ERDI</code> · Buddhist — Madhyamaka and Dignāgan logic · <strong>Catalogued — a reading, owns no gate</strong></p>
+<p class="lens-meta"><code class="lens-code">TWO-TRUTHS</code> · Buddhist — Madhyamaka and Dignāgan logic · <strong>Catalogued — a reading, owns no gate</strong></p>
 
 ## The failure it names
 

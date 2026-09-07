@@ -1,7 +1,7 @@
 ---
 layout: lens
 title: "Non-Perception as a Reason"
-code: "ANUPALABDHI"
+code: "NON-PERCEPTION"
 script: "不可得因"
 tradition: "Buddhist"
 phase: Enforced
@@ -12,7 +12,7 @@ nav_exclude: true
 
 # Non-Perception as a Reason <span class="script">不可得因</span>
 
-<p class="lens-meta"><code class="lens-code">ANUPALABDHI</code> · Buddhist — Madhyamaka and Dignāgan logic · <strong>Enforced — owns a gate</strong></p>
+<p class="lens-meta"><code class="lens-code">NON-PERCEPTION</code> · Buddhist — Madhyamaka and Dignāgan logic · <strong>Enforced — owns a gate</strong></p>
 
 ## The failure it names
 

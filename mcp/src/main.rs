@@ -38,7 +38,7 @@ struct CheckProseArgs {
 
 #[derive(Deserialize, schemars::JsonSchema, Default)]
 struct LensArgs {
-    /// A lens id such as `TRAIRUPYA`. Omit for the whole catalogue.
+    /// A lens id such as `THREE-MARKS`. Omit for the whole catalogue.
     id: Option<String>,
 }
 

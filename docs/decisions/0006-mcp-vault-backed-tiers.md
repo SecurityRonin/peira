@@ -116,8 +116,8 @@ written to the vault.
 The adoption barrier is that nobody hand-writes
 `supports: ["c1 grade=G2 by=albert via=perception"]`. `propose` reads prose the author
 already wrote and emits the skeleton of a claim node — because **a claim's required fields
-are the enforced gates in reverse** (`warrant`→TOULMIN, `aspect`→TIYONG,
-`quantifier`→BAIMA, `causal_rung`→RUNG, `uses_term`→ZHENGMING, `boundaries`/`falsifier`→
+are the enforced gates in reverse** (`warrant`→TOULMIN, `aspect`→SUBSTANCE-FUNCTION,
+`quantifier`→WHITE-HORSE, `causal_rung`→RUNG, `uses_term`→RECTIFY-NAME, `boundaries`/`falsifier`→
 RUNG/PREMORTEM). Filling the blanks it hands back is what turns the draft into a claim
 that passes, and each blank is labelled with the gate that will demand it.
 
