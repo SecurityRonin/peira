@@ -17,5 +17,6 @@
 **Sources:**
 - Judea Pearl, The Book of Why (2018), ch. 1 — the ladder of causation
 - Austin Bradford Hill, Proc. R. Soc. Med. 58 (1965) 295
+- <https://plato.stanford.edu/entries/causal-models/>
 
 Run `peira lens RUNG` for this entry in the tool.

@@ -40,5 +40,6 @@ Two disciplines meet. Karl Popper (Logik der Forschung, 1934) made falsifiabilit
 
 - Gary Klein, Harvard Business Review, September 2007, "Performing a Project Premortem"
 - Karl Popper, Logik der Forschung (1934), §6
+- <https://plato.stanford.edu/entries/popper/>
 
 <p class="back"><a href="{{ '/lenses/' | relative_url }}">← All lenses</a> · <a href="{{ '/doors/' | relative_url }}">The seven doors</a></p>

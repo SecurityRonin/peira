@@ -40,5 +40,6 @@ These block a citation packet deterministically — no model in the loop:
 
 - 周敦頤《太極圖說》: 聖人定之以中正仁義而主靜，立人極焉
 - <https://ctext.org/wiki.pl?if=en&chapter=592302>
+- <https://iep.utm.edu/neo-confucian-philosophy/>
 
 <p class="back"><a href="{{ '/lenses/' | relative_url }}">← All lenses</a> · <a href="{{ '/doors/' | relative_url }}">The seven doors</a></p>

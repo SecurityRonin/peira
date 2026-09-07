@@ -17,5 +17,6 @@
 **Sources:**
 - 周敦頤《太極圖說》: 聖人定之以中正仁義而主靜，立人極焉
 - <https://ctext.org/wiki.pl?if=en&chapter=592302>
+- <https://iep.utm.edu/neo-confucian-philosophy/>
 
 Run `peira lens CRITERION` for this entry in the tool.

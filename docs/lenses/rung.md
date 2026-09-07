@@ -41,5 +41,6 @@ Judea Pearl's ladder of causation (The Book of Why, 2018) has three rungs — as
 
 - Judea Pearl, The Book of Why (2018), ch. 1 — the ladder of causation
 - Austin Bradford Hill, Proc. R. Soc. Med. 58 (1965) 295
+- <https://plato.stanford.edu/entries/causal-models/>
 
 <p class="back"><a href="{{ '/lenses/' | relative_url }}">← All lenses</a> · <a href="{{ '/doors/' | relative_url }}">The seven doors</a></p>

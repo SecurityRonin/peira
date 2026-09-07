@@ -17,5 +17,6 @@
 **Sources:**
 - Gary Klein, Harvard Business Review, September 2007, "Performing a Project Premortem"
 - Karl Popper, Logik der Forschung (1934), §6
+- <https://plato.stanford.edu/entries/popper/>
 
 Run `peira lens PREMORTEM` for this entry in the tool.

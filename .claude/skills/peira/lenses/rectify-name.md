@@ -18,5 +18,6 @@
 - 《金剛般若波羅蜜經》: 所謂佛法者，即非佛法，是名佛法
 - [論語·子路: 必也正名乎](https://ctext.org/analects/zi-lu)
 - 陳那 Dignāga, 集量論 Pramāṇasamuccaya ch. 5 (遮詮/anyāpoha) — a term excludes what it is not, which is the 即非 moment reached from Buddhist epistemology; `not_essence` is that obligation mechanised, so apoha earns no separate entry
+- <https://plato.stanford.edu/entries/confucius/>
 
 Run `peira lens RECTIFY-NAME` for this entry in the tool.

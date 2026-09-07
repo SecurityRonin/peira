@@ -35,5 +35,6 @@ a claim carried forward from a source survives an application test — predict w
 - 朱熹《四書章句集注・大學章句》: 致知在格物
 - 王陽明《傳習錄》: 知行合一
 - <https://ctext.org/liji/da-xue>
+- <https://plato.stanford.edu/entries/wang-yangming/>
 
 <p class="back"><a href="{{ '/lenses/' | relative_url }}">← All lenses</a> · <a href="{{ '/doors/' | relative_url }}">The seven doors</a></p>

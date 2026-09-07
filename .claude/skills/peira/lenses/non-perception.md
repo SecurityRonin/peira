@@ -18,5 +18,6 @@
 - Dharmakīrti, Nyāyabindu II.12–20 (the dṛśya restriction at II.13); tr. Th. Stcherbatsky, Buddhist Logic vol. II (1930)
 - Dharmakīrti, Pramāṇavārttika, svārthānumāna ch.; ed. Gnoli (Rome 1960)
 - 呂澂《因明入正理論講解》中華書局 (1983) — the received Chinese terminology
+- <https://plato.stanford.edu/entries/dharmakiirti/>
 
 Run `peira lens NON-PERCEPTION` for this entry in the tool.

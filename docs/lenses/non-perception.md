@@ -41,5 +41,6 @@ Dharmakīrti (7th c.) admits non-perception (anupalabdhi) as a way to establish 
 - Dharmakīrti, Nyāyabindu II.12–20 (the dṛśya restriction at II.13); tr. Th. Stcherbatsky, Buddhist Logic vol. II (1930)
 - Dharmakīrti, Pramāṇavārttika, svārthānumāna ch.; ed. Gnoli (Rome 1960)
 - 呂澂《因明入正理論講解》中華書局 (1983) — the received Chinese terminology
+- <https://plato.stanford.edu/entries/dharmakiirti/>
 
 <p class="back"><a href="{{ '/lenses/' | relative_url }}">← All lenses</a> · <a href="{{ '/doors/' | relative_url }}">The seven doors</a></p>
