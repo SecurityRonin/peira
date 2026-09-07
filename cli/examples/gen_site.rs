@@ -421,7 +421,7 @@ Reach for that before you reach for more evidence.
 ## Honest failure
 
 If a claim cannot be rescued, say so and write a `dissent` node preserving it and
-its best argument. Rejection never deletes — that is the machloket rule, and the
+its best argument. Rejection never deletes — that is the מחלוקת rule, and the
 reasoning that rejected something is worth as much later as the conclusion.
 "#;
 
