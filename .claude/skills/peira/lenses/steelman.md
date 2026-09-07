@@ -10,6 +10,8 @@
 
 **Worked example:** State the opposing case so well that its holder thanks you, before saying a word against it.
 
+**In the tradition:** Anatol Rapoport's rules for criticism, popularised by Daniel Dennett (Intuition Pumps and Other Tools for Thinking, 2013), begin: state your opponent's position so clearly and fairly that they say "thank you, I wish I'd put it that way" — and only then criticise. The steelman is the straw man's opposite. The lens keeps it: an attack on a position must first restate it in a form its holder would accept.
+
 **Sources:**
 - Daniel Dennett, Intuition Pumps and Other Tools for Thinking (2013), ch. 3
 - Anatol Rapoport, Fights, Games and Debates (1960)

@@ -26,6 +26,10 @@ the exported safe statement must be entailed by the grounded extension
 
 The conventional register (世俗諦) is what may be said aloud; the ultimate register (勝義諦) is the fully-bounded graph. Court Mode is the disciplined translation between them, and it may only ever lose strength, never gain it.
 
+## In the tradition
+
+Nāgārjuna, Mūlamadhyamakakārikā 24.8–10: the Buddha's teaching rests on two truths — the conventional (saṃvṛti-satya), what may be said in ordinary terms, and the ultimate (paramārtha-satya), how things finally stand — and the ultimate is reached only by way of the conventional. peira's Court Mode is exactly that translation, one-directional: the statement said aloud may only lose strength against the fully-bounded graph, never gain it.
+
 ## Sources
 
 - Nāgārjuna, Mūlamadhyamakakārikā 24.8–24.10

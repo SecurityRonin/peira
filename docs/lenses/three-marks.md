@@ -34,6 +34,10 @@ These block a citation packet deterministically — no model in the loop:
 
 The classic inference — "the hill has fire, because it has smoke" — holds because smoke is absent wherever fire is absent (no fire, no smoke). "He has a fever, so he has the flu" fails the same test: fever attends a hundred illnesses, present even where there is no flu (異品), so it discriminates nothing — 共不定, cell 1 of the 九句因.
 
+## In the tradition
+
+Dignāga's trairūpya sets the three marks a reason (hetu) must bear to prove anything: present in the case at issue (pakṣadharmatā), present in at least one similar case (sapakṣa), and absent from every dissimilar case (vipakṣa). The third is load-bearing — a reason that also occurs where the thesis is false proves nothing — which Dignāga mapped exhaustively in the 九句因 (Hetucakra, the wheel of reasons). The lens enforces it: evidence common to a claim and its rival is not diagnostic.
+
 ## Sources
 
 - 商羯羅主《因明入正理論》玄奘譯 (647), T32n1630: 「因有三相…謂遍是宗法性、同品定有性、異品遍無性」

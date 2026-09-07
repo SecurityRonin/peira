@@ -26,6 +26,10 @@ a synthesis node must `sublates` both parents and state what it keeps from each
 
 Aufheben carries all three senses at once — to cancel, to preserve, to lift up. A synthesis citing only one parent has merely picked a side.
 
+## In the tradition
+
+Hegel's aufheben fuses three senses at once — to cancel, to preserve, and to lift up — so a sublation (Aufhebung) negates a stage's limitation while keeping its content and raising it into a new unity, not splitting the difference. (The tidy "thesis–antithesis–synthesis" triad is not Hegel's: it comes from Fichte, was codified by Chalybäus in 1843 after Hegel's death, and Hegel rejected such schematisation.) The lens keeps the demand: a synthesis must carry forward what it claims to reconcile from both parents, not quietly drop one.
+
 ## Sources
 
 - Hegel, Wissenschaft der Logik, Bk I §§185–188

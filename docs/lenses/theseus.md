@@ -26,6 +26,10 @@ editing an accepted claim's proposition forces an explicit amend-or-supersede de
 
 Theseus's ship has every plank replaced yet keeps its name and its berth; whether it is still the same ship cannot be settled without a rule for identity across change. A claim edited past its evidence is that ship — the id and every citation stay put while the proposition drifts. When the IAU redefined "planet" in 2006 and Pluto fell out, every earlier "nine planets" silently came to mean something its readers never wrote.
 
+## In the tradition
+
+Plutarch (Life of Theseus 23.1) reports the ship the Athenians preserved by replacing each decayed plank, and the philosophers' question: is it the same ship? Hobbes sharpened it — gather the discarded planks, rebuild a second ship, and which is Theseus's? The puzzle is identity persisting under change while the name stays fixed. The lens keeps that edge: editing a claim's proposition while its id and every citation stay put is silent identity drift, and forces an amend-or-supersede choice.
+
 ## Sources
 
 - Plutarch, Life of Theseus 23.1

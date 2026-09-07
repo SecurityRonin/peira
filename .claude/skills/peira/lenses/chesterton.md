@@ -10,6 +10,8 @@
 
 **Worked example:** Before the fence comes down, the reason it went up must be stated — not because the reason is necessarily good, but because not knowing it is not an argument.
 
+**In the tradition:** G. K. Chesterton's parable (The Thing, 1929, "The Drift from Domesticity"): if a fence stands across a road and a reformer cannot see why, the answer is not "clear it away" but "go and find out why it was put there" — only then may it come down. Not knowing the reason is not an argument against it. The lens keeps the rule: removing or superseding something requires first recovering the reason it existed.
+
 **Sources:**
 - G. K. Chesterton, The Thing (1929), ch. 4 "The Drift from Domesticity"
 
