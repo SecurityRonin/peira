@@ -950,7 +950,7 @@ mod meta_tests {
     /// whether the gates work. This is where that evidence lives.
     #[test]
     fn the_declared_characteristics_reach_the_caller() {
-        use peira_core::{parse_node, Edge, EdgeKind, NodeId, Pramana};
+        use peira_core::{parse_node, Edge, EdgeKind, Means, NodeId};
         let mut g = Graph::new();
         for src in [
             "---\nid: c1\ntype: claim\ntitle: The binary was executed\n---\n",
@@ -960,7 +960,7 @@ mod meta_tests {
         }
         g.insert_edge(
             Edge::new(NodeId::new("o1"), NodeId::new("c1"), EdgeKind::Supports)
-                .via(Pramana::Inference),
+                .via(Means::Inference),
         );
 
         // Both reach NO VERDICT, and Unassessed is never a pass — so what must arrive

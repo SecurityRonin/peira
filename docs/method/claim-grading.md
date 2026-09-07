@@ -32,8 +32,8 @@ at once, and a scheme that forces one tag makes you drop a fact to satisfy it.
 | `[WAS-UNVERIFIED — CLOSED]` | formerly open, since resolved; retained for audit only |
 
 **peira separates the two axes but does NOT implement these tags.** An earlier draft of this
-document claimed the first axis "rides on the edge as `pramāṇa`" and the second "is computed". Both
-halves were false and are retracted. `Pramana` has four values — perception, inference, comparison,
+document claimed the first axis "rides on the edge as `means`" and the second "is computed". Both
+halves were false and are retracted. `Means` has four values — perception, inference, comparison,
 testimony — not the three tags above, and it is optional on an edge; nothing requires a claim to
 carry one. The states peira computes are `review_ready`, `contested` and `evidence_pending`, none of
 which is `[UNVERIFIED]`, `[NOT ESTABLISHED]` or `[WAS-UNVERIFIED — CLOSED]`.

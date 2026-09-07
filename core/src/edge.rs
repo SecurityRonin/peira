@@ -268,45 +268,45 @@ impl fmt::Display for Grade {
     }
 }
 
-/// How a knowing was arrived at — the Nyāya means of knowledge (pramāṇa).
+/// How a knowing was arrived at — its means of knowing.
 ///
 /// Typing evidence this way is what stops testimony being filed as observation.
 /// It is also the mechanical form of the manifesto's rule that independent tools
-/// are not automatically independent evidence: two parsers agreeing is *śabda*
+/// are not automatically independent evidence: two parsers agreeing is testimony
 /// corroboration, not perception, and it cannot buy a grade perception would earn.
 #[non_exhaustive]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum Pramana {
-    /// Pratyakṣa — direct perception, including a reading taken off an instrument.
+pub enum Means {
+    /// Direct perception, including a reading taken off an instrument.
     Perception,
-    /// Anumāna — inference from what was perceived.
+    /// Inference from what was perceived.
     Inference,
-    /// Upamāna — comparison or analogy.
+    /// Comparison or analogy.
     Comparison,
-    /// Śabda — testimony: documentation, a write-up, another tool's report.
+    /// Testimony: documentation, a write-up, another tool's report.
     Testimony,
 }
 
-impl Pramana {
+impl Means {
     /// The frontmatter spelling.
     #[must_use]
     pub fn as_str(self) -> &'static str {
         match self {
-            Pramana::Perception => "perception",
-            Pramana::Inference => "inference",
-            Pramana::Comparison => "comparison",
-            Pramana::Testimony => "testimony",
+            Means::Perception => "perception",
+            Means::Inference => "inference",
+            Means::Comparison => "comparison",
+            Means::Testimony => "testimony",
         }
     }
 
-    /// Parse a means of knowledge, accepting both the English and Sanskrit names.
+    /// Parse a means of knowing, accepting both the English and the romanized Sanskrit names.
     #[must_use]
     pub fn from_str_opt(s: &str) -> Option<Self> {
         Some(match s {
-            "perception" | "pratyaksa" | "pratyakṣa" => Pramana::Perception,
-            "inference" | "anumana" | "anumāna" => Pramana::Inference,
-            "comparison" | "upamana" | "upamāna" => Pramana::Comparison,
-            "testimony" | "sabda" | "śabda" => Pramana::Testimony,
+            "perception" | "pratyaksa" | "pratyakṣa" => Means::Perception,
+            "inference" | "anumana" | "anumāna" => Means::Inference,
+            "comparison" | "upamana" | "upamāna" => Means::Comparison,
+            "testimony" | "sabda" | "śabda" => Means::Testimony,
             _ => return None,
         })
     }
@@ -320,14 +320,14 @@ impl Pramana {
     #[must_use]
     pub fn grade_ceiling(self) -> Grade {
         match self {
-            Pramana::Perception => Grade::G3,
-            Pramana::Inference => Grade::G2,
-            Pramana::Comparison | Pramana::Testimony => Grade::G1,
+            Means::Perception => Grade::G3,
+            Means::Inference => Grade::G2,
+            Means::Comparison | Means::Testimony => Grade::G1,
         }
     }
 }
 
-impl fmt::Display for Pramana {
+impl fmt::Display for Means {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str(self.as_str())
     }
@@ -353,7 +353,7 @@ pub struct Edge {
     /// A grade anyone — including a model — may suggest. Carries no authority.
     pub grade_proposed: Option<Grade>,
     /// How the supporting knowing was arrived at, when this is an evidence edge.
-    pub pramana: Option<Pramana>,
+    pub means: Option<Means>,
 }
 
 impl Edge {
@@ -366,7 +366,7 @@ impl Edge {
             kind,
             graded: None,
             grade_proposed: None,
-            pramana: None,
+            means: None,
         }
     }
 
@@ -386,8 +386,8 @@ impl Edge {
 
     /// Declare how the knowing was arrived at.
     #[must_use]
-    pub fn via(mut self, pramana: Pramana) -> Self {
-        self.pramana = Some(pramana);
+    pub fn via(mut self, means: Means) -> Self {
+        self.means = Some(means);
         self
     }
 
@@ -408,9 +408,9 @@ impl Edge {
     /// An ungraded edge, or one with no declared pramāṇa, is not over-graded — it
     /// is *unassessed*, which the gates report separately. Silence is never a pass.
     #[must_use]
-    pub fn exceeds_pramana_ceiling(&self) -> bool {
-        match (self.grade(), self.pramana) {
-            (Some(grade), Some(pramana)) => grade > pramana.grade_ceiling(),
+    pub fn exceeds_means_ceiling(&self) -> bool {
+        match (self.grade(), self.means) {
+            (Some(grade), Some(means)) => grade > means.grade_ceiling(),
             _ => false,
         }
     }
@@ -427,10 +427,10 @@ mod published_pramana_spellings {
     #[test]
     fn every_pramana_token_is_pinned_to_its_published_literal() {
         for (p, spelling) in [
-            (Pramana::Perception, "perception"),
-            (Pramana::Inference, "inference"),
-            (Pramana::Comparison, "comparison"),
-            (Pramana::Testimony, "testimony"),
+            (Means::Perception, "perception"),
+            (Means::Inference, "inference"),
+            (Means::Comparison, "comparison"),
+            (Means::Testimony, "testimony"),
         ] {
             assert_eq!(
                 p.as_str(),
@@ -545,44 +545,40 @@ mod tests {
 
     #[test]
     fn testimony_cannot_carry_a_perception_grade() {
-        let e = edge()
-            .via(Pramana::Testimony)
-            .graded_by(Grade::G3, "albert");
+        let e = edge().via(Means::Testimony).graded_by(Grade::G3, "albert");
         assert!(
-            e.exceeds_pramana_ceiling(),
+            e.exceeds_means_ceiling(),
             "two tools agreeing is corroboration, not perception"
         );
     }
 
     #[test]
     fn perception_may_carry_g3() {
-        let e = edge()
-            .via(Pramana::Perception)
-            .graded_by(Grade::G3, "albert");
-        assert!(!e.exceeds_pramana_ceiling());
+        let e = edge().via(Means::Perception).graded_by(Grade::G3, "albert");
+        assert!(!e.exceeds_means_ceiling());
     }
 
     #[test]
     fn no_single_edge_may_reach_g4_whatever_its_pramana() {
-        for pramana in [
-            Pramana::Perception,
-            Pramana::Inference,
-            Pramana::Comparison,
-            Pramana::Testimony,
+        for means in [
+            Means::Perception,
+            Means::Inference,
+            Means::Comparison,
+            Means::Testimony,
         ] {
-            let e = edge().via(pramana).graded_by(Grade::G4, "albert");
+            let e = edge().via(means).graded_by(Grade::G4, "albert");
             assert!(
-                e.exceeds_pramana_ceiling(),
-                "G4 needs independent convergent lines, a graph property — {pramana} must not reach it"
+                e.exceeds_means_ceiling(),
+                "G4 needs independent convergent lines, a graph property — {means} must not reach it"
             );
         }
     }
 
     #[test]
     fn an_ungraded_edge_is_unassessed_not_passing() {
-        let e = edge().via(Pramana::Testimony);
+        let e = edge().via(Means::Testimony);
         assert!(
-            !e.exceeds_pramana_ceiling(),
+            !e.exceeds_means_ceiling(),
             "unassessed is not a violation — but it is also not a pass, which the gates report"
         );
         assert_eq!(e.grade(), None);
@@ -645,35 +641,31 @@ mod tests {
     #[test]
     fn pramana_accepts_english_and_sanskrit_including_diacritics() {
         for (input, expected) in [
-            ("perception", Pramana::Perception),
-            ("pratyaksa", Pramana::Perception),
-            ("pratyakṣa", Pramana::Perception),
-            ("inference", Pramana::Inference),
-            ("anumana", Pramana::Inference),
-            ("anumāna", Pramana::Inference),
-            ("comparison", Pramana::Comparison),
-            ("upamana", Pramana::Comparison),
-            ("upamāna", Pramana::Comparison),
-            ("testimony", Pramana::Testimony),
-            ("sabda", Pramana::Testimony),
-            ("śabda", Pramana::Testimony),
+            ("perception", Means::Perception),
+            ("pratyaksa", Means::Perception),
+            ("pratyakṣa", Means::Perception),
+            ("inference", Means::Inference),
+            ("anumana", Means::Inference),
+            ("anumāna", Means::Inference),
+            ("comparison", Means::Comparison),
+            ("upamana", Means::Comparison),
+            ("upamāna", Means::Comparison),
+            ("testimony", Means::Testimony),
+            ("sabda", Means::Testimony),
+            ("śabda", Means::Testimony),
         ] {
-            assert_eq!(
-                Pramana::from_str_opt(input),
-                Some(expected),
-                "input {input}"
-            );
+            assert_eq!(Means::from_str_opt(input), Some(expected), "input {input}");
         }
-        assert_eq!(Pramana::from_str_opt("revelation"), None);
+        assert_eq!(Means::from_str_opt("revelation"), None);
     }
 
     #[test]
     fn every_pramana_renders_its_name() {
         for p in [
-            Pramana::Perception,
-            Pramana::Inference,
-            Pramana::Comparison,
-            Pramana::Testimony,
+            Means::Perception,
+            Means::Inference,
+            Means::Comparison,
+            Means::Testimony,
         ] {
             assert_eq!(p.to_string(), p.as_str());
         }
@@ -682,11 +674,11 @@ mod tests {
     #[test]
     fn the_ceiling_ordering_reflects_the_epistemology() {
         // Perception outranks inference, which outranks the two second-hand routes.
-        assert!(Pramana::Perception.grade_ceiling() > Pramana::Inference.grade_ceiling());
-        assert!(Pramana::Inference.grade_ceiling() > Pramana::Testimony.grade_ceiling());
+        assert!(Means::Perception.grade_ceiling() > Means::Inference.grade_ceiling());
+        assert!(Means::Inference.grade_ceiling() > Means::Testimony.grade_ceiling());
         assert_eq!(
-            Pramana::Comparison.grade_ceiling(),
-            Pramana::Testimony.grade_ceiling()
+            Means::Comparison.grade_ceiling(),
+            Means::Testimony.grade_ceiling()
         );
     }
 
@@ -694,7 +686,7 @@ mod tests {
     fn an_edge_with_a_grade_but_no_pramana_is_not_flagged_as_over_graded() {
         let e = edge().graded_by(Grade::G4, "albert");
         assert!(
-            !e.exceeds_pramana_ceiling(),
+            !e.exceeds_means_ceiling(),
             "with no declared means of knowing there is nothing to compare against; \
 the gates report that separately as unassessed"
         );

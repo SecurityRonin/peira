@@ -15,17 +15,17 @@ implementation reporting twice.
 
 ## Decision
 
-Type every evidence edge by the Nyāya means of valid knowledge, and cap the grade it may
+Type every evidence edge by its means of knowing, and cap the grade it may
 carry:
 
-| pramāṇa | ceiling |
+| means of knowing | ceiling |
 |---|---|
-| pratyakṣa — perception, including an instrument reading | `G3` |
-| anumāna — inference | `G2` |
-| upamāna — comparison | `G1` |
-| śabda — testimony, including another tool's report | `G1` |
+| perception — including an instrument reading | `G3` |
+| inference | `G2` |
+| comparison | `G1` |
+| testimony — including another tool's report | `G1` |
 
-**No single edge reaches `G4` under any pramāṇa**, because G4 requires multiple
+**No single edge reaches `G4` under any means of knowing**, because G4 requires multiple
 materially independent convergent lines — a property of the graph, not of one piece of
 evidence.
 
@@ -41,7 +41,7 @@ linked by a `duplicates` edge.
   quietly deleted. No graph operation computes convergence, so nothing EARNS a G4; and the
   loader constructs a settled G4 edge directly from `grade=G4 by=…`, so the only G4 the
   system can hold is an asserted one. What the ceiling actually does is refuse G4 to any
-  single edge that declares a pramāṇa — no pramāṇa's ceiling reaches it. See
+  single edge that declares a means of knowing — no means-of-knowing ceiling reaches it. See
   [`../architecture.md`](../architecture.md).
-- An edge with no declared pramāṇa is *unassessed*, which the gates report separately and
+- An edge with no declared means of knowing is *unassessed*, which the gates report separately and
   which never counts as a pass.

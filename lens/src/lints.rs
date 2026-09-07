@@ -1605,7 +1605,7 @@ not a finding",
 /// The sibling of [`unreviewed_grades`] one step earlier: that catches a grade
 /// PROPOSED and never settled, this catches an edge nobody graded at all. Until now
 /// an ungraded, unattributed edge supported promotion exactly as effectively as
-/// reviewed direct perception, so `Grade` and `Pramana` bound only authors who chose
+/// reviewed direct perception, so `Grade` and `Means` bound only authors who chose
 /// to be bound — the apparatus was inert unless volunteered into.
 ///
 /// Claims always; anything else when something leans on it. Support AND `depends_on`

@@ -7,7 +7,7 @@ nav_order: 1
 # peira
 
 **A knowledge system that refuses to promote a claim you have not examined** — with gates
-drawn from Socratic elenchus, the Diamond Sutra, Nyāya, Madhyamaka and the causal ladder.
+drawn from Socratic ἔλεγχος, the 金剛經, classical Indian logic, 中觀 and the causal ladder.
 
 > Care is not a control. A control is something that can go red, and it must be shown to do so.
 
