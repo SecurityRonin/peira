@@ -331,9 +331,9 @@ pub static CATALOG: &[Lens] = &[
             code: gates::CRITERION_UNDECLARED,
             check: gates::criterion_declared,
         }],
-        worked_example: "\"…sits in a directory commonly used to stage malware\" calls a path \
-suspicious without ever stating the standard of suspicion, so the reader cannot tell whether \
-%TEMP% qualifies by frequency, by policy, or by the author's intuition.",
+        worked_example: "\"A healthy breakfast\" names no standard — healthy for blood sugar, for \
+weight, or for a day's hard labour? Until the pole is set, the word carries the judgement and the \
+reader cannot tell what would count against it.",
         sources: &[
             "周敦頤《太極圖說》: 聖人定之以中正仁義而主靜，立人極焉",
             "https://ctext.org/wiki.pl?if=en&chapter=592302",
@@ -353,9 +353,10 @@ stipulated",
             code: gates::TERM_UNSTIPULATED,
             check: gates::key_terms_stipulated,
         }],
-        worked_example: "\"execution\" is used as though self-evident. The Diamond Sutra form \
-makes the three moments explicit: 所謂「執行」— what is called execution; 即非「執行」— the \
-artifact is not execution; 是名「執行」— it is conventionally named execution, under stated bounds.",
+        worked_example: "Is a tomato a fruit? Botany says yes, the kitchen says no, and Nix v. \
+Hedden (1893) had the US Supreme Court call it a vegetable for tariff law. 所謂「水果」— what is \
+called fruit; 即非「水果」— no one thing answers to the bare word; 是名「水果」— it is fruit only \
+under a stated sense.",
         sources: &[
             "《金剛般若波羅蜜經》: 所謂佛法者，即非佛法，是名佛法",
             "https://ctext.org/analects/zi-lu (論語·子路: 必也正名乎)",
@@ -383,9 +384,9 @@ evidence alone cannot license it",
             code: gates::FUNCTION_AS_SUBSTANCE,
             check: gates::substance_not_from_function_alone,
         }],
-        worked_example: "\"Amcache is an execution artifact\" (substance) resting only on \
-\"Amcache recorded this path\" (function). The record is a thing the artifact did; the claim is \
-about what it is.",
+        worked_example: "A smoke alarm sounding is what the device did; \"there is a fire\" is a \
+claim about what is — and burnt toast sets it off just as well. The alarm reports its function; \
+that a fire exists is a substance claim the sound alone does not carry.",
         sources: &[
             "程頤《易傳序》: 體用一源，顯微無間",
             "https://plato.stanford.edu/entries/neo-confucianism/",
@@ -403,9 +404,9 @@ about what it is.",
             code: gates::CLASS_EXTENSION_UNDECLARED,
             check: gates::class_extension_declared,
         }],
-        worked_example: "\"Amcache entries indicate execution\" quantifies over every entry, \
-having examined one. Gongsun Long's point is that the class and the qualified subclass are not \
-interchangeable, however natural the slide feels.",
+        worked_example: "One white horse was examined, and the claim is made of horses at large. \
+公孫龍's 白馬非馬 turns on exactly this: \"white horse\" and \"horse\" have different extensions, so \
+what holds of the qualified subclass need not hold of the class, however natural the plural feels.",
         sources: &[
             "《公孫龍子·白馬論》: 白馬非馬",
             "https://plato.stanford.edu/entries/school-names/",
@@ -424,8 +425,9 @@ have been stated",
             code: gates::CORNERS_UNADDRESSED,
             check: gates::four_corners_addressed,
         }],
-        worked_example: "\"executed / not executed\" omits the corner that actually fits an \
-Amcache record: catalogued without execution — neither cleanly one nor the other.",
+        worked_example: "\"Is light a wave or a particle?\" forces two corners, and each is wrong \
+alone — the physics needed the third: it is both. 四句 keeps all four (is, is-not, both, neither) \
+open until the question earns a collapse.",
         sources: &[
             "Nāgārjuna, Mūlamadhyamakakārikā 1.1, 18.8",
             "https://plato.stanford.edu/entries/nagarjuna/",
@@ -444,8 +446,9 @@ them never is",
             code: gates::WARRANT_MISSING,
             check: gates::warrant_present,
         }],
-        worked_example: "From \"the hive holds this path\" to \"the program ran\" there is an \
-unwritten rule licensing the step. Written down, it is visibly false.",
+        worked_example: "Toulmin's own case: from \"Harry was born in Bermuda\" to \"Harry is a \
+British subject\" the step rides on an unwritten warrant — the law that a Bermudan is a British \
+subject. Written down, a warrant can be checked or shown false; left unwritten, it just works.",
         sources: &[
             "Stephen Toulmin, The Uses of Argument (1958), ch. 3",
             "https://plato.stanford.edu/entries/reasoning-defeasible/",
@@ -464,9 +467,9 @@ independence",
             code: gates::GRADE_EXCEEDS_MEANS,
             check: gates::grades_within_means_ceiling,
         }],
-        worked_example: "Two parsers agreeing on a hive is śabda corroboration, not pratyakṣa. \
-If they vendor the same decoding library they are not independent at all, and no count of them \
-reaches G4.",
+        worked_example: "Two newspapers running the same wire story are śabda — testimony — not \
+two eyes on the event (pratyakṣa). Sharing one source, they are a single line of evidence however \
+many mastheads carry it, and no tally of them reaches direct knowledge.",
         sources: &[
             "Nyāya Sūtra 1.1.3 (pratyakṣa, anumāna, upamāna, śabda)",
             "https://plato.stanford.edu/entries/epistemology-india/",
@@ -492,9 +495,9 @@ it; every claim declares its boundaries",
                 check: gates::boundaries_declared,
             },
         ],
-        worked_example: "\"This Amcache entry proves execution\" is a rung-3 assertion resting \
-on rung-1 data, with no Windows build named. Nothing was intervened on; nothing was compared \
-against a world where the file was only copied.",
+        worked_example: "Ice-cream sales and drownings rise together, but \"ice cream causes \
+drowning\" is a rung-3 claim resting on rung-1 correlation — the common cause is summer. Nothing \
+was intervened on, and no world was compared where sales were forced up out of season.",
         sources: &[
             "Judea Pearl, The Book of Why (2018), ch. 1 — the ladder of causation",
             "Austin Bradford Hill, Proc. R. Soc. Med. 58 (1965) 295",
@@ -535,8 +538,9 @@ tested against; diagnosticity is THREE-MARKS's half of the same rule",
             code: gates::RIVALS_UNENUMERATED,
             check: gates::rivals_enumerated,
         }],
-        worked_example: "Evidence consistent with execution is usually also consistent with \
-installation and with scanning, so it is not diagnostic and should carry no weight either way.",
+        worked_example: "Wet grass at dawn is consistent with overnight rain — and equally with \
+the sprinkler timer. Evidence that fits every hypothesis discriminates none, so it should move the \
+verdict toward neither; gathering more of it only feels like progress.",
         sources: &[
             "Richards J. Heuer Jr., Psychology of Intelligence Analysis (CIA CSI, 1999), ch. 8",
             "https://www.cia.gov/resources/csi/books-monographs/psychology-of-intelligence-analysis-2/",
@@ -672,8 +676,9 @@ not because the reason is necessarily good, but because not knowing it is not an
             code: gates::FALSIFIER_MISSING,
             check: gates::falsifier_declared,
         }],
-        worked_example: "Assume it is a year later and the conclusion collapsed; say what did it. \
-A claim with no answer is not yet a claim.",
+        worked_example: "Popper's mark of a real claim: \"all swans are white\" says something \
+because a single black swan would refute it. Assume it is a year on and the conclusion collapsed — \
+name what did it. A claim nothing could ever count against is a belief wearing a claim's clothes.",
         sources: &[
             "Gary Klein, Harvard Business Review, September 2007, \"Performing a Project Premortem\"",
             "Karl Popper, Logik der Forschung (1934), §6",
@@ -703,10 +708,10 @@ them",
                 check: gates::confirming_case_declared,
             },
         ],
-        worked_example: "An Amcache InventoryApplicationFile entry supports \"the user ran it\" \
-and \"the appraiser catalogued it, unrun\" equally, because the appraiser writes one either way. \
-A case resting on it alone has argued for neither side — 共不定, cell 1 of the 九句因. One \
-Prefetch .pf with a run counter decides the contest, and passes the gate.",
+        worked_example: "The classic inference — \"the hill has fire, because it has smoke\" — \
+holds because smoke is absent wherever fire is absent (no fire, no smoke). \"He has a fever, so he \
+has the flu\" fails the same test: fever attends a hundred illnesses, present even where there is \
+no flu (異品), so it discriminates nothing — 共不定, cell 1 of the 九句因.",
         sources: &[
             "商羯羅主《因明入正理論》玄奘譯 (647), T32n1630: 「因有三相…謂遍是宗法性、同品定有性、異品遍無性」",
             "陳那 Dignāga, 《因明正理門論本》玄奘譯, T32n1628",
@@ -728,9 +733,9 @@ naming no instrument reaches no verdict rather than passing",
             code: gates::ABSENCE_UNCONTROLLED,
             check: gates::absence_is_controlled,
         }],
-        worked_example: "\"The binary was never executed — no Prefetch file exists.\" On a \
-Server SKU with SysMain disabled, no execution would ever have written one, so the search could \
-not have found the thing it reports missing. Non-perception establishes absence only of the \
+        worked_example: "You may say \"there is no elephant in the room\" — one would be seen. \
+You may not say \"there are no bacteria\" from a look, because the eye cannot resolve them, so \
+finding none reports the instrument, not the room. Non-perception establishes absence only of the \
 perceptible; of the imperceptible it establishes nothing.",
         sources: &[
             "Dharmakīrti, Nyāyabindu II.12–20 (the dṛśya restriction at II.13); tr. Th. \

@@ -30,7 +30,7 @@ These block a citation packet deterministically — no model in the loop:
 
 ## Worked example
 
-"…sits in a directory commonly used to stage malware" calls a path suspicious without ever stating the standard of suspicion, so the reader cannot tell whether %TEMP% qualifies by frequency, by policy, or by the author's intuition.
+"A healthy breakfast" names no standard — healthy for blood sugar, for weight, or for a day's hard labour? Until the pole is set, the word carries the judgement and the reader cannot tell what would count against it.
 
 ## Sources
 

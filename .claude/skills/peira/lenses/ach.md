@@ -10,7 +10,7 @@
 
 **Enforced gates:** `PEIR-RIVALS-UNENUMERATED`
 
-**Worked example:** Evidence consistent with execution is usually also consistent with installation and with scanning, so it is not diagnostic and should carry no weight either way.
+**Worked example:** Wet grass at dawn is consistent with overnight rain — and equally with the sprinkler timer. Evidence that fits every hypothesis discriminates none, so it should move the verdict toward neither; gathering more of it only feels like progress.
 
 **Sources:**
 - Richards J. Heuer Jr., Psychology of Intelligence Analysis (CIA CSI, 1999), ch. 8

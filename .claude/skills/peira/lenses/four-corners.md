@@ -10,7 +10,7 @@
 
 **Enforced gates:** `PEIR-CORNERS-UNADDRESSED`
 
-**Worked example:** "executed / not executed" omits the corner that actually fits an Amcache record: catalogued without execution — neither cleanly one nor the other.
+**Worked example:** "Is light a wave or a particle?" forces two corners, and each is wrong alone — the physics needed the third: it is both. 四句 keeps all four (is, is-not, both, neither) open until the question earns a collapse.
 
 **Sources:**
 - Nāgārjuna, Mūlamadhyamakakārikā 1.1, 18.8

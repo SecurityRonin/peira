@@ -30,7 +30,7 @@ These block a citation packet deterministically — no model in the loop:
 
 ## Worked example
 
-"execution" is used as though self-evident. The Diamond Sutra form makes the three moments explicit: 所謂「執行」— what is called execution; 即非「執行」— the artifact is not execution; 是名「執行」— it is conventionally named execution, under stated bounds.
+Is a tomato a fruit? Botany says yes, the kitchen says no, and Nix v. Hedden (1893) had the US Supreme Court call it a vegetable for tariff law. 所謂「水果」— what is called fruit; 即非「水果」— no one thing answers to the bare word; 是名「水果」— it is fruit only under a stated sense.
 
 ## Sources
 

@@ -10,7 +10,7 @@
 
 **Enforced gates:** `PEIR-WARRANT-MISSING`
 
-**Worked example:** From "the hive holds this path" to "the program ran" there is an unwritten rule licensing the step. Written down, it is visibly false.
+**Worked example:** Toulmin's own case: from "Harry was born in Bermuda" to "Harry is a British subject" the step rides on an unwritten warrant — the law that a Bermudan is a British subject. Written down, a warrant can be checked or shown false; left unwritten, it just works.
 
 **Sources:**
 - Stephen Toulmin, The Uses of Argument (1958), ch. 3
