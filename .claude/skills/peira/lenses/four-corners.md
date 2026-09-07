@@ -12,6 +12,8 @@
 
 **Worked example:** "Is light a wave or a particle?" forces two corners, and each is wrong alone — the physics needed the third: it is both. 四句 keeps all four (is, is-not, both, neither) open until the question earns a collapse.
 
+**In the tradition:** The catuṣkoṭi (चतुष्कोटि, "four corners") sets out four alternatives on a proposition: that it holds, that it fails to hold, that it does both, and that it does neither. It predates Madhyamaka — the Pali canon has the Buddha decline all four on the "undeclared" questions (avyākata), as in the Aggi-Vacchagotta Sutta on the fate of an awakened one after death. Nāgārjuna (c. 150–250 CE) makes it a method in the Mūlamadhyamakakārikā; his use is not uniform, but the signature move denies all four, as in the opening verse refusing that anything arises from itself, from another, from both, or from neither (MMK 1.1).
+
 **Sources:**
 - Nāgārjuna, Mūlamadhyamakakārikā 1.1, 18.8
 - <https://plato.stanford.edu/entries/nagarjuna/>

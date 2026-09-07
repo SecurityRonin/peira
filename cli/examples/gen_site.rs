@@ -140,6 +140,10 @@ fn lens_page(lens: &Lens) -> String {
 
     let _ = writeln!(out, "## Worked example\n\n{}\n", lens.worked_example);
 
+    if !lens.background.is_empty() {
+        let _ = writeln!(out, "## In the tradition\n\n{}\n", lens.background);
+    }
+
     out.push_str("## Sources\n\n");
     for s in lens.sources {
         let _ = writeln!(out, "{}", source_line(s));
@@ -483,6 +487,9 @@ fn skill_playbook(lens: &Lens) -> String {
         let _ = writeln!(out, "**Enforced gates:** {codes}\n");
     }
     let _ = writeln!(out, "**Worked example:** {}\n", lens.worked_example);
+    if !lens.background.is_empty() {
+        let _ = writeln!(out, "**In the tradition:** {}\n", lens.background);
+    }
     out.push_str("**Sources:**\n");
     for s in lens.sources {
         let _ = writeln!(out, "{}", source_line(s));

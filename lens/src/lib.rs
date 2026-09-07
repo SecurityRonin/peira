@@ -185,6 +185,11 @@ pub struct Lens {
     pub worked_example: &'static str,
     /// Authoritative references.
     pub sources: &'static [&'static str],
+    /// A short, source-checked note on the tradition the lens comes from and a famous
+    /// usage — empty until written. Every claim here must trace to a cited source, not
+    /// to recollection; an unsourced background paragraph is the overclaim this project
+    /// exists to refuse. Rendered as an "In the tradition" section where non-empty.
+    pub background: &'static str,
     /// Enforced now, or catalogued for later.
     pub phase: Phase,
 }
@@ -338,6 +343,7 @@ reader cannot tell what would count against it.",
             "周敦頤《太極圖說》: 聖人定之以中正仁義而主靜，立人極焉",
             "https://ctext.org/wiki.pl?if=en&chapter=592302",
         ],
+        background: "立極 — to establish the pole — is from 周敦頤 Zhou Dunyi (1017–1073) and his 太極圖說: 「聖人定之以中正仁義而主靜，立人極焉」, the sage fixing the human pole by a stated standard. The lens borrows the move, not the metaphysics: a judgement must set the pole it is measured against, or the word carries the verdict and nothing can check it.",
         phase: Phase::Enforced,
     },
     Lens {
@@ -364,6 +370,7 @@ under a stated sense.",
 it is not, which is the 即非 moment reached from Buddhist epistemology; `not_essence` is that \
 obligation mechanised, so apoha earns no separate entry",
         ],
+        background: "正名, the rectification of names, is stated in Analects 13.3: asked what he would do first to govern, Confucius answers 「必也正名乎」— if names are not rectified, speech does not accord with reality and nothing is accomplished. The lens joins it to the Diamond Sutra's 所謂 X・即非 X・是名 X and to Dignāga's apoha (5th–6th c.), on which a word means by excluding what it is not — three traditions on one discipline: fix the term before it does the arguing.",
         phase: Phase::Enforced,
     },
     Lens {
@@ -391,6 +398,7 @@ that a fire exists is a substance claim the sound alone does not carry.",
             "程頤《易傳序》: 體用一源，顯微無間",
             "https://plato.stanford.edu/entries/neo-confucianism/",
         ],
+        background: "體用 (ti-yong, substance and function) has roots in early Confucian and Daoist texts, was first used systematically by 王弼 Wang Bi (226–249) in his commentary on the Daodejing, and spread as a hermeneutic partly through Buddhism. 程頤 Cheng Yi's Neo-Confucian formula 「體用一源，顯微無間」— substance and function are one source, the manifest and the subtle without gap — is its classic statement. The lens takes only the distinction: what a thing is (體) is not settled by what it did (用).",
         phase: Phase::Enforced,
     },
     Lens {
@@ -411,6 +419,7 @@ what holds of the qualified subclass need not hold of the class, however natural
             "《公孫龍子·白馬論》: 白馬非馬",
             "https://plato.stanford.edu/entries/school-names/",
         ],
+        background: "公孫龍 Gongsun Long (fl. 284–259 BCE), of the Warring-States 名家 (School of Names), argued in the 白馬論 that \"a white horse is not a horse\": \"horse\" names a shape and \"white horse\" a shape-with-colour, so the two pick out different things and cannot be swapped. Usually taught as sophistry, its point is the one the lens enforces — natural language slides between a class and a qualified subclass.",
         phase: Phase::Enforced,
     },
     Lens {
@@ -432,6 +441,7 @@ open until the question earns a collapse.",
             "Nāgārjuna, Mūlamadhyamakakārikā 1.1, 18.8",
             "https://plato.stanford.edu/entries/nagarjuna/",
         ],
+        background: "The catuṣkoṭi (चतुष्कोटि, \"four corners\") sets out four alternatives on a proposition: that it holds, that it fails to hold, that it does both, and that it does neither. It predates Madhyamaka — the Pali canon has the Buddha decline all four on the \"undeclared\" questions (avyākata), as in the Aggi-Vacchagotta Sutta on the fate of an awakened one after death. Nāgārjuna (c. 150–250 CE) makes it a method in the Mūlamadhyamakakārikā; his use is not uniform, but the signature move denies all four, as in the opening verse refusing that anything arises from itself, from another, from both, or from neither (MMK 1.1).",
         phase: Phase::Enforced,
     },
     Lens {
@@ -453,6 +463,7 @@ subject. Written down, a warrant can be checked or shown false; left unwritten, 
             "Stephen Toulmin, The Uses of Argument (1958), ch. 3",
             "https://plato.stanford.edu/entries/reasoning-defeasible/",
         ],
+        background: "",
         phase: Phase::Enforced,
     },
     Lens {
@@ -474,6 +485,7 @@ many mastheads carry it, and no tally of them reaches direct knowledge.",
             "Nyāya Sūtra 1.1.3 (pratyakṣa, anumāna, upamāna, śabda)",
             "https://plato.stanford.edu/entries/epistemology-india/",
         ],
+        background: "",
         phase: Phase::Enforced,
     },
     Lens {
@@ -502,6 +514,7 @@ was intervened on, and no world was compared where sales were forced up out of s
             "Judea Pearl, The Book of Why (2018), ch. 1 — the ladder of causation",
             "Austin Bradford Hill, Proc. R. Soc. Med. 58 (1965) 295",
         ],
+        background: "",
         phase: Phase::Enforced,
     },
     // ── Catalogued, not yet mechanised ───────────────────────────────────────
@@ -521,6 +534,7 @@ dismissed.",
             "Plato, Meno 79e–86c; Gorgias 471d–479e",
             "https://plato.stanford.edu/entries/plato-ethics-shorter/",
         ],
+        background: "",
         phase: Phase::Catalogued,
     },
     Lens {
@@ -545,6 +559,7 @@ verdict toward neither; gathering more of it only feels like progress.",
             "Richards J. Heuer Jr., Psychology of Intelligence Analysis (CIA CSI, 1999), ch. 8",
             "https://www.cia.gov/resources/csi/books-monographs/psychology-of-intelligence-analysis-2/",
         ],
+        background: "",
         phase: Phase::Enforced,
     },
     Lens {
@@ -566,6 +581,7 @@ reduction to three members (THREE-MARKS, SEMBLANCE), never its originator.",
             "世親《如實論・反質難品》真諦譯 c. 550, T32n1633 — the 古因明 five-member form",
             "https://plato.stanford.edu/entries/logic-india/",
         ],
+        background: "",
         phase: Phase::Catalogued,
     },
     Lens {
@@ -582,6 +598,7 @@ saying a word against it.",
             "Daniel Dennett, Intuition Pumps and Other Tools for Thinking (2013), ch. 3",
             "Anatol Rapoport, Fights, Games and Debates (1960)",
         ],
+        background: "",
         phase: Phase::Catalogued,
     },
     Lens {
@@ -595,6 +612,7 @@ saying a word against it.",
         worked_example: "If neither side can name what would change their mind, the dispute is \
 not yet about anything checkable.",
         sources: &["https://www.lesswrong.com/posts/exa5kmvopeRyfJgCy/double-crux-a-strategy-for-resolving-disagreement"],
+        background: "",
         phase: Phase::Catalogued,
     },
     Lens {
@@ -613,6 +631,7 @@ and loses the case.",
             "Mishnah Eduyot 1:5–1:6",
             "https://www.sefaria.org/Mishnah_Eduyot.1.5",
         ],
+        background: "",
         phase: Phase::Catalogued,
     },
     Lens {
@@ -629,6 +648,7 @@ lift up. A synthesis citing only one parent has merely picked a side.",
             "Hegel, Wissenschaft der Logik, Bk I §§185–188",
             "https://plato.stanford.edu/entries/hegel-dialectics/",
         ],
+        background: "",
         phase: Phase::Catalogued,
     },
     Lens {
@@ -650,6 +670,7 @@ earlier \"nine planets\" silently came to mean something its readers never wrote
             "Plutarch, Life of Theseus 23.1",
             "https://plato.stanford.edu/entries/identity-over-time/",
         ],
+        background: "",
         phase: Phase::Catalogued,
     },
     Lens {
@@ -663,6 +684,7 @@ earlier \"nine planets\" silently came to mean something its readers never wrote
         worked_example: "Before the fence comes down, the reason it went up must be stated — \
 not because the reason is necessarily good, but because not knowing it is not an argument.",
         sources: &["G. K. Chesterton, The Thing (1929), ch. 4 \"The Drift from Domesticity\""],
+        background: "",
         phase: Phase::Catalogued,
     },
     Lens {
@@ -683,6 +705,7 @@ name what did it. A claim nothing could ever count against is a belief wearing a
             "Gary Klein, Harvard Business Review, September 2007, \"Performing a Project Premortem\"",
             "Karl Popper, Logik der Forschung (1934), §6",
         ],
+        background: "",
         phase: Phase::Enforced,
     },
     Lens {
@@ -719,6 +742,7 @@ no flu (異品), so it discriminates nothing — 共不定, cell 1 of the 九句
             "R. Hayes, Dignāga on the Interpretation of Signs (Kluwer 1988), ch. 4",
             "https://plato.stanford.edu/entries/logic-india/",
         ],
+        background: "",
         phase: Phase::Enforced,
     },
     Lens {
@@ -743,6 +767,7 @@ Stcherbatsky, Buddhist Logic vol. II (1930)",
             "Dharmakīrti, Pramāṇavārttika, svārthānumāna ch.; ed. Gnoli (Rome 1960)",
             "呂澂《因明入正理論講解》中華書局 (1983) — the received Chinese terminology",
         ],
+        background: "",
         phase: Phase::Enforced,
     },
     Lens {
@@ -768,6 +793,7 @@ admission that assent was never obtained).",
             "S. Katsura, \"The theory of anaikāntika in Buddhist logic\", in Studies in the \
 Buddhist Epistemological Tradition (Vienna 1991)",
         ],
+        background: "",
         phase: Phase::Catalogued,
     },
     Lens {
@@ -785,6 +811,7 @@ between them, and it may only ever lose strength, never gain it.",
             "Nāgārjuna, Mūlamadhyamakakārikā 24.8–24.10",
             "https://plato.stanford.edu/entries/twotruths-india/",
         ],
+        background: "",
         phase: Phase::Catalogued,
     },
     Lens {
@@ -802,6 +829,7 @@ follows from the attack graph, and grounded semantics refuses to pick a winner i
             "P. M. Dung, Artificial Intelligence 77 (1995) 321–357",
             "https://doi.org/10.1016/0004-3702(94)00041-X",
         ],
+        background: "",
         phase: Phase::Enforced,
     },
     // ── The anti-summarization pass ───────────────────────────────────────────
@@ -830,6 +858,7 @@ understood; you have only compressed.",
             "王陽明《傳習錄》: 知行合一",
             "https://ctext.org/liji/da-xue",
         ],
+        background: "格物致知 (\"investigate things, extend knowledge\") is from the Great Learning 大學; 朱熹 Zhu Xi (1130–1200) read it as exhausting the principle (理) in each thing. In 1492 王陽明 Wang Yangming sat before bamboo for seven days to do exactly that, found no principle and fell ill — concluding that principle is not caught by treating the world as a detached object, which became his 知行合一, the unity of knowing and acting. The lens keeps the test: what you cannot act on, you have not yet understood.",
         phase: Phase::Catalogued,
     },
     Lens {
@@ -851,6 +880,7 @@ what it never saw does the opposite, and reads as complete.",
             "Arthur Conan Doyle, \"The Adventure of Silver Blaze\" (1892)",
             "《論語・衛靈公》15.26: 吾猶及史之闕文也",
         ],
+        background: "Two sources meet here. 孔子 Confucius, Analects 15.26: 「吾猶及史之闕文也」— he could still recall when a scribe left a blank (闕文) rather than fill a gap he could not vouch for. And Conan Doyle's \"Silver Blaze\" (1892), where Holmes cracks the case by the dog that did not bark: the absence of the expected is the evidence. A distillation sees neither unbidden — it reports what is present, so an omission has to be hunted.",
         phase: Phase::Catalogued,
     },
     Lens {
@@ -871,6 +901,7 @@ rule — a zero is a possible instrument failure — turned on the instrument th
             "Francis Bacon, Novum Organum (1620), Bk I, Aphorisms 39–68",
             "https://plato.stanford.edu/entries/francis-bacon/",
         ],
+        background: "",
         phase: Phase::Catalogued,
     },
     Lens {
@@ -892,6 +923,7 @@ and on an incidental aside has mis-allocated its scepticism.",
             "William Blackstone, Commentaries on the Laws of England, vol. IV (1769), ch. 27",
             "J. Neyman & E. S. Pearson, Phil. Trans. R. Soc. A 231 (1933) 289–337",
         ],
+        background: "",
         phase: Phase::Catalogued,
     },
 ];
