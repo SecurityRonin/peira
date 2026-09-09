@@ -299,14 +299,14 @@ impl Means {
         }
     }
 
-    /// Parse a means of knowing, accepting both the English and the romanized Sanskrit names.
+    /// Parse a means of knowing from its English name.
     #[must_use]
     pub fn from_str_opt(s: &str) -> Option<Self> {
         Some(match s {
-            "perception" | "pratyaksa" | "pratyakṣa" => Means::Perception,
-            "inference" | "anumana" | "anumāna" => Means::Inference,
-            "comparison" | "upamana" | "upamāna" => Means::Comparison,
-            "testimony" | "sabda" | "śabda" => Means::Testimony,
+            "perception" => Means::Perception,
+            "inference" => Means::Inference,
+            "comparison" => Means::Comparison,
+            "testimony" => Means::Testimony,
             _ => return None,
         })
     }
@@ -639,24 +639,33 @@ mod tests {
     }
 
     #[test]
-    fn pramana_accepts_english_and_sanskrit_including_diacritics() {
+    fn means_accepts_english_only() {
         for (input, expected) in [
             ("perception", Means::Perception),
-            ("pratyaksa", Means::Perception),
-            ("pratyakṣa", Means::Perception),
             ("inference", Means::Inference),
-            ("anumana", Means::Inference),
-            ("anumāna", Means::Inference),
             ("comparison", Means::Comparison),
-            ("upamana", Means::Comparison),
-            ("upamāna", Means::Comparison),
             ("testimony", Means::Testimony),
-            ("sabda", Means::Testimony),
-            ("śabda", Means::Testimony),
         ] {
             assert_eq!(Means::from_str_opt(input), Some(expected), "input {input}");
         }
-        assert_eq!(Means::from_str_opt("revelation"), None);
+        // The field speaks English: romanized Sanskrit is no longer accepted.
+        for rejected in [
+            "pratyaksa",
+            "pratyakṣa",
+            "anumana",
+            "anumāna",
+            "upamana",
+            "upamāna",
+            "sabda",
+            "śabda",
+            "revelation",
+        ] {
+            assert_eq!(
+                Means::from_str_opt(rejected),
+                None,
+                "must reject {rejected}"
+            );
+        }
     }
 
     #[test]

@@ -38,7 +38,7 @@ The four-cornered logic (四句; चतुष्कोटि) sets out four alte
 
 ## Sources
 
-- 龍樹《中論》鳩摩羅什譯 (T30n1564), 觀因緣品第一・觀法品第十八
-- [龍樹, Stanford Encyclopedia of Philosophy](https://plato.stanford.edu/entries/nagarjuna/)
+- नागार्जुन《मूलमध्यमककारिका》1.1, 18.8
+- [नागार्जुन, Stanford Encyclopedia of Philosophy](https://plato.stanford.edu/entries/nagarjuna/)
 
 <p class="back"><a href="{{ '/lenses/' | relative_url }}">← All lenses</a> · <a href="{{ '/doors/' | relative_url }}">The seven doors</a></p>
