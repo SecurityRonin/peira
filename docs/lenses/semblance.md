@@ -32,7 +32,7 @@ Indian logic catalogued the ways a proof can wear the form of validity without t
 
 ## Sources
 
-- 商羯羅主《因明入正理論》T32n1630 — 似因十四過 (不成四・不定六・相違四), 似宗九過
+- शङ्करस्वामिन्《न्यायप्रवेश》(玄奘漢譯《因明入正理論》, T32n1630) — 似因十四過 (不成四・不定六・相違四), 似宗九過
 - M. Tachikawa, "A Sixth-Century Manual of Indian Logic", J. Indian Philosophy 1 (1971) 111–145
 - S. Katsura, "The theory of anaikāntika in Buddhist logic", in Studies in the Buddhist Epistemological Tradition (Vienna 1991)
 - <https://plato.stanford.edu/entries/logic-india/>

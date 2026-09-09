@@ -38,7 +38,7 @@ In classical Indian epistemology a प्रमाण is a means of valid knowle
 
 ## Sources
 
-- 《正理經》(喬答摩) 1.1.3 — perception, inference, comparison, testimony
+- अक्षपाद गौतम《न्यायसूत्र》1.1.3 — perception, inference, comparison, testimony
 - <https://plato.stanford.edu/entries/epistemology-india/>
 
 <p class="back"><a href="{{ '/lenses/' | relative_url }}">← All lenses</a> · <a href="{{ '/doors/' | relative_url }}">The seven doors</a></p>

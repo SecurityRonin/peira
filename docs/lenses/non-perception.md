@@ -38,9 +38,9 @@ You may say "there is no elephant in the room" — one would be seen. You may no
 
 ## Sources
 
-- 法稱《正理滴論》II.12–20 (the perceptibility restriction at II.13); tr. Th. Stcherbatsky, Buddhist Logic vol. II (1930)
-- 法稱《釋量論》為自比量品 (梵本 ed. Gnoli, Rome 1960; 法尊漢譯, 1980)
+- धर्मकीर्ति《न्यायबिन्दु》II.12–20 (the perceptibility restriction at II.13); tr. Th. Stcherbatsky, Buddhist Logic vol. II (1930)
+- धर्मकीर्ति《प्रमाणवार्त्तिक》, the inference-for-oneself chapter (ed. Gnoli, Rome 1960)
 - 呂澂《因明入正理論講解》中華書局 (1983) — the received Chinese terminology
-- [法稱, Stanford Encyclopedia of Philosophy](https://plato.stanford.edu/entries/dharmakiirti/)
+- [धर्मकीर्ति, Stanford Encyclopedia of Philosophy](https://plato.stanford.edu/entries/dharmakiirti/)
 
 <p class="back"><a href="{{ '/lenses/' | relative_url }}">← All lenses</a> · <a href="{{ '/doors/' | relative_url }}">The seven doors</a></p>

@@ -32,7 +32,7 @@ The classical Indian demonstration has five members — the thesis, the reason, 
 
 ## Sources
 
-- 《正理經》(喬答摩) 1.1.32–1.1.39; 1.2.4–1.2.9
+- अक्षपाद गौतम《न्यायसूत्र》1.1.32–1.1.39; 1.2.4–1.2.9
 - 世親《如實論・反質難品》真諦譯 c. 550, T32n1633 — the 古因明 five-member form
 - <https://plato.stanford.edu/entries/logic-india/>
 
