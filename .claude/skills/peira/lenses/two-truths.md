@@ -10,7 +10,7 @@
 
 **Worked example:** The conventional register (世俗諦) is what may be said aloud; the ultimate register (勝義諦) is the fully-bounded graph. Court Mode is the disciplined translation between them, and it may only ever lose strength, never gain it.
 
-**In the tradition:** 龍樹, in his root verses on the Middle Way (24.8–10): the Buddha's teaching rests on two truths — the conventional (世俗諦), what may be said in ordinary terms, and the ultimate (勝義諦), how things finally stand — and the ultimate is reached only by way of the conventional. peira's Court Mode is exactly that translation, one-directional: the statement said aloud may only lose strength against the fully-bounded graph, never gain it.
+**In the tradition:** नागार्जुन, in his root verses on the Middle Way (24.8–10): the Buddha's teaching rests on two truths — the conventional (世俗諦), what may be said in ordinary terms, and the ultimate (勝義諦), how things finally stand — and the ultimate is reached only by way of the conventional. peira's Court Mode is exactly that translation, one-directional: the statement said aloud may only lose strength against the fully-bounded graph, never gain it.
 
 **Sources:**
 - नागार्जुन《मूलमध्यमककारिका》24.8–24.10
