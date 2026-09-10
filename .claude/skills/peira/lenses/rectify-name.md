@@ -12,12 +12,12 @@
 
 **Worked example:** Is a tomato a fruit? Botany says yes, the kitchen says no, and Nix v. Hedden (1893) had the US Supreme Court call it a vegetable for tariff law. 所謂「水果」— what is called fruit; 即非「水果」— no one thing answers to the bare word; 是名「水果」— it is fruit only under a stated sense.
 
-**In the tradition:** 正名, the rectification of names, is stated in the Analects (13.3): asked what he would do first to govern, 孔子 answers 「必也正名乎」— if names are not rectified, speech does not accord with reality and nothing is accomplished. The lens joins it to the 金剛經's 所謂 X・即非 X・是名 X and to दिग्नाग's doctrine that a word means by excluding what it is not — three traditions on one discipline: fix the term before it does the arguing.
+**In the tradition:** 正名, the rectification of names, is stated in the Analects (13.3): asked what he would do first to govern, 孔子 answers 「必也正名乎」— if names are not rectified, speech does not accord with reality and nothing is accomplished. The lens joins it to the 金剛經's 所謂 X・即非 X・是名 X and to दिग्नाग (陳那)'s doctrine that a word means by excluding what it is not — three traditions on one discipline: fix the term before it does the arguing.
 
 **Sources:**
 - 《金剛般若波羅蜜經》: 所謂佛法者，即非佛法，是名佛法
 - [論語·子路: 必也正名乎](https://ctext.org/analects/zi-lu)
-- दिग्नाग, 集量論 ch. 5 (遮詮) — a term excludes what it is not, which is the 即非 moment reached from Buddhist epistemology; `not_essence` is that obligation mechanised, so this earns no separate entry
+- दिग्नाग (陳那), 集量論 ch. 5 (遮詮) — a term excludes what it is not, which is the 即非 moment reached from Buddhist epistemology; `not_essence` is that obligation mechanised, so this earns no separate entry
 - <https://plato.stanford.edu/entries/confucius/>
 
 Run `peira lens RECTIFY-NAME` for this entry in the tool.

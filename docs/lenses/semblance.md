@@ -28,11 +28,11 @@ a human screen: each load-bearing inference is read against the fourteen 似因 
 
 ## In the tradition
 
-Indian logic catalogued the ways a proof can wear the form of validity without the force of it: the semblances of a reason (似因) and their counterpart for the thesis (似宗). शङ्करस्वामिन्'s न्यायप्रवेश — in 玄奘's Chinese translation, 因明入正理論 (7th c.) — lists fourteen faulty reasons — unestablished, inconclusive, contradictory — beside nine faulty theses. The lens is the human screen: a reason that looks like proof is read against the taxonomy before it is trusted.
+Indian logic catalogued the ways a proof can wear the form of validity without the force of it: the semblances of a reason (似因) and their counterpart for the thesis (似宗). शङ्करस्वामिन् (商羯羅主)'s न्यायप्रवेश — in 玄奘's Chinese translation, 因明入正理論 (7th c.) — lists fourteen faulty reasons — unestablished, inconclusive, contradictory — beside nine faulty theses. The lens is the human screen: a reason that looks like proof is read against the taxonomy before it is trusted.
 
 ## Sources
 
-- शङ्करस्वामिन्《न्यायप्रवेश》(玄奘漢譯《因明入正理論》, T32n1630) — 似因十四過 (不成四・不定六・相違四), 似宗九過
+- शङ्करस्वामिन् (商羯羅主)《न्यायप्रवेश》(玄奘漢譯《因明入正理論》, T32n1630) — 似因十四過 (不成四・不定六・相違四), 似宗九過
 - M. Tachikawa, "A Sixth-Century Manual of Indian Logic", J. Indian Philosophy 1 (1971) 111–145
 - S. Katsura, "The theory of anaikāntika in Buddhist logic", in Studies in the Buddhist Epistemological Tradition (Vienna 1991)
 - <https://plato.stanford.edu/entries/logic-india/>

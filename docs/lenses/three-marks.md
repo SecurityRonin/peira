@@ -36,12 +36,12 @@ The classic inference — "the hill has fire, because it has smoke" — holds be
 
 ## In the tradition
 
-दिग्नाग's three marks of a valid reason (因三相) set what a reason must bear to prove anything: present in the case at issue, present in at least one similar case, and absent from every dissimilar case. The third is load-bearing — a reason that also occurs where the thesis is false proves nothing — which दिग्नाग mapped exhaustively in the 九句因 (the wheel of reasons). The lens enforces it: evidence common to a claim and its rival is not diagnostic.
+दिग्नाग (陳那)'s three marks of a valid reason (因三相) set what a reason must bear to prove anything: present in the case at issue, present in at least one similar case, and absent from every dissimilar case. The third is load-bearing — a reason that also occurs where the thesis is false proves nothing — which दिग्नाग mapped exhaustively in the 九句因 (the wheel of reasons). The lens enforces it: evidence common to a claim and its rival is not diagnostic.
 
 ## Sources
 
-- शङ्करस्वामिन्《न्यायप्रवेश》(玄奘漢譯《因明入正理論》, T32n1630): 「因有三相…謂遍是宗法性、同品定有性、異品遍無性」
-- दिग्नाग《因明正理門論本》玄奘譯, T32n1628
+- शङ्करस्वामिन् (商羯羅主)《न्यायप्रवेश》(玄奘漢譯《因明入正理論》, T32n1630): 「因有三相…謂遍是宗法性、同品定有性、異品遍無性」
+- दिग्नाग (陳那)《因明正理門論本》玄奘譯, T32n1628
 - धर्मकीर्ति《न्यायबिन्दु》II.5–7; tr. Th. Stcherbatsky, Buddhist Logic vol. II (1930)
 - R. Hayes, Dignāga on the Interpretation of Signs (Kluwer 1988), ch. 4
 - <https://plato.stanford.edu/entries/logic-india/>

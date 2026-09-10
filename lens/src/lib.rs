@@ -367,12 +367,12 @@ under a stated sense.",
         sources: &[
             "《金剛般若波羅蜜經》: 所謂佛法者，即非佛法，是名佛法",
             "https://ctext.org/analects/zi-lu (論語·子路: 必也正名乎)",
-            "दिग्नाग, 集量論 ch. 5 (遮詮) — a term excludes what \
+            "दिग्नाग (陳那), 集量論 ch. 5 (遮詮) — a term excludes what \
 it is not, which is the 即非 moment reached from Buddhist epistemology; `not_essence` is that \
 obligation mechanised, so this earns no separate entry",
             "https://plato.stanford.edu/entries/confucius/",
         ],
-        background: "正名, the rectification of names, is stated in the Analects (13.3): asked what he would do first to govern, 孔子 answers 「必也正名乎」— if names are not rectified, speech does not accord with reality and nothing is accomplished. The lens joins it to the 金剛經's 所謂 X・即非 X・是名 X and to दिग्नाग's doctrine that a word means by excluding what it is not — three traditions on one discipline: fix the term before it does the arguing.",
+        background: "正名, the rectification of names, is stated in the Analects (13.3): asked what he would do first to govern, 孔子 answers 「必也正名乎」— if names are not rectified, speech does not accord with reality and nothing is accomplished. The lens joins it to the 金剛經's 所謂 X・即非 X・是名 X and to दिग्नाग (陳那)'s doctrine that a word means by excluding what it is not — three traditions on one discipline: fix the term before it does the arguing.",
         phase: Phase::Enforced,
     },
     Lens {
@@ -487,7 +487,7 @@ it, and no tally of them reaches direct knowledge.",
             "अक्षपाद गौतम《न्यायसूत्र》1.1.3 — perception, inference, comparison, testimony",
             "https://plato.stanford.edu/entries/epistemology-india/",
         ],
-        background: "In classical Indian epistemology a प्रमाण is a means of valid knowledge, counted as four: perception, inference, comparison and testimony. The Buddhist logicians दिग्नाग and धर्मकीर्ति (5th–7th c.) pared these to two — perception and inference — folding testimony into inference, and holding that no source certifies more than its own kind supports. The lens keeps that ceiling: testimony cannot be promoted to observation, and repetition of one source is not independence.",
+        background: "In classical Indian epistemology a प्रमाण is a means of valid knowledge, counted as four: perception, inference, comparison and testimony. The Buddhist logicians दिग्नाग (陳那) and धर्मकीर्ति (5th–7th c.) pared these to two — perception and inference — folding testimony into inference, and holding that no source certifies more than its own kind supports. The lens keeps that ceiling: testimony cannot be promoted to observation, and repetition of one source is not independence.",
         phase: Phase::Enforced,
     },
     Lens {
@@ -577,15 +577,15 @@ taxonomy of faulty reasons (似因)",
         gates: &[],
         worked_example: "The five members — thesis, reason, example, application, conclusion — \
 with the reason screened for the classic faults: unestablished, contradictory, inconclusive, \
-counterbalanced, already-defeated. वसुबन्धु's 如實論 argues this five-member form carrying only a \
-proto-因三相: the 古因明 stage, and the precursor to दिग्नाग's reduction to three members \
+counterbalanced, already-defeated. वसुबन्धु (世親)'s 如實論 argues this five-member form carrying only a \
+proto-因三相: the 古因明 stage, and the precursor to दिग्नाग (陳那)'s reduction to three members \
 (THREE-MARKS, SEMBLANCE), never its originator.",
         sources: &[
             "अक्षपाद गौतम《न्यायसूत्र》1.1.32–1.1.39; 1.2.4–1.2.9",
-            "वसुबन्धु《如實論・反質難品》真諦譯 c. 550, T32n1633 — the 古因明 five-member form",
+            "वसुबन्धु (世親)《如實論・反質難品》真諦譯 c. 550, T32n1633 — the 古因明 five-member form",
             "https://plato.stanford.edu/entries/logic-india/",
         ],
-        background: "The classical Indian demonstration has five members — the thesis, the reason, an example, the application and the conclusion — and screens the reason against the fallacy list. वसुबन्धु's 如實論 carries this older five-member form (古因明) before दिग्नाग reduced it to three. The lens keeps the demand that an argument show all its members, not merely assert its conclusion.",
+        background: "The classical Indian demonstration has five members — the thesis, the reason, an example, the application and the conclusion — and screens the reason against the fallacy list. वसुबन्धु (世親)'s 如實論 carries this older five-member form (古因明) before दिग्नाग (陳那) reduced it to three. The lens keeps the demand that an argument show all its members, not merely assert its conclusion.",
         phase: Phase::Catalogued,
     },
     Lens {
@@ -741,13 +741,13 @@ holds because smoke is absent wherever fire is absent (no fire, no smoke). \"He 
 has the flu\" fails the same test: fever attends a hundred illnesses, present even where there is \
 no flu (異品), so it discriminates nothing — 共不定, cell 1 of the 九句因.",
         sources: &[
-            "शङ्करस्वामिन्《न्यायप्रवेश》(玄奘漢譯《因明入正理論》, T32n1630): 「因有三相…謂遍是宗法性、同品定有性、異品遍無性」",
-            "दिग्नाग《因明正理門論本》玄奘譯, T32n1628",
+            "शङ्करस्वामिन् (商羯羅主)《न्यायप्रवेश》(玄奘漢譯《因明入正理論》, T32n1630): 「因有三相…謂遍是宗法性、同品定有性、異品遍無性」",
+            "दिग्नाग (陳那)《因明正理門論本》玄奘譯, T32n1628",
             "धर्मकीर्ति《न्यायबिन्दु》II.5–7; tr. Th. Stcherbatsky, Buddhist Logic vol. II (1930)",
             "R. Hayes, Dignāga on the Interpretation of Signs (Kluwer 1988), ch. 4",
             "https://plato.stanford.edu/entries/logic-india/",
         ],
-        background: "दिग्नाग's three marks of a valid reason (因三相) set what a reason must bear to prove anything: present in the case at issue, present in at least one similar case, and absent from every dissimilar case. The third is load-bearing — a reason that also occurs where the thesis is false proves nothing — which दिग्नाग mapped exhaustively in the 九句因 (the wheel of reasons). The lens enforces it: evidence common to a claim and its rival is not diagnostic.",
+        background: "दिग्नाग (陳那)'s three marks of a valid reason (因三相) set what a reason must bear to prove anything: present in the case at issue, present in at least one similar case, and absent from every dissimilar case. The third is load-bearing — a reason that also occurs where the thesis is false proves nothing — which दिग्नाग mapped exhaustively in the 九句因 (the wheel of reasons). The lens enforces it: evidence common to a claim and its rival is not diagnostic.",
         phase: Phase::Enforced,
     },
     Lens {
@@ -793,14 +793,14 @@ words. peira has no party model, so 極成 is deliberately substituted by the �
 what cannot be verified (the opponent's assent) is replaced by what can be enforced (the \
 admission that assent was never obtained).",
         sources: &[
-            "शङ्करस्वामिन्《न्यायप्रवेश》(玄奘漢譯《因明入正理論》, T32n1630) — 似因十四過 (不成四・不定六・相違四), 似宗九過",
+            "शङ्करस्वामिन् (商羯羅主)《न्यायप्रवेश》(玄奘漢譯《因明入正理論》, T32n1630) — 似因十四過 (不成四・不定六・相違四), 似宗九過",
             "M. Tachikawa, \"A Sixth-Century Manual of Indian Logic\", J. Indian Philosophy 1 \
 (1971) 111–145",
             "S. Katsura, \"The theory of anaikāntika in Buddhist logic\", in Studies in the \
 Buddhist Epistemological Tradition (Vienna 1991)",
             "https://plato.stanford.edu/entries/logic-india/",
         ],
-        background: "Indian logic catalogued the ways a proof can wear the form of validity without the force of it: the semblances of a reason (似因) and their counterpart for the thesis (似宗). शङ्करस्वामिन्'s न्यायप्रवेश — in 玄奘's Chinese translation, 因明入正理論 (7th c.) — lists fourteen faulty reasons — unestablished, inconclusive, contradictory — beside nine faulty theses. The lens is the human screen: a reason that looks like proof is read against the taxonomy before it is trusted.",
+        background: "Indian logic catalogued the ways a proof can wear the form of validity without the force of it: the semblances of a reason (似因) and their counterpart for the thesis (似宗). शङ्करस्वामिन् (商羯羅主)'s न्यायप्रवेश — in 玄奘's Chinese translation, 因明入正理論 (7th c.) — lists fourteen faulty reasons — unestablished, inconclusive, contradictory — beside nine faulty theses. The lens is the human screen: a reason that looks like proof is read against the taxonomy before it is trusted.",
         phase: Phase::Catalogued,
     },
     Lens {

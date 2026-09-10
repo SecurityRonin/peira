@@ -12,7 +12,7 @@
 
 **Worked example:** Two newspapers running the same wire story are testimony, not two eyes on the event. Sharing one source, they are a single line of evidence however many mastheads carry it, and no tally of them reaches direct knowledge.
 
-**In the tradition:** In classical Indian epistemology a प्रमाण is a means of valid knowledge, counted as four: perception, inference, comparison and testimony. The Buddhist logicians दिग्नाग and धर्मकीर्ति (5th–7th c.) pared these to two — perception and inference — folding testimony into inference, and holding that no source certifies more than its own kind supports. The lens keeps that ceiling: testimony cannot be promoted to observation, and repetition of one source is not independence.
+**In the tradition:** In classical Indian epistemology a प्रमाण is a means of valid knowledge, counted as four: perception, inference, comparison and testimony. The Buddhist logicians दिग्नाग (陳那) and धर्मकीर्ति (5th–7th c.) pared these to two — perception and inference — folding testimony into inference, and holding that no source certifies more than its own kind supports. The lens keeps that ceiling: testimony cannot be promoted to observation, and repetition of one source is not independence.
 
 **Sources:**
 - अक्षपाद गौतम《न्यायसूत्र》1.1.3 — perception, inference, comparison, testimony
