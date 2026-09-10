@@ -10,6 +10,30 @@ messages on `main`. Do not hand-edit released sections.
 
 ## [Unreleased]
 
+## [0.2.0](https://github.com/SecurityRonin/peira/compare/peira-citation-v0.1.0...peira-citation-v0.2.0) - 2026-09-10
+
+### Added
+
+- *(mcp)* Tier 4 — freeze / verify, with refusal as a result
+
+### Documentation
+
+- *(examples)* a runnable example vault that refuses to freeze ([#38](https://github.com/SecurityRonin/peira/pull/38))
+- *(examples)* a second example vault — peira examines its own audit
+- link the worked example vault from the README
+
+### Fixed
+
+- *(docs)* publish the six-structures doc at a working URL ([#46](https://github.com/SecurityRonin/peira/pull/46))
+- *(citation)* tolerate a leading BOM in Packet::from_document
+
+### Other
+
+- De-romanize the rest: hand-maintained pages, core Pramana→Means, design docs ([#51](https://github.com/SecurityRonin/peira/pull/51))
+- *(lens)* [**breaking**] English lens codes, tradition kept in the names ([#43](https://github.com/SecurityRonin/peira/pull/43))
+- peira method: version-stamped, binary-embedded method docs ([#37](https://github.com/SecurityRonin/peira/pull/37))
+- Anti-summarization pass: seven doors + four catalogued lenses ([#36](https://github.com/SecurityRonin/peira/pull/36))
+
 ## [0.1.0](https://github.com/SecurityRonin/peira/releases/tag/peira-citation-v0.1.0) - 2026-08-23
 
 ### Added

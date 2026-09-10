@@ -10,6 +10,36 @@ messages on `main`. Do not hand-edit released sections.
 
 ## [Unreleased]
 
+## [0.2.0](https://github.com/SecurityRonin/peira/compare/peira-lens-v0.1.0...peira-lens-v0.2.0) - 2026-09-10
+
+### Added
+
+- *(skill)* regenerate the peira skill from the catalogue; famous worked examples ([#47](https://github.com/SecurityRonin/peira/pull/47))
+
+### Documentation
+
+- *(lens)* align Indian figure names to Sanskrit (prose + citations) ([#56](https://github.com/SecurityRonin/peira/pull/56))
+- *(lens)* restore the Hayes and Katsura secondary citations ([#52](https://github.com/SecurityRonin/peira/pull/52))
+- *(lens)* verified encyclopedia links + strip romanization from displayed prose ([#50](https://github.com/SecurityRonin/peira/pull/50))
+- *(lens)* famous, authoritative worked examples for the enforced lenses ([#48](https://github.com/SecurityRonin/peira/pull/48))
+- *(examples)* a runnable example vault that refuses to freeze ([#38](https://github.com/SecurityRonin/peira/pull/38))
+- *(examples)* a second example vault — peira examines its own audit
+- link the worked example vault from the README
+
+### Fixed
+
+- *(docs)* publish the six-structures doc at a working URL ([#46](https://github.com/SecurityRonin/peira/pull/46))
+
+### Other
+
+- *(core,lens)* [**breaking**] source-language citations; Means parser English-only ([#55](https://github.com/SecurityRonin/peira/pull/55))
+- De-romanize the rest: hand-maintained pages, core Pramana→Means, design docs ([#51](https://github.com/SecurityRonin/peira/pull/51))
+- Tradition sections for all 27 lenses (source-checked) ([#49](https://github.com/SecurityRonin/peira/pull/49))
+- *(lens)* [**breaking**] anglicize the four gate codes that embedded Sanskrit ([#44](https://github.com/SecurityRonin/peira/pull/44))
+- *(lens)* [**breaking**] English lens codes, tradition kept in the names ([#43](https://github.com/SecurityRonin/peira/pull/43))
+- peira method: version-stamped, binary-embedded method docs ([#37](https://github.com/SecurityRonin/peira/pull/37))
+- Anti-summarization pass: seven doors + four catalogued lenses ([#36](https://github.com/SecurityRonin/peira/pull/36))
+
 ## [0.1.0](https://github.com/SecurityRonin/peira/releases/tag/peira-lens-v0.1.0) - 2026-08-23
 
 ### Added
