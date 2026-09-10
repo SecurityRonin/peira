@@ -367,12 +367,12 @@ under a stated sense.",
         sources: &[
             "《金剛般若波羅蜜經》: 所謂佛法者，即非佛法，是名佛法",
             "https://ctext.org/analects/zi-lu (論語·子路: 必也正名乎)",
-            "陳那, 集量論 ch. 5 (遮詮) — a term excludes what \
+            "दिग्नाग, 集量論 ch. 5 (遮詮) — a term excludes what \
 it is not, which is the 即非 moment reached from Buddhist epistemology; `not_essence` is that \
 obligation mechanised, so this earns no separate entry",
             "https://plato.stanford.edu/entries/confucius/",
         ],
-        background: "正名, the rectification of names, is stated in the Analects (13.3): asked what he would do first to govern, 孔子 answers 「必也正名乎」— if names are not rectified, speech does not accord with reality and nothing is accomplished. The lens joins it to the 金剛經's 所謂 X・即非 X・是名 X and to 陳那's doctrine that a word means by excluding what it is not — three traditions on one discipline: fix the term before it does the arguing.",
+        background: "正名, the rectification of names, is stated in the Analects (13.3): asked what he would do first to govern, 孔子 answers 「必也正名乎」— if names are not rectified, speech does not accord with reality and nothing is accomplished. The lens joins it to the 金剛經's 所謂 X・即非 X・是名 X and to दिग्नाग's doctrine that a word means by excluding what it is not — three traditions on one discipline: fix the term before it does the arguing.",
         phase: Phase::Enforced,
     },
     Lens {
@@ -443,7 +443,7 @@ open until the question earns a collapse.",
             "नागार्जुन《मूलमध्यमककारिका》1.1, 18.8",
             "https://plato.stanford.edu/entries/nagarjuna/ (नागार्जुन, Stanford Encyclopedia of Philosophy)",
         ],
-        background: "The four-cornered logic (四句; चतुष्कोटि) sets out four alternatives on a proposition: that it holds, that it fails to hold, that it does both, and that it does neither. It predates 中觀 — the early canon has the Buddha decline all four on the \"undeclared\" questions, as in the Aggi-Vacchagotta Sutta on the fate of an awakened one after death. 龍樹 (c. 150–250 CE) makes it a method in his root verses on the Middle Way; his use is not uniform, but the signature move denies all four, as in the opening verse refusing that anything arises from itself, from another, from both, or from neither.",
+        background: "The four-cornered logic (四句; चतुष्कोटि) sets out four alternatives on a proposition: that it holds, that it fails to hold, that it does both, and that it does neither. It predates 中觀 — the early canon has the Buddha decline all four on the \"undeclared\" questions, as in the Aggi-Vacchagotta Sutta on the fate of an awakened one after death. नागार्जुन (c. 150–250 CE) makes it a method in his root verses on the Middle Way; his use is not uniform, but the signature move denies all four, as in the opening verse refusing that anything arises from itself, from another, from both, or from neither.",
         phase: Phase::Enforced,
     },
     Lens {
@@ -487,7 +487,7 @@ it, and no tally of them reaches direct knowledge.",
             "अक्षपाद गौतम《न्यायसूत्र》1.1.3 — perception, inference, comparison, testimony",
             "https://plato.stanford.edu/entries/epistemology-india/",
         ],
-        background: "In classical Indian epistemology a प्रमाण is a means of valid knowledge, counted as four: perception, inference, comparison and testimony. The Buddhist logicians 陳那 and 法稱 (5th–7th c.) pared these to two — perception and inference — folding testimony into inference, and holding that no source certifies more than its own kind supports. The lens keeps that ceiling: testimony cannot be promoted to observation, and repetition of one source is not independence.",
+        background: "In classical Indian epistemology a प्रमाण is a means of valid knowledge, counted as four: perception, inference, comparison and testimony. The Buddhist logicians दिग्नाग and धर्मकीर्ति (5th–7th c.) pared these to two — perception and inference — folding testimony into inference, and holding that no source certifies more than its own kind supports. The lens keeps that ceiling: testimony cannot be promoted to observation, and repetition of one source is not independence.",
         phase: Phase::Enforced,
     },
     Lens {
@@ -577,15 +577,15 @@ taxonomy of faulty reasons (似因)",
         gates: &[],
         worked_example: "The five members — thesis, reason, example, application, conclusion — \
 with the reason screened for the classic faults: unestablished, contradictory, inconclusive, \
-counterbalanced, already-defeated. 世親's 如實論 argues this five-member form carrying only a \
-proto-因三相: the 古因明 stage, and the precursor to 陳那's reduction to three members \
+counterbalanced, already-defeated. वसुबन्धु's 如實論 argues this five-member form carrying only a \
+proto-因三相: the 古因明 stage, and the precursor to दिग्नाग's reduction to three members \
 (THREE-MARKS, SEMBLANCE), never its originator.",
         sources: &[
             "अक्षपाद गौतम《न्यायसूत्र》1.1.32–1.1.39; 1.2.4–1.2.9",
-            "世親《如實論・反質難品》真諦譯 c. 550, T32n1633 — the 古因明 five-member form",
+            "वसुबन्धु《如實論・反質難品》真諦譯 c. 550, T32n1633 — the 古因明 five-member form",
             "https://plato.stanford.edu/entries/logic-india/",
         ],
-        background: "The classical Indian demonstration has five members — the thesis, the reason, an example, the application and the conclusion — and screens the reason against the fallacy list. 世親's 如實論 carries this older five-member form (古因明) before 陳那 reduced it to three. The lens keeps the demand that an argument show all its members, not merely assert its conclusion.",
+        background: "The classical Indian demonstration has five members — the thesis, the reason, an example, the application and the conclusion — and screens the reason against the fallacy list. वसुबन्धु's 如實論 carries this older five-member form (古因明) before दिग्नाग reduced it to three. The lens keeps the demand that an argument show all its members, not merely assert its conclusion.",
         phase: Phase::Catalogued,
     },
     Lens {
@@ -742,12 +742,12 @@ has the flu\" fails the same test: fever attends a hundred illnesses, present ev
 no flu (異品), so it discriminates nothing — 共不定, cell 1 of the 九句因.",
         sources: &[
             "शङ्करस्वामिन्《न्यायप्रवेश》(玄奘漢譯《因明入正理論》, T32n1630): 「因有三相…謂遍是宗法性、同品定有性、異品遍無性」",
-            "陳那《因明正理門論本》玄奘譯, T32n1628",
+            "दिग्नाग《因明正理門論本》玄奘譯, T32n1628",
             "धर्मकीर्ति《न्यायबिन्दु》II.5–7; tr. Th. Stcherbatsky, Buddhist Logic vol. II (1930)",
             "R. Hayes, Dignāga on the Interpretation of Signs (Kluwer 1988), ch. 4",
             "https://plato.stanford.edu/entries/logic-india/",
         ],
-        background: "陳那's three marks of a valid reason (因三相) set what a reason must bear to prove anything: present in the case at issue, present in at least one similar case, and absent from every dissimilar case. The third is load-bearing — a reason that also occurs where the thesis is false proves nothing — which 陳那 mapped exhaustively in the 九句因 (the wheel of reasons). The lens enforces it: evidence common to a claim and its rival is not diagnostic.",
+        background: "दिग्नाग's three marks of a valid reason (因三相) set what a reason must bear to prove anything: present in the case at issue, present in at least one similar case, and absent from every dissimilar case. The third is load-bearing — a reason that also occurs where the thesis is false proves nothing — which दिग्नाग mapped exhaustively in the 九句因 (the wheel of reasons). The lens enforces it: evidence common to a claim and its rival is not diagnostic.",
         phase: Phase::Enforced,
     },
     Lens {
@@ -773,7 +773,7 @@ Stcherbatsky, Buddhist Logic vol. II (1930)",
             "呂澂《因明入正理論講解》中華書局 (1983) — the received Chinese terminology",
             "https://plato.stanford.edu/entries/dharmakiirti/ (धर्मकीर्ति, Stanford Encyclopedia of Philosophy)",
         ],
-        background: "法稱 (7th c.) admits non-perception (不可得) as a way to establish absence — but only under the perceivability condition: the thing, were it present, would have been perceived; the apparatus works; the conditions suffice. Of the imperceptible it proves nothing. The lens keeps the restriction: \"none found\" is evidence of absence only when the search could have found the thing.",
+        background: "धर्मकीर्ति (7th c.) admits non-perception (不可得) as a way to establish absence — but only under the perceivability condition: the thing, were it present, would have been perceived; the apparatus works; the conditions suffice. Of the imperceptible it proves nothing. The lens keeps the restriction: \"none found\" is evidence of absence only when the search could have found the thing.",
         phase: Phase::Enforced,
     },
     Lens {
@@ -800,7 +800,7 @@ admission that assent was never obtained).",
 Buddhist Epistemological Tradition (Vienna 1991)",
             "https://plato.stanford.edu/entries/logic-india/",
         ],
-        background: "Indian logic catalogued the ways a proof can wear the form of validity without the force of it: the semblances of a reason (似因) and their counterpart for the thesis (似宗). 商羯羅主's 因明入正理論 (7th c., in 玄奘's translation) lists fourteen faulty reasons — unestablished, inconclusive, contradictory — beside nine faulty theses. The lens is the human screen: a reason that looks like proof is read against the taxonomy before it is trusted.",
+        background: "Indian logic catalogued the ways a proof can wear the form of validity without the force of it: the semblances of a reason (似因) and their counterpart for the thesis (似宗). शङ्करस्वामिन्'s न्यायप्रवेश — in 玄奘's Chinese translation, 因明入正理論 (7th c.) — lists fourteen faulty reasons — unestablished, inconclusive, contradictory — beside nine faulty theses. The lens is the human screen: a reason that looks like proof is read against the taxonomy before it is trusted.",
         phase: Phase::Catalogued,
     },
     Lens {
@@ -818,7 +818,7 @@ between them, and it may only ever lose strength, never gain it.",
             "नागार्जुन《मूलमध्यमककारिका》24.8–24.10",
             "https://plato.stanford.edu/entries/twotruths-india/",
         ],
-        background: "龍樹, in his root verses on the Middle Way (24.8–10): the Buddha's teaching rests on two truths — the conventional (世俗諦), what may be said in ordinary terms, and the ultimate (勝義諦), how things finally stand — and the ultimate is reached only by way of the conventional. peira's Court Mode is exactly that translation, one-directional: the statement said aloud may only lose strength against the fully-bounded graph, never gain it.",
+        background: "नागार्जुन, in his root verses on the Middle Way (24.8–10): the Buddha's teaching rests on two truths — the conventional (世俗諦), what may be said in ordinary terms, and the ultimate (勝義諦), how things finally stand — and the ultimate is reached only by way of the conventional. peira's Court Mode is exactly that translation, one-directional: the statement said aloud may only lose strength against the fully-bounded graph, never gain it.",
         phase: Phase::Catalogued,
     },
     Lens {

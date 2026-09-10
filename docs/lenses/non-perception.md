@@ -34,7 +34,7 @@ You may say "there is no elephant in the room" — one would be seen. You may no
 
 ## In the tradition
 
-法稱 (7th c.) admits non-perception (不可得) as a way to establish absence — but only under the perceivability condition: the thing, were it present, would have been perceived; the apparatus works; the conditions suffice. Of the imperceptible it proves nothing. The lens keeps the restriction: "none found" is evidence of absence only when the search could have found the thing.
+धर्मकीर्ति (7th c.) admits non-perception (不可得) as a way to establish absence — but only under the perceivability condition: the thing, were it present, would have been perceived; the apparatus works; the conditions suffice. Of the imperceptible it proves nothing. The lens keeps the restriction: "none found" is evidence of absence only when the search could have found the thing.
 
 ## Sources
 

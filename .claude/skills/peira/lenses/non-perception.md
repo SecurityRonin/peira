@@ -12,7 +12,7 @@
 
 **Worked example:** You may say "there is no elephant in the room" — one would be seen. You may not say "there are no bacteria" from a look, because the eye cannot resolve them, so finding none reports the instrument, not the room. Non-perception establishes absence only of the perceptible; of the imperceptible it establishes nothing.
 
-**In the tradition:** 法稱 (7th c.) admits non-perception (不可得) as a way to establish absence — but only under the perceivability condition: the thing, were it present, would have been perceived; the apparatus works; the conditions suffice. Of the imperceptible it proves nothing. The lens keeps the restriction: "none found" is evidence of absence only when the search could have found the thing.
+**In the tradition:** धर्मकीर्ति (7th c.) admits non-perception (不可得) as a way to establish absence — but only under the perceivability condition: the thing, were it present, would have been perceived; the apparatus works; the conditions suffice. Of the imperceptible it proves nothing. The lens keeps the restriction: "none found" is evidence of absence only when the search could have found the thing.
 
 **Sources:**
 - धर्मकीर्ति《न्यायबिन्दु》II.12–20 (the perceptibility restriction at II.13); tr. Th. Stcherbatsky, Buddhist Logic vol. II (1930)
