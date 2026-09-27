@@ -4,9 +4,11 @@ Date: 2026-09-27 (revised the same day after two adversarial critiques)
 
 ## Status
 
-Proposed.
+**Accepted — 27 Sep 2026, by the owner's decision, ahead of its own acceptance test.** The held-out evaluation in
+condition 1 below has **not** been run; it is recorded as an open obligation (see the canonical doc, "The pass's own
+control") and the rewritten wording is as untested as the wording it replaced. Condition 2 is met by this change.
 
-No door is added. Accept only when:
+No door is added. The original acceptance conditions, kept so the outstanding one stays visible:
 
 1. the amended prompt lines, with wording **frozen**, have been run blind on held-out sources **not** used to
    write them — including faithful retellings and authentic items as negative controls — with catches, false
