@@ -28,7 +28,7 @@ against the primary texts before use here. Their reports are held with the autho
 
 | Door | Nearest ICD 203 requirement | Note |
 |---|---|---|
-| 1 Direction | D.6.c relevance ("customer" relevance) — once Direction asks *for what decision* | the cost comparison has no ICD counterpart |
+| 1 Direction | D.6.e(5) "Demonstrates customer relevance and addresses implications" — once Direction asks *for what decision* | the cost comparison has no ICD counterpart |
 | 2 Words | D.6.e(6) "Language and syntax should convey meaning unambiguously"; D.6.e(2) uncertainty | the draft cited only e(2) |
 | 3 Ground | D.6.e(1) source quality: "possible denial and deception, age and continued currency of information … source access, validation, motivation, possible bias, or expertise"; D.6.e(3) information vs assumption | deception and staleness are source-quality factors in ICD 203 |
 | 4 Rivals | D.6.e(4) analysis of alternatives | naming a rival is not performing ACH |
