@@ -9,7 +9,7 @@ nav_order: 1
 **A knowledge system that refuses to promote a claim you have not examined** — with gates
 drawn from Socratic ἔλεγχος, the 金剛經, classical Indian logic, 中觀 and the causal ladder.
 
-> Care is not a control. A control is something that can go red, and it must be shown to do so.
+> Care is not a control. A control is something that can go red on a known-bad input and stay green on a known-good one, and it must be shown to do both.
 
 An examiner who is being careful and an examiner who is being fooled produce the same
 subjective experience. The difference is external: a check that fails on a known-bad input,

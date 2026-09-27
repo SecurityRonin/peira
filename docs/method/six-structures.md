@@ -18,7 +18,7 @@ nearly reached, a client. The instances are domain-specific and will not recur; 
 
 ## The controlling idea
 
-> **Care is not a control. A control is something that can go red, and it must be shown to do so.**
+> **Care is not a control. A control is something that can go red on a known-bad input and stay green on a known-good one, and it must be shown to do both.**
 
 An examiner who is being careful and an examiner who is being fooled produce the same subjective
 experience. The difference is external: a check that fails on a known-bad input, run before the
@@ -126,8 +126,8 @@ to prevent.
 | Evidence grade is capped by means of knowing | `PEIR-GRADE-EXCEEDS-MEANS` (प्रमाण) | **enforced** ¹ |
 | A causal claim earns its rung | `PEIR-CAUSAL-RUNG-UNREACHED` (Pearl) | **checked when declared** ⁴ |
 | A claim states where it holds | `PEIR-BOUNDARIES-MISSING` | **enforced** |
-| A claim states what would defeat it | `PEIR-FALSIFIER-MISSING` (Popper / premortem) | **enforced** |
-| Evidence common to both sides of a contest carries no weight | `PEIR-REASON-UNDIAGNOSTIC` (因三相, 共不定) | **enforced** ¹⁴ |
+| A claim states what would defeat it | `PEIR-FALSIFIER-MISSING` (Popper) | **enforced** |
+| Evidence common to both sides of a contest does not discriminate between them | `PEIR-REASON-UNDIAGNOSTIC` (因三相, 共不定) | **enforced** ¹⁴ |
 | A causal claim names something it was tested against | `PEIR-RIVALS-UNENUMERATED` (ACH) | **enforced** ¹⁴ |
 | Absence is certified only by a search shown able to find the thing | `PEIR-ABSENCE-UNCONTROLLED` (不可得因) | **enforced, heuristic** ¹⁵ |
 | An inference surveys the cases where the thing is absent | `PEIR-CONTRARY-CASES-UNSURVEYED` (異品遍無性) | **checked when declared** ¹⁶ |
