@@ -1,6 +1,6 @@
 {
   "name": "peira",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "The peira critical-thinking checker in Claude Code: the anti-summarization pass as a skill, its method docs, and the peira MCP server that refuses to promote an unexamined claim.",
   "author": {
     "name": "Security Ronin",
