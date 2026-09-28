@@ -517,6 +517,12 @@ fn run() -> std::io::Result<usize> {
     }
     write_file(&lenses_dir.join("index.md"), &index_page())?;
     write_file(&out_root.join("doors.md"), &doors_page())?;
+    // The binary embeds a crate-local copy of the method doc (a published crate cannot
+    // reach ../docs); keep it byte-identical to the canonical file.
+    write_file(
+        &PathBuf::from("cli/method/anti-summarization.md"),
+        include_str!("../../docs/method/anti-summarization.md"),
+    )?;
 
     // The Claude Code skill, compiled from the same catalogue. Its playbook filenames
     // are the (new) lens slugs, so the old-slug playbooks are cleared first.

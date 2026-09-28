@@ -66,6 +66,20 @@ jobs:
       # a drifted control still reports green.
       - run: ./tests/controls.sh target/release/peira
 
+  # The published crate is built from its own tarball, not from this repository: a file
+  # embedded from outside cli/ compiles here and fails on crates.io. v0.2.0's crate
+  # publish failed exactly that way (include_str! of ../../docs/...). Package WITH the
+  # verify build, so this job goes red on the class, not only on that instance.
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8
+        with:
+          toolchain: 1.96.0
+      - uses: Swatinem/rust-cache@9bdad043e88c75890e36ad3bbc8d27f0090dd609
+      - run: cargo package -p peira-cli --locked
+
   msrv:
     runs-on: ubuntu-latest
     steps:
