@@ -1,6 +1,6 @@
 [package]
 name = "peira-cli"
-version = "0.2.0"
+version = "0.2.1"
 description = "peira — examine a knowledge vault against classical critical-thinking gates, and export court-ready citation packets."
 edition.workspace = true
 rust-version = "1.88"
