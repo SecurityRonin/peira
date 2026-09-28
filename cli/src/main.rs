@@ -417,12 +417,16 @@ fn cmd_lens(id: Option<String>) -> Result<u8, String> {
 }
 
 /// The method documents, embedded at build time so the installed binary carries the
-/// reasoning peira checks for without needing the repository. `include_str!` makes the
-/// embedded copy byte-identical to the file, so binary and repo cannot drift: a doc edit
-/// that is not rebuilt does not ship, and one that is rebuilt travels here verbatim.
+/// reasoning peira checks for without needing the repository.
+///
+/// The embed reads a crate-local copy (`cli/method/`), because the published crate is
+/// built from its own tarball: a path outside `cli/` compiles in this repository and fails
+/// on crates.io (the v0.2.0 crate publish did exactly that). `gen_site` writes the copy
+/// from `docs/method/`, the `drift` job fails if it is stale, and
+/// `embedded_method_matches_the_canonical_doc` fails if the two ever differ.
 const METHODS: &[(&str, &str)] = &[(
     "anti-summarization",
-    include_str!("../../docs/method/anti-summarization.md"),
+    include_str!("../method/anti-summarization.md"),
 )];
 
 /// The embedded body of a method document, or `None` if the name is unknown.
@@ -651,6 +655,28 @@ mod tests {
         assert!(
             method_doc("no-such-method").is_none(),
             "an unknown method must not resolve"
+        );
+    }
+
+    /// The embedded copy must be the canonical doc, byte for byte. Only inside the
+    /// repository can the canonical file be read; a packaged crate has no `docs/`, and there
+    /// the test says so rather than passing silently on nothing.
+    #[test]
+    fn embedded_method_matches_the_canonical_doc() {
+        let canonical = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../docs/method/anti-summarization.md");
+        if !canonical.exists() {
+            eprintln!(
+                "SKIPPED: {} absent (packaged crate); the embed cannot be compared here",
+                canonical.display()
+            );
+            return;
+        }
+        let on_disk = std::fs::read_to_string(&canonical).expect("canonical doc is readable");
+        assert_eq!(
+            method_doc("anti-summarization").expect("embedded"),
+            on_disk,
+            "cli/method/anti-summarization.md is stale — run: cargo run -p peira-cli --example gen_site -- docs"
         );
     }
 
